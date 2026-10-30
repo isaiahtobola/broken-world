@@ -156,8 +156,9 @@ body.first-load .get-started{animation:circleRevealSlow 2s cubic-bezier(.22,.75,
   to{filter:blur(0); opacity:1}
 }
 .christmas-quote{
-  font-size:clamp(22px,3vw,36px); font-weight:600; font-style:italic; line-height:1.35;
-  max-width:880px; margin:52px auto 8px;
+  font-size:clamp(21px,2.3vw,31px); font-weight:600; font-style:italic; line-height:1.32;
+  width:min(1360px,94vw); max-width:none; margin:52px 0 8px;
+  position:relative; left:50%; transform:translateX(-50%);
   background:linear-gradient(45deg, #ff4040, #ffd23e, #43d95e, #5ec8ff, #b46bff);
   -webkit-background-clip:text; background-clip:text; color:transparent;
 }
@@ -497,6 +498,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 4s ease-out .9s both}
 
 /* ============ RESPONSIVE ============ */
 @media (max-width:900px){
+  .quote-break{display:none}
   .video-row{grid-template-columns:1fr}
   .sea-grid{grid-template-columns:1fr}
   .doors{flex-direction:column; gap:14px}
@@ -564,7 +566,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 4s ease-out .9s both}
     <!-- Spec 3: Get Started Now, Shape-circular, 2s -->
     <button class="get-started" id="get-started">Get Started Now</button>
     <!-- Specs 4+5: THE EXCEPTION — rainbow gradient at 45deg, BLUR-in 4s, never Shape -->
-    <h2 class="christmas-quote">I Created a YouTube channel on Christmas night of 2024, because my favorite YouTubers made me laugh, cry, and feel real human connection from thousands of miles away</h2>
+    <h2 class="christmas-quote">I Created a YouTube channel on Christmas night of 2024, because my favorite YouTubers<br class="quote-break">made me laugh, cry, and feel real human connection from thousands of miles away</h2>
     <div class="social-row">
       <a href="https://www.instagram.com/bwyoungbo" target="_blank" rel="noopener"><b>Instagram</b> · @bwyoungbo</a>
       <a href="https://www.youtube.com/@BWYoungBo" target="_blank" rel="noopener"><b>YouTube</b> · @BWYoungBo</a>

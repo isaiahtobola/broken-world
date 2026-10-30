@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Broken World — Demo</title>
+<title>Broken World</title>
 <meta name="description" content="Broken World, hand-coded in plum and gold. A living demo of the new house.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -755,11 +755,11 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
           <div class="avatar">B</div>
           <div class="composer-main">
             <textarea id="sea-post-text" rows="3" placeholder="Share something with the Sea…" aria-label="Write a post"></textarea>
-            <div class="composer-actions"><span class="composer-note">Demo posting — saves in this browser only</span><button class="post-btn" id="sea-post-btn">Post</button></div>
+            <div class="composer-actions"><span class="composer-note">Open to read — join or log in to post</span><button class="post-btn" id="sea-post-btn">Post</button></div>
           </div>
         </div>
         <div id="sea-feed"></div>
-        <p class="feed-empty" id="sea-empty">The Sea is quiet. Your first post lands here — it lives in this browser, just for you, until the real build opens the gates.</p>
+        <p class="feed-empty" id="sea-empty">The Sea is quiet. Your first post lands here — live for everyone who sails in.</p>
       </div>
       <aside>
         <div class="side-panel">
@@ -803,7 +803,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
       <div class="avatar">B</div>
       <div class="composer-main">
         <textarea id="hub-post-text" rows="3" placeholder="Share something with the Hub…" aria-label="Write a post"></textarea>
-        <div class="composer-actions"><span class="composer-note">Demo posting — saves in this browser only</span><button class="post-btn" id="hub-post-btn">Post</button></div>
+        <div class="composer-actions"><span class="composer-note">Open to read — join or log in to post</span><button class="post-btn" id="hub-post-btn">Post</button></div>
       </div>
     </div>
     <div id="hub-feed"></div>
@@ -893,7 +893,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
       <div id="files-rows"></div>
       <div class="library-empty" id="files-empty">
         <p class="big">The Library is Empty.</p>
-        <p>Hit <b>Send a file</b> and it lands right here — the list saves in this browser (demo). Click a row and the wall answers; star your favorites; the real two-way vault arrives with the November build.</p>
+        <p>Hit <b>Send a file</b> and it lands right here — in the real vault, live for everyone. Members send files; everyone can download. Click a row and the wall answers; star your favorites.</p>
       </div>
     </div>
   </div>
@@ -1092,14 +1092,14 @@ function buildPostCard(post, idx){
   var rx = document.createElement('div'); rx.className = 'reactions';
   ['👍','😍','🤣'].forEach(function(em){
     var btn = document.createElement('button'); btn.textContent = em;
-    btn.addEventListener('click', function(){ toast('Demo — reactions switch on in the real build.'); });
+    btn.addEventListener('click', function(){ toast('Reactions arrive in the November build.'); });
     rx.appendChild(btn);
   });
   var more = document.createElement('span'); more.className = 'more-rx'; more.textContent = '+ More reactions'; rx.appendChild(more);
   var counts = document.createElement('p'); counts.className = 'counts'; counts.textContent = '0 reactions · 0 comments · Sort by: Newest';
   var crow = document.createElement('div'); crow.className = 'comment-row';
   var inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = 'Write a comment...'; inp.setAttribute('aria-label','Write a comment');
-  inp.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); toast('Demo — comments switch on in the real build.'); inp.value = ''; } });
+  inp.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); toast('Comments arrive in the November build.'); inp.value = ''; } });
   crow.appendChild(inp);
   card.appendChild(head); card.appendChild(body); card.appendChild(rx); card.appendChild(counts); card.appendChild(crow);
   return card;
@@ -1234,7 +1234,7 @@ document.getElementById('join-form').addEventListener('submit', function(e){
 });
 document.querySelectorAll('.comment-row input').forEach(function(inp){
   inp.addEventListener('keydown', function(e){
-    if(e.key==='Enter'){ e.preventDefault(); toast('Demo build — commenting wires up in the real build.'); inp.value=''; }
+    if(e.key==='Enter'){ e.preventDefault(); toast('Comments arrive in the November build.'); inp.value=''; }
   });
 });
 document.querySelectorAll('.reactions button').forEach(function(b){
@@ -1615,10 +1615,10 @@ document.querySelectorAll('.hub-tab-btn').forEach(function(btn){
   });
 });
 document.querySelectorAll('.share-text').forEach(function(b){
-  b.addEventListener('click', function(){ toast('Demo build — sharing wires up in the real build.'); });
+  b.addEventListener('click', function(){ toast('Sharing arrives in the November build.'); });
 });
 document.querySelectorAll('.dl-btn').forEach(function(b){
-  b.addEventListener('click', function(){ toast('Demo build — downloads wire up in the real build.'); });
+  b.addEventListener('click', function(){ toast('That row is a memorial — live downloads live in File Share.'); });
 });
 
 /* ---------- shared canvas plumbing ---------- */

@@ -129,10 +129,12 @@ img{max-width:100%}
   from{clip-path:circle(0% at 50% 30%)}
   to{clip-path:circle(142% at 50% 30%)}
 }
-/* First-load countdown cascade (Specs 1–3): nav 4s · hero 3s · button 2s */
-body.first-load .site-nav{animation:circleReveal 4s cubic-bezier(.22,.75,.25,1) both}
-body.first-load .hero-line{animation:circleRevealSlow 3s cubic-bezier(.22,.75,.25,1) .35s both}
-body.first-load .get-started{animation:circleRevealSlow 2s cubic-bezier(.22,.75,.25,1) .7s both}
+/* First-load cascade, REVISED by Isaiah 2026-10-30 03:09 (his Wix-feel call):
+   nav 8s · first quote (hero) 6s · Get Started 4s — slower, steadier ease so
+   the circle grows through the whole duration like his site. */
+body.first-load .site-nav{animation:circleReveal 8s cubic-bezier(.45,.05,.35,1) both}
+body.first-load .hero-line{animation:circleRevealSlow 6s cubic-bezier(.45,.05,.35,1) .35s both}
+body.first-load .get-started{animation:circleRevealSlow 4s cubic-bezier(.45,.05,.35,1) .7s both}
 
 /* ============ HOME ============ */
 #view-home{min-height:calc(100vh - 190px)}
@@ -162,7 +164,7 @@ body.first-load .get-started{animation:circleRevealSlow 2s cubic-bezier(.22,.75,
   background:linear-gradient(45deg, #ff4040, #ffd23e, #43d95e, #5ec8ff, #b46bff);
   -webkit-background-clip:text; background-clip:text; color:transparent;
 }
-body.first-load .christmas-quote{animation:quoteBlurIn 4s ease-out .9s both}
+body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 .social-row{
   display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin:36px 0 8px;
   font-family:var(--mono); font-size:13.5px; letter-spacing:.08em;

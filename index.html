@@ -125,8 +125,8 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
   pointer-events:none; z-index:28; opacity:0; visibility:hidden; transition:opacity .8s;
 }
 .slot{position:absolute; overflow:hidden}
-.slot-yang{left:calc(50% + 310px); top:0; width:56px; height:220px}
-.slot-yin{right:calc(50% + 310px); top:0; width:56px; height:220px}
+.slot-yang{left:calc(50% + 385px); top:0; width:56px; height:220px}
+.slot-yin{right:calc(50% + 385px); top:0; width:56px; height:220px}
 .orb{position:absolute; animation:orbitTick 15s ease-in-out 1 both; will-change:transform}
 @keyframes orbitTick{
   from{transform:translateY(var(--from))}
@@ -142,12 +142,12 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
 .orb-sun svg{filter:drop-shadow(0 0 16px rgba(240,183,63,.55))}
 .orb-sun .rays{transform-origin:50px 50px; animation:sunSpin 26s linear infinite}
 @keyframes sunSpin{to{transform:rotate(360deg)}}
-.orb-yang{left:6px; top:172px; width:44px; --from:-168px; --to:0px}
-.orb-yin{left:6px; top:4px; width:44px; --from:172px; --to:0px}
+.orb-yang{left:6px; top:4px; width:44px; --from:172px; --to:0px}
+.orb-yin{left:6px; top:172px; width:44px; --from:-168px; --to:0px}
 .orb-yang svg,.orb-yin svg{filter:drop-shadow(0 0 9px rgba(240,183,63,.65))}
 @media (max-width: 760px){
   .orb-moon{width:44px; right:10px} .orb-sun{width:48px; left:10px}
-  .slot-yang{left:calc(50% + 280px)} .slot-yin{right:calc(50% + 280px)}
+  .slot-yang{left:calc(50% + 350px)} .slot-yin{right:calc(50% + 350px)}
   .orb-yang,.orb-yin{width:36px; left:10px}
 }
 @media (max-width: 560px){ .orbit-top{display:none} }

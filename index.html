@@ -903,7 +903,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 <!-- ================= FOOTER ================= -->
 <footer class="site-footer">
   <div class="footer-inner">
-    <span><b>Broken World</b> — hand-coded demo · plum &amp; gold</span>
+    <span><b>Broken World</b> — hand-coded · plum &amp; gold · live</span>
     <span>Est. MMXXVI · Tacoma, Washington</span>
   </div>
 </footer>
@@ -927,12 +927,13 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
       #auth-email-form[hidden]{display:none}
       #auth-email-form input{background:#150d20;border:1px solid #3a2560;border-radius:10px;color:#f7ead1;padding:11px 13px;font:inherit}
     </style>
-    <p class="modal-note">Demo build — accounts arrive with the real build. Members join with an email and a password they create.</p>
+    <p class="modal-note">Live build — members join with an email and a password they create. Posts and files are public; the vault only takes files from members.</p>
   </div>
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ============================================================
    BROKEN WORLD — demo engine
@@ -1058,7 +1059,8 @@ document.getElementById('get-started').addEventListener('click', function(){ swi
 /* ---------- demo toasts ---------- */
 /* Log In button opens the sign-up modal — wired in the modal block below. */
 document.getElementById('hub-join-btn').addEventListener('click', function(){
-  toast('Demo build — joining the Hub wires up in the real build.');
+  var m = document.getElementById('login-modal'); if(m) m.hidden = false;
+  toast('Join the Hub — email + a password you create.');
 });
 /* ---------- DEMO POSTING (Isaiah's call, 2026-10-30: copies out, his own posts in) ----------
    Posts save to THIS browser's localStorage only — not public, not a server.
@@ -1074,15 +1076,16 @@ function fmtWhen(ts){
 function buildPostCard(post, idx){
   var card = document.createElement('article'); card.className = 'post-card';
   var head = document.createElement('div'); head.className = 'post-head';
-  var av = document.createElement('div'); av.className = 'avatar'; av.textContent = 'B';
+  var av = document.createElement('div'); av.className = 'avatar'; av.textContent = (post.author || 'B').charAt(0).toUpperCase();
   var who = document.createElement('div'); who.className = 'who';
-  var b = document.createElement('b'); b.textContent = 'bwyoungbo';
+  var b = document.createElement('b'); b.textContent = post.author || 'bwyoungbo';
   var s = document.createElement('span'); s.textContent = 'posted in BW Hub · ' + fmtWhen(post.ts);
   who.appendChild(b); who.appendChild(s);
   var del = document.createElement('button'); del.className = 'post-del'; del.title = 'Remove post'; del.textContent = '✕';
   del.addEventListener('click', function(){
     var posts = loadPosts(); posts.splice(idx, 1); savePosts(posts); renderPosts();
-    toast('Post removed from your demo Sea.');
+    if(window.__bwDeletePost) window.__bwDeletePost(post);
+    toast('Post removed.');
   });
   head.appendChild(av); head.appendChild(who); head.appendChild(del);
   var body = document.createElement('p'); body.className = 'post-body'; body.textContent = post.text;
@@ -1173,21 +1176,23 @@ function renderFiles(){
     var dl = document.createElement('button'); dl.className = 'dl-btn'; dl.textContent = '⬇ Get';
     dl.addEventListener('click', function(e){
       e.stopPropagation();
-      if(fileUrls[f.id]){
+      var url = fileUrls[f.id] || (f.key ? bwWorkerGet(f) : null);
+      if(url){
         var a = document.createElement('a');
-        a.href = fileUrls[f.id]; a.download = f.name; a.click();
+        a.href = url; a.download = f.name; a.click();
       } else {
-        toast('Demo list entry — the file bytes move in with the real November vault.');
+        toast('That entry has no file behind it yet.');
       }
     });
     var del = document.createElement('button'); del.className = 'del-btn'; del.textContent = '✕';
     del.addEventListener('click', function(e){
       e.stopPropagation();
+      if(window.__bwDeleteFile) window.__bwDeleteFile(f);
       saveFiles(loadFiles().filter(function(x){ return x.id !== f.id; }));
-      renderFiles(); toast('Removed from your demo library.');
+      renderFiles(); toast('Removed from the library.');
     });
     acts.appendChild(dl); acts.appendChild(del);
-    var contrib = document.createElement('span'); contrib.className = 'fmeta'; contrib.textContent = 'bwyoungbo';
+    var contrib = document.createElement('span'); contrib.className = 'fmeta'; contrib.textContent = f.contrib || 'bwyoungbo';
     row.appendChild(nameCell); row.appendChild(date); row.appendChild(views); row.appendChild(fav);
     var last = document.createElement('span'); last.style.display = 'flex'; last.style.gap = '14px'; last.style.alignItems = 'center';
     last.appendChild(contrib); last.appendChild(acts);
@@ -1207,17 +1212,10 @@ document.getElementById('send-file-btn').addEventListener('click', function(){
 });
 document.getElementById('file-picker').addEventListener('change', function(e){
   var picked = Array.prototype.slice.call(e.target.files || []);
-  if(!picked.length) return;
-  var list = loadFiles();
-  picked.forEach(function(file, i){
-    var id = 'f' + Date.now() + '-' + i;
-    fileUrls[id] = URL.createObjectURL(file);
-    list.unshift({id:id, name:file.name, size:file.size, ts:Date.now(), views:0, fav:false});
-  });
-  saveFiles(list); renderFiles();
-  if(window.__eqRipple) window.__eqRipple(0.5);
-  toast(picked.length === 1 ? 'Added to your demo library.' : 'Added ' + picked.length + ' files to your demo library.');
   e.target.value = '';
+  if(!picked.length) return;
+  if(typeof liveUploadFiles === 'function'){ liveUploadFiles(picked); }
+  else { toast('The vault is still waking up — one second.'); }
 });
 document.getElementById('files-search').addEventListener('input', function(e){
   fileQuery = e.target.value.trim().toLowerCase(); renderFiles();
@@ -1232,7 +1230,7 @@ document.querySelectorAll('.files-table-head .sortable').forEach(function(h){
 renderFiles();
 document.getElementById('join-form').addEventListener('submit', function(e){
   e.preventDefault();
-  toast('Demo build — the list wires up in the real build.');
+  toast('The updates list joins in November — site membership above works today.');
 });
 document.querySelectorAll('.comment-row input').forEach(function(inp){
   inp.addEventListener('keydown', function(e){
@@ -1368,6 +1366,187 @@ runners['sky-home'] = function(canvas, ctx, state){
   }
   state.raf = requestAnimationFrame(frame);
 };
+/* ============================================================
+   BW LIVE — the real backend (test phase, 2026-10-30)
+   Supabase = the notebook (members, posts, file list);
+   Cloudflare Worker = the gatekeeper to the R2 vault.
+   If the library or the key is missing, the demo systems stay
+   exactly as they were — this block simply never wakes up.
+   ============================================================ */
+var BW = { sb:null, user:null, session:null, name:'', posts:null, files:null };
+var BW_CONFIG = {
+  SUPABASE_URL: 'https://zkkspubneerstbznuevj.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpra3NwdWJuZWVyc3Riem51ZXZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNjk5MDksImV4cCI6MjEwODk0NTkwOX0.efbYEnmtaQ757MEfJpFk-UWuwWggvzEcKUVZoNWsO-M',
+  WORKER_URL: 'https://bw-files.isaiahtobola.workers.dev'
+};
+function bwKey(key){ return key.split('/').map(encodeURIComponent).join('/'); }
+function bwOpenModal(){ var m = document.getElementById('login-modal'); if(m) m.hidden = false; }
+function bwCloseModal(){ var m = document.getElementById('login-modal'); if(m) m.hidden = true; }
+
+function bwApplyAuth(){
+  var btn = document.getElementById('login-btn');
+  if(BW.user){
+    BW.name = (BW.user.user_metadata && BW.user.user_metadata.display_name) || (BW.user.email || '').split('@')[0] || 'member';
+    if(btn) btn.textContent = BW.name + ' · Log out';
+    window.__bwSignOut = function(){ BW.sb.auth.signOut(); };
+  } else {
+    BW.name = '';
+    if(btn) btn.textContent = 'Log In';
+    window.__bwSignOut = null;
+  }
+  document.querySelectorAll('.composer-note').forEach(function(n){
+    n.textContent = BW.user ? ('Posting as ' + BW.name + ' — live, everyone can read') : 'Open to read — join or log in to post';
+  });
+  if(BW.files) renderFiles();
+}
+
+function bwFetchPosts(){
+  return BW.sb.from('posts').select('id, body, author, author_name, created_at')
+    .order('created_at', {ascending:false}).limit(100)
+    .then(function(r){
+      if(r.error) return;
+      BW.posts = (r.data || []).map(function(row){
+        return { id: row.id, text: row.body, ts: new Date(row.created_at).getTime(),
+                 author: row.author_name || 'member', author_id: row.author };
+      });
+      renderPosts();
+    });
+}
+function bwFetchFiles(){
+  return BW.sb.from('files').select('id, name, size_bytes, r2_key, content_type, uploader, uploader_name, created_at')
+    .order('created_at', {ascending:false}).limit(200)
+    .then(function(r){
+      if(r.error) return;
+      BW.files = (r.data || []).map(function(row){
+        return { id: row.id, name: row.name, size: row.size_bytes, ts: new Date(row.created_at).getTime(),
+                 views: 0, fav: false, key: row.r2_key, contrib: row.uploader_name || 'member',
+                 mine: BW.user && row.uploader === BW.user.id };
+      });
+      renderFiles();
+    });
+}
+
+function liveMakePost(textareaId){
+  var ta = document.getElementById(textareaId);
+  var text = (ta.value || '').trim();
+  if(!text){ toast('Write something first — the Sea is listening.'); return; }
+  if(!BW.user){ toast('Join or log in to post — reading is open to everyone.'); bwOpenModal(); return; }
+  BW.sb.from('posts').insert({ body: text, author: BW.user.id, author_name: BW.name })
+    .then(function(r){
+      if(r.error){ toast('The Sea refused that one: ' + r.error.message); return; }
+      ta.value = '';
+      bwFetchPosts();
+      toast('Posted to the Sea — live for everyone.');
+    });
+}
+window.__bwDeletePost = function(post){
+  if(!BW.sb || !post || typeof post.id !== 'string' || post.id.length < 20) return;
+  BW.sb.from('posts').delete().eq('id', post.id).then(function(){});
+};
+window.__bwDeleteFile = function(f){
+  if(!BW.sb || !f || !f.key) return;
+  if(typeof f.id === 'string' && f.id.length >= 20)
+    BW.sb.from('files').delete().eq('id', f.id).then(function(){});
+  if(BW.session){
+    fetch(BW_CONFIG.WORKER_URL + '/f/' + bwKey(f.key), {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + BW.session.access_token }
+    }).then(function(){}, function(){});
+  }
+};
+function bwWorkerGet(f){ return BW_CONFIG.WORKER_URL + '/f/' + bwKey(f.key); }
+
+function liveUploadFiles(picked){
+  if(!BW.user){ toast('The vault is members-only — join or log in to send files.'); bwOpenModal(); return; }
+  toast(picked.length === 1 ? 'Sending to the vault…' : 'Sending ' + picked.length + ' files to the vault…');
+  var chain = Promise.resolve(), failed = 0;
+  picked.forEach(function(file){
+    chain = chain.then(function(){
+      var fd = new FormData(); fd.append('file', file);
+      return fetch(BW_CONFIG.WORKER_URL + '/upload', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + BW.session.access_token },
+        body: fd
+      }).then(function(r){ return r.json(); }).then(function(res){
+        if(res.error){ failed++; toast(res.error); return; }
+        return BW.sb.from('files').insert({
+          name: res.name, size_bytes: res.size, r2_key: res.key,
+          content_type: res.content_type, uploader: BW.user.id, uploader_name: BW.name
+        }).then(function(){});
+      }).catch(function(){ failed++; });
+    });
+  });
+  chain.then(function(){
+    bwFetchFiles();
+    if(window.__eqRipple) window.__eqRipple(0.5);
+    if(!failed) toast(picked.length === 1 ? 'Filed in the vault — live for everyone.' : 'All files in the vault.');
+  });
+}
+
+/* Auth entry point for the modal form (script 2 hands us the form). */
+window.__bwAuth = function(form){
+  if(!BW.sb){ toast('The notebook is still waking up — one second.'); return; }
+  var email = (form.querySelector('input[type="email"]').value || '').trim();
+  var pw = form.querySelector('input[type="password"]').value || '';
+  var nameEl = form.querySelector('input[name="bw-name"]');
+  var name = nameEl ? (nameEl.value || '').trim() : '';
+  var mode = window.__bwAuthMode || 'signup';
+  if(!email || !pw){ toast('Email and password — both fields, captain.'); return; }
+  if(mode === 'login'){
+    BW.sb.auth.signInWithPassword({ email: email, password: pw }).then(function(r){
+      if(r.error){ toast('Log in refused: ' + r.error.message); return; }
+      bwCloseModal(); toast('Welcome back to Broken World.');
+    });
+  } else {
+    BW.sb.auth.signUp({
+      email: email, password: pw,
+      options: { data: { display_name: name || email.split('@')[0] } }
+    }).then(function(r){
+      if(r.error){ toast('Sign up refused: ' + r.error.message); return; }
+      bwCloseModal();
+      toast(r.data && r.data.session ? 'Welcome to Broken World — you are member-live.' : 'Account made — log in and you are live.');
+    });
+  }
+};
+
+(function bwInit(){
+  try{
+    if(!window.supabase) return;
+    if(BW_CONFIG.SUPABASE_ANON_KEY.indexOf('__BW_') === 0) return; /* key lands at publish time */
+    BW.sb = window.supabase.createClient(BW_CONFIG.SUPABASE_URL, BW_CONFIG.SUPABASE_ANON_KEY);
+  }catch(e){ return; }
+
+  /* a display-name field joins the modal form (sign-up uses it) */
+  var form = document.getElementById('auth-email-form');
+  if(form && !form.querySelector('input[name="bw-name"]')){
+    var ni = document.createElement('input');
+    ni.type = 'text'; ni.name = 'bw-name'; ni.placeholder = 'Display name (when signing up)';
+    ni.setAttribute('aria-label', 'Display name');
+    form.insertBefore(ni, form.firstChild);
+  }
+
+  /* take over the spines: posts + files now read the notebook, not this browser */
+  loadPosts = function(){ return BW.posts || []; };
+  savePosts = function(){};
+  makePost = liveMakePost;
+  loadFiles = function(){ return BW.files || []; };
+  saveFiles = function(){};
+
+  BW.sb.auth.getSession().then(function(r){
+    BW.session = (r.data && r.data.session) || null;
+    BW.user = BW.session ? BW.session.user : null;
+    bwApplyAuth();
+  });
+  BW.sb.auth.onAuthStateChange(function(_evt, session){
+    BW.session = session || null;
+    BW.user = session ? session.user : null;
+    bwApplyAuth();
+    bwFetchFiles();
+  });
+  bwFetchPosts();
+  bwFetchFiles();
+})();
+
 })(); /* end part 1 */
 </script>
 
@@ -1389,15 +1568,29 @@ function toast(msg){
 var modal = document.getElementById('login-modal');
 function openModal(){ modal.hidden = false; }
 function closeModal(){ modal.hidden = true; }
-document.getElementById('login-btn').addEventListener('click', openModal);
+document.getElementById('login-btn').addEventListener('click', function(){
+  if(window.__bwSignOut){ window.__bwSignOut(); toast('Logged out — the Sea keeps your posts.'); }
+  else openModal();
+});
 document.getElementById('modal-close').addEventListener('click', closeModal);
 modal.addEventListener('click', function(e){ if(e.target===modal) closeModal(); });
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
 document.getElementById('modal-login-link').addEventListener('click', function(e){
-  e.preventDefault(); toast('Demo build — accounts arrive with the real build.');
+  e.preventDefault();
+  var toLogin = window.__bwAuthMode !== 'login';
+  window.__bwAuthMode = toLogin ? 'login' : 'signup';
+  document.getElementById('modal-title').textContent = toLogin ? 'Log In' : 'Sign Up';
+  var sub = document.querySelector('#login-modal .modal-sub');
+  if(sub && sub.firstChild) sub.firstChild.textContent = toLogin ? 'New here? ' : 'Already a member? ';
+  e.target.textContent = toLogin ? 'Sign Up' : 'Log In';
+  document.getElementById('auth-email-toggle').textContent = toLogin ? 'Log in with email' : 'Sign up with email';
+  var submitBtn = emailForm.querySelector('button[type="submit"]');
+  if(submitBtn) submitBtn.textContent = toLogin ? 'Log in' : 'Create account';
+  var nameField = emailForm.querySelector('input[name="bw-name"]');
+  if(nameField) nameField.style.display = toLogin ? 'none' : '';
 });
 modal.querySelectorAll('[data-auth]').forEach(function(b){
-  b.addEventListener('click', function(){ toast('Demo build — accounts arrive with the real build.'); });
+  b.addEventListener('click', function(){ toast('Email is the door today — Google/Facebook joining arrives in the November build.'); });
 });
 /* Email path: members join with an email + a password they create (his spec). */
 var emailForm = document.getElementById('auth-email-form');
@@ -1406,7 +1599,9 @@ document.getElementById('auth-email-toggle').addEventListener('click', function(
   if(!emailForm.hidden){ var f = emailForm.querySelector('input'); if(f) f.focus(); }
 });
 emailForm.addEventListener('submit', function(e){
-  e.preventDefault(); toast('Demo build — accounts arrive with the real build.');
+  e.preventDefault();
+  if(window.__bwAuth) window.__bwAuth(emailForm);
+  else toast('The notebook is still waking up — one second.');
 });
 
 /* ---------- HUB TABS ---------- */

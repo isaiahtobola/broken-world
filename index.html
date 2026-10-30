@@ -26,7 +26,7 @@
 html{scroll-behavior:smooth}
 body{
   background:var(--bg); color:var(--cream); font-family:var(--serif);
-  min-height:100vh; overflow-x:hidden;
+  min-height:100vh; overflow-x:hidden; scrollbar-gutter:stable;
   background-image:radial-gradient(1200px 600px at 50% -10%, rgba(109,79,161,.18), transparent 60%);
 }
 ::selection{background:var(--gold); color:var(--ink)}
@@ -940,10 +940,14 @@ function toast(msg){
 var runners = window.__bwRunners || (window.__bwRunners = {});   // shared with part 2
 var running = window.__bwRunning || (window.__bwRunning = {});
 function fitCanvas(c){
+  /* hysteresis (the 04:52 twitch fix): fractional rect sizes used to
+     round up/down by 1px between frames, resetting the bitmap and
+     rebuilding the particle fields every frame — visible twitching.
+     Now a resize only lands when the size truly moved (>3px). */
   var r = c.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio||1, 2);
   var w = Math.max(2, Math.round(r.width*dpr)), h = Math.max(2, Math.round(r.height*dpr));
-  if(c.width!==w || c.height!==h){ c.width=w; c.height=h; }
-  return {w:w, h:h, dpr:dpr};
+  if(Math.abs(c.width-w) > 3 || Math.abs(c.height-h) > 3){ c.width=w; c.height=h; }
+  return {w:c.width, h:c.height, dpr:dpr};
 }
 function startRunner(id){
   var c = document.getElementById(id);
@@ -1410,10 +1414,14 @@ document.querySelectorAll('.dl-btn').forEach(function(b){
 var pointer = {x:-9999, y:-9999, inside:false};
 window.addEventListener('pointermove', function(e){ pointer.x=e.clientX; pointer.y=e.clientY; pointer.inside=true; });
 function fitCanvas(c){
+  /* hysteresis (the 04:52 twitch fix): fractional rect sizes used to
+     round up/down by 1px between frames, resetting the bitmap and
+     rebuilding the particle fields every frame — visible twitching.
+     Now a resize only lands when the size truly moved (>3px). */
   var r = c.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio||1, 2);
   var w = Math.max(2, Math.round(r.width*dpr)), h = Math.max(2, Math.round(r.height*dpr));
-  if(c.width!==w || c.height!==h){ c.width=w; c.height=h; }
-  return {w:w, h:h, dpr:dpr};
+  if(Math.abs(c.width-w) > 3 || Math.abs(c.height-h) > 3){ c.width=w; c.height=h; }
+  return {w:c.width, h:c.height, dpr:dpr};
 }
 /* Shared registry: part 1 owns start/stop and exposes them on window. */
 var runners = window.__bwRunners, running = window.__bwRunning;

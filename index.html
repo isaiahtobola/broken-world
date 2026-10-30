@@ -26,7 +26,7 @@
 html{scroll-behavior:smooth}
 body{
   background:var(--bg); color:var(--cream); font-family:var(--serif);
-  min-height:100vh; overflow-x:hidden; scrollbar-gutter:stable;
+  min-height:100vh; min-height:100svh; overflow-x:hidden; scrollbar-gutter:stable;
   background-image:radial-gradient(1200px 600px at 50% -10%, rgba(109,79,161,.18), transparent 60%);
 }
 ::selection{background:var(--gold); color:var(--ink)}
@@ -149,11 +149,22 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
 .orb-yin{left:6px; top:172px; width:44px; --from:-220px; --to:0px}
 .orb-yang svg,.orb-yin svg{filter:drop-shadow(0 0 9px rgba(240,183,63,.65))}
 @media (max-width: 760px){
-  .orb-moon{width:44px; right:10px} .orb-sun{width:48px; left:10px}
-  .slot-yang{left:calc(50% + 350px)} .slot-yin{right:calc(50% + 350px)}
-  .orb-yang,.orb-yin{width:36px; left:10px}
+  /* PHONE BRIDGE (his 10:48 spec): same site, same dance — the header
+     shrinks, the slots ride to the screen edges beside the smaller
+     banner, nothing is hidden */
+  .site-header{padding:18px 0}
+  .header-row{min-height:0}
+  .header-banner{padding:6px 0}
+  .header-banner img{height:50px}
+  .header-side .tagline{display:none}
+  .orbit-top{height:104px}
+  .slot{height:98px}
+  .slot-yang{left:4px} .slot-yin{right:4px}
+  .orb-yang{width:32px; left:5px; top:3px; --from:101px}
+  .orb-yin{width:32px; left:5px; top:63px; --from:-101px}
+  .orb-moon{width:44px; right:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:calc(-18vh - 110px)}
+  .orb-sun{width:48px; left:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:55vh}
 }
-@media (max-width: 560px){ .orbit-top{display:none} }
 @media (prefers-reduced-motion: reduce){ .orb{animation:none} .orb-sun .rays{animation:none} }
 .more-menu{
   position:absolute; top:calc(100% + 2px); left:50%; transform:translate(-50%,-6px);
@@ -292,6 +303,8 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   color:var(--muted); letter-spacing:.1em;
 }
 .car-hint b{color:var(--gold); font-weight:600}
+.car-hint .touch{display:none}
+@media (hover:none){ .car-hint .desk{display:none} .car-hint .touch{display:inline} }
 
 /* ============ SEA (Spec 7) ============ */
 #view-sea{overflow:hidden}
@@ -354,6 +367,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 .reactions .more-rx{font-family:var(--mono); font-size:12px; color:var(--muted); letter-spacing:.06em}
 .counts{font-family:var(--mono); font-size:12px; color:var(--muted); margin:10px 0 12px; letter-spacing:.05em}
 .comment-row{display:flex; gap:10px}
+.join-form input, .comment-row input, #auth-email-form input, .composer-main textarea{font-size:16px}
 .comment-row input{
   flex:1; background:rgba(13,7,22,.6); border:1px solid rgba(184,166,217,.35); border-radius:999px;
   padding:10px 16px; color:var(--cream); font-family:var(--serif); font-size:15px; outline:none;
@@ -704,7 +718,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
       <h2>Welcome back, traveler</h2>
       <button class="login-btn" id="login-btn">Log In</button>
     </div>
-    <p class="car-hint"><b>Scroll up against the wall = gas ↑</b> · or hold ↑ · hold top speed 7 seconds and he GONE — but he always loops back</p>
+    <p class="car-hint"><span class="desk"><b>Scroll up against the wall = gas ↑</b> · or hold ↑ · hold top speed 7 seconds and he GONE — but he always loops back</span><span class="touch"><b>Hold the road = gas</b> · drag up for more · hold top speed 7 seconds and he GONE — but he always loops back</span></p>
   </div>
 </section>
 
@@ -1234,6 +1248,7 @@ document.querySelectorAll('.reactions button').forEach(function(b){
 /* ---------- pointer tracking (shared) ---------- */
 var pointer = {x:-9999, y:-9999, inside:false};
 window.addEventListener('pointermove', function(e){ pointer.x=e.clientX; pointer.y=e.clientY; pointer.inside=true; });
+window.addEventListener('pointerdown', function(e){ pointer.x=e.clientX; pointer.y=e.clientY; pointer.inside=true; });
 window.addEventListener('pointerleave', function(){ pointer.inside=false; });
 
 /* ============================================================
@@ -1416,6 +1431,7 @@ document.querySelectorAll('.dl-btn').forEach(function(b){
 /* ---------- shared canvas plumbing ---------- */
 var pointer = {x:-9999, y:-9999, inside:false};
 window.addEventListener('pointermove', function(e){ pointer.x=e.clientX; pointer.y=e.clientY; pointer.inside=true; });
+window.addEventListener('pointerdown', function(e){ pointer.x=e.clientX; pointer.y=e.clientY; pointer.inside=true; });
 function fitCanvas(c){
   /* hysteresis (the 04:52 twitch fix): fractional rect sizes used to
      round up/down by 1px between frames, resetting the bitmap and
@@ -1450,8 +1466,35 @@ window.addEventListener('pointerdown', function(e){ window.__seaClick = {x:e.cli
 /* Sea blue→turquoise cascade (his 03:59–04:00 law): entering fires it,
    leaving starts the slow fade home */
 window.__seaSweep = -1; window.__seaHover = false; window.__seaLeave = 0;
-document.getElementById('view-sea').addEventListener('pointerenter', function(){ window.__seaHover = true; window.__seaLeave = 0; window.__seaSweep = performance.now(); });
-document.getElementById('view-sea').addEventListener('pointerleave', function(){ window.__seaHover = false; window.__seaLeave = performance.now(); });
+var seaViewEl = document.getElementById('view-sea');
+seaViewEl.addEventListener('pointerenter', function(e){ if(e.pointerType === 'mouse'){ window.__seaHover = true; window.__seaLeave = 0; window.__seaSweep = performance.now(); } });
+seaViewEl.addEventListener('pointerleave', function(e){ if(e.pointerType === 'mouse'){ window.__seaHover = false; window.__seaLeave = performance.now(); } });
+/* touch twin (his 10:48 call — replace cursor with TAP): a tap on the
+   Sea toggles the blue→turquoise cascade on; the next tap rests it */
+seaViewEl.addEventListener('pointerdown', function(e){
+  if(e.pointerType === 'mouse') return;
+  window.__seaHover = !window.__seaHover;
+  if(window.__seaHover){ window.__seaLeave = 0; window.__seaSweep = performance.now(); }
+  else window.__seaLeave = performance.now();
+});
+/* touch twins for the car (his 10:48 call — replace scroll with TAP
+   and DRAG): HOLD a finger on the Login scene = throttle (the 7-second
+   zoom counts holds too); DRAG up = extra gas, same gain as the wheel */
+var touchHeld = false, lastTouchY = null;
+var loginViewEl = document.getElementById('view-login');
+loginViewEl.addEventListener('pointerdown', function(e){ if(e.pointerType !== 'mouse'){ touchHeld = true; lastTouchY = e.clientY; } });
+window.addEventListener('pointermove', function(e){
+  if(touchHeld && e.pointerType !== 'mouse' && lastTouchY !== null){
+    var dy = lastTouchY - e.clientY;
+    if(dy > 0 && loginViewEl.classList.contains('active')){
+      carState.speed = Math.min(carState.speed + Math.min(dy, 60)*0.012, 3.2);
+      carState.lastWheel = performance.now();
+    }
+    lastTouchY = e.clientY;
+  }
+});
+window.addEventListener('pointerup', function(){ touchHeld = false; lastTouchY = null; });
+window.addEventListener('pointercancel', function(){ touchHeld = false; lastTouchY = null; });
 var arrowHeld = false;
 window.addEventListener('keydown', function(e){ if(e.key==='ArrowUp') arrowHeld = true; });
 window.addEventListener('keyup',   function(e){ if(e.key==='ArrowUp') arrowHeld = false; });
@@ -1661,7 +1704,7 @@ runners['car-canvas'] = function(canvas, ctx, state){
     fitCanvas(canvas);
     var dt = Math.min(0.05, lastT ? (now-lastT)/1000 : 0.016); lastT = now;
     var loginOn = document.getElementById('view-login').classList.contains('active');
-    if(arrowHeld && loginOn){ carState.speed = Math.min(carState.speed + 0.03, 3.2); carState.lastWheel = now; }
+    if((arrowHeld || touchHeld) && loginOn){ carState.speed = Math.min(carState.speed + 0.03, 3.2); carState.lastWheel = now; }
     /* --- his 03:18 machine: drive → (7s of top speed) → ZOOM off → loop back slow --- */
     var M = carState.mode;
     if(M === 'drive'){

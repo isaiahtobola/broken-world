@@ -336,6 +336,19 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   font-family:var(--serif); font-size:17px; font-style:italic; transition:border-color .2s;
 }
 .composer:hover{border-color:var(--gold)}
+/* Demo posting (his call, 2026-10-30): a composer that really posts — locally */
+.post-composer{background:var(--panel); border:1px solid rgba(184,166,217,.3); border-radius:14px; padding:16px 18px; display:flex; gap:14px; margin-bottom:24px}
+.composer-main{flex:1; display:flex; flex-direction:column; gap:10px}
+.composer-main textarea{background:#150d20; border:1px solid #3a2560; border-radius:10px; color:var(--cream); padding:12px 14px; font:inherit; resize:vertical}
+.composer-main textarea:focus{outline:none; border-color:var(--gold)}
+.composer-actions{display:flex; align-items:center; gap:12px}
+.composer-note{font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--muted); text-transform:uppercase}
+.post-btn{margin-left:auto; background:var(--gold); color:#150d20; border:none; border-radius:999px; padding:9px 22px; font-family:var(--mono); font-size:13px; letter-spacing:.08em; cursor:pointer}
+.post-btn:hover{background:var(--yellow)}
+.feed-empty{color:var(--muted); font-style:italic; text-align:center; padding:26px 10px; border:1px dashed rgba(184,166,217,.3); border-radius:14px}
+.post-body{white-space:pre-wrap; font-size:17px; line-height:1.55; color:var(--cream)}
+.post-del{margin-left:auto; color:var(--muted); background:none; border:none; cursor:pointer; font-size:14px}
+.post-del:hover{color:#ff7a7a}
 .media-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:36px}
 .media-grid .mtile{
   aspect-ratio:1.15; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
@@ -641,44 +654,16 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
       </a>
     </div>
     <div class="sea-grid">
-      <div class="feed">
-        <article class="post-card">
-          <div class="post-head">
-            <div class="avatar">B</div>
-            <div class="who"><b>bwyoungbo</b><span>posted in BW Hub · 3 days ago</span></div>
-            <button class="post-share" title="Share">➤</button>
+            <div class="feed">
+        <div class="post-composer">
+          <div class="avatar">B</div>
+          <div class="composer-main">
+            <textarea id="sea-post-text" rows="3" placeholder="Share something with the Sea…" aria-label="Write a post"></textarea>
+            <div class="composer-actions"><span class="composer-note">Demo posting — saves in this browser only</span><button class="post-btn" id="sea-post-btn">Post</button></div>
           </div>
-          <h3 class="post-title">Lego Stop Motion Tutorial</h3>
-          <div class="media-tile">▶</div>
-          <div class="reactions"><button>👍</button><button>😍</button><button>🤣</button><span class="more-rx">+ More reactions</span><button class="share-text">Share</button></div>
-          <p class="counts">12 reactions · 4 comments · 86 Views · Sort by: Newest</p>
-          <div class="comment-row"><input type="text" placeholder="Write a comment..." aria-label="Write a comment"></div>
-        </article>
-        <article class="post-card">
-          <div class="post-head">
-            <div class="avatar">B</div>
-            <div class="who"><b>bwyoungbo</b><span>posted in BW Hub · 3 days ago</span></div>
-            <button class="post-share" title="Share">➤</button>
-          </div>
-          <h3 class="post-title">song4 pop ep..wav</h3>
-          <div class="media-tile audio">♪</div>
-          <span class="dl-chip">⬇ Download WAV · 28.18 MB</span>
-          <div class="reactions"><button>👍</button><button>😍</button><button>🤣</button><span class="more-rx">+ More reactions</span><button class="share-text">Share</button></div>
-          <p class="counts">9 reactions · 2 comments · 54 Views · Sort by: Newest</p>
-          <div class="comment-row"><input type="text" placeholder="Write a comment..." aria-label="Write a comment"></div>
-        </article>
-        <article class="post-card">
-          <div class="post-head">
-            <div class="avatar">S</div>
-            <div class="who"><b>shay</b><span>posted in BW Hub · 3 days ago</span></div>
-            <button class="post-share" title="Share">➤</button>
-          </div>
-          <h3 class="post-title">the backrooms level that lives in my head rent free</h3>
-          <div class="media-tile">▦</div>
-          <div class="reactions"><button>👍</button><button>😍</button><button>🤣</button><span class="more-rx">+ More reactions</span><button class="share-text">Share</button></div>
-          <p class="counts">21 reactions · 7 comments · 132 Views · Sort by: Newest</p>
-          <div class="comment-row"><input type="text" placeholder="Write a comment..." aria-label="Write a comment"></div>
-        </article>
+        </div>
+        <div id="sea-feed"></div>
+        <p class="feed-empty" id="sea-empty">The Sea is quiet. Your first post lands here — it lives in this browser, just for you, until the real build opens the gates.</p>
       </div>
       <aside>
         <div class="side-panel">
@@ -718,32 +703,15 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
       <button class="hub-tab-btn" data-hubtab="about">About</button>
     </div>
     <div class="hub-panel active" id="hubpanel-discussion">
-    <button class="composer" id="hub-composer">Share something with the Hub…</button>
-    <p class="section-label">Fresh from the Hub</p>
-    <article class="post-card">
-      <div class="post-head">
-        <div class="avatar">B</div>
-        <div class="who"><b>bwyoungbo</b><span>posted in BW Hub · 3 days ago</span></div>
-        <button class="post-share" title="Share">➤</button>
+    <div class="post-composer">
+      <div class="avatar">B</div>
+      <div class="composer-main">
+        <textarea id="hub-post-text" rows="3" placeholder="Share something with the Hub…" aria-label="Write a post"></textarea>
+        <div class="composer-actions"><span class="composer-note">Demo posting — saves in this browser only</span><button class="post-btn" id="hub-post-btn">Post</button></div>
       </div>
-      <h3 class="post-title">Lego Stop Motion Tutorial</h3>
-      <div class="media-tile">▶</div>
-      <div class="reactions"><button>👍</button><button>😍</button><button>🤣</button><span class="more-rx">+ More reactions</span><button class="share-text">Share</button></div>
-      <p class="counts">12 reactions · 4 comments · 86 Views</p>
-      <div class="comment-row"><input type="text" placeholder="Write a comment..." aria-label="Write a comment"></div>
-    </article>
-    <article class="post-card">
-      <div class="post-head">
-        <div class="avatar">S</div>
-        <div class="who"><b>shay</b><span>posted in BW Hub · 3 days ago</span></div>
-        <button class="post-share" title="Share">➤</button>
-      </div>
-      <h3 class="post-title">song4 pop ep..wav — wait, wrong file. this one slaps tho</h3>
-      <div class="media-tile audio">♪</div>
-      <div class="reactions"><button>👍</button><button>😍</button><button>🤣</button><span class="more-rx">+ More reactions</span><button class="share-text">Share</button></div>
-      <p class="counts">15 reactions · 5 comments · 97 Views</p>
-      <div class="comment-row"><input type="text" placeholder="Write a comment..." aria-label="Write a comment"></div>
-    </article>
+    </div>
+    <div id="hub-feed"></div>
+    <p class="feed-empty" id="hub-empty">No posts yet — yours will be the first thing on the porch.</p>
     </div><!-- /hubpanel-discussion -->
     <div class="hub-panel" id="hubpanel-media">
       <div class="media-grid">
@@ -986,9 +954,68 @@ document.getElementById('get-started').addEventListener('click', function(){ swi
 document.getElementById('hub-join-btn').addEventListener('click', function(){
   toast('Demo build — joining the Hub wires up in the real build.');
 });
-document.getElementById('hub-composer').addEventListener('click', function(){
-  toast('Demo build — posting wires up in the real build.');
-});
+/* ---------- DEMO POSTING (Isaiah's call, 2026-10-30: copies out, his own posts in) ----------
+   Posts save to THIS browser's localStorage only — not public, not a server.
+   Real public posting arrives with the November Supabase build. */
+var POSTS_KEY = 'bw-demo-posts-v1';
+function loadPosts(){ try{ return JSON.parse(localStorage.getItem(POSTS_KEY)) || []; }catch(e){ return []; } }
+function savePosts(p){ try{ localStorage.setItem(POSTS_KEY, JSON.stringify(p)); }catch(e){} }
+function fmtWhen(ts){
+  if(Date.now() - ts < 60000) return 'just now';
+  var d = new Date(ts);
+  return d.toLocaleDateString(undefined,{month:'short', day:'numeric'}) + ' · ' + d.toLocaleTimeString(undefined,{hour:'numeric', minute:'2-digit'});
+}
+function buildPostCard(post, idx){
+  var card = document.createElement('article'); card.className = 'post-card';
+  var head = document.createElement('div'); head.className = 'post-head';
+  var av = document.createElement('div'); av.className = 'avatar'; av.textContent = 'B';
+  var who = document.createElement('div'); who.className = 'who';
+  var b = document.createElement('b'); b.textContent = 'bwyoungbo';
+  var s = document.createElement('span'); s.textContent = 'posted in BW Hub · ' + fmtWhen(post.ts);
+  who.appendChild(b); who.appendChild(s);
+  var del = document.createElement('button'); del.className = 'post-del'; del.title = 'Remove post'; del.textContent = '✕';
+  del.addEventListener('click', function(){
+    var posts = loadPosts(); posts.splice(idx, 1); savePosts(posts); renderPosts();
+    toast('Post removed from your demo Sea.');
+  });
+  head.appendChild(av); head.appendChild(who); head.appendChild(del);
+  var body = document.createElement('p'); body.className = 'post-body'; body.textContent = post.text;
+  var rx = document.createElement('div'); rx.className = 'reactions';
+  ['👍','😍','🤣'].forEach(function(em){
+    var btn = document.createElement('button'); btn.textContent = em;
+    btn.addEventListener('click', function(){ toast('Demo — reactions switch on in the real build.'); });
+    rx.appendChild(btn);
+  });
+  var more = document.createElement('span'); more.className = 'more-rx'; more.textContent = '+ More reactions'; rx.appendChild(more);
+  var counts = document.createElement('p'); counts.className = 'counts'; counts.textContent = '0 reactions · 0 comments · Sort by: Newest';
+  var crow = document.createElement('div'); crow.className = 'comment-row';
+  var inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = 'Write a comment...'; inp.setAttribute('aria-label','Write a comment');
+  inp.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); toast('Demo — comments switch on in the real build.'); inp.value = ''; } });
+  crow.appendChild(inp);
+  card.appendChild(head); card.appendChild(body); card.appendChild(rx); card.appendChild(counts); card.appendChild(crow);
+  return card;
+}
+function renderPosts(){
+  var posts = loadPosts();
+  [['sea-feed','sea-empty'], ['hub-feed','hub-empty']].forEach(function(pair){
+    var box = document.getElementById(pair[0]), empty = document.getElementById(pair[1]);
+    if(!box) return;
+    box.innerHTML = '';
+    posts.forEach(function(p, i){ box.appendChild(buildPostCard(p, i)); });
+    if(empty) empty.hidden = posts.length > 0;
+  });
+}
+function makePost(textareaId){
+  var ta = document.getElementById(textareaId);
+  var text = (ta.value || '').trim();
+  if(!text){ toast('Write something first — the Sea is listening.'); return; }
+  var posts = loadPosts(); posts.unshift({text:text, ts:Date.now()}); savePosts(posts);
+  ta.value = ''; renderPosts();
+  toast('Posted to your demo Sea — saved in this browser only.');
+}
+document.getElementById('sea-post-btn').addEventListener('click', function(){ makePost('sea-post-text'); });
+document.getElementById('hub-post-btn').addEventListener('click', function(){ makePost('hub-post-text'); });
+renderPosts();
 document.getElementById('send-file-btn').addEventListener('click', function(){
   toast('Demo — the two-way door opens in the real build: subs will send files here too.');
 });

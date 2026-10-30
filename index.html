@@ -1421,6 +1421,11 @@ window.addEventListener('wheel', function(e){
 /* Sea plankton-bloom clicks (shared): the Sea runner consumes fresh clicks. */
 window.__seaClick = null;
 window.addEventListener('pointerdown', function(e){ window.__seaClick = {x:e.clientX, y:e.clientY, t:performance.now()}; });
+/* Sea blue→turquoise cascade (his 03:59–04:00 law): entering fires it,
+   leaving starts the slow fade home */
+window.__seaSweep = -1; window.__seaHover = false; window.__seaLeave = 0;
+document.getElementById('view-sea').addEventListener('pointerenter', function(){ window.__seaHover = true; window.__seaLeave = 0; window.__seaSweep = performance.now(); });
+document.getElementById('view-sea').addEventListener('pointerleave', function(){ window.__seaHover = false; window.__seaLeave = performance.now(); });
 var arrowHeld = false;
 window.addEventListener('keydown', function(e){ if(e.key==='ArrowUp') arrowHeld = true; });
 window.addEventListener('keyup',   function(e){ if(e.key==='ArrowUp') arrowHeld = false; });
@@ -1761,11 +1766,11 @@ runners['sea-canvas'] = function(canvas, ctx, state){
   /* plum ↔ blue pairs matched in lightness (his 03:20 spec):
      hovering a layer turns THAT layer blue; leaving fades it home. */
   var layers = [
-    {plum:[41,27,68],   blue:[29,44,82],   amp:0.052, len:0.0016, spd:0.16, base:0.06, alpha:0.55, mix:0},
-    {plum:[58,37,96],   blue:[42,61,117],  amp:0.060, len:0.0021, spd:-0.11, base:0.27, alpha:0.6, mix:0},
-    {plum:[109,79,161], blue:[79,111,196], amp:0.048, len:0.0028, spd:0.22, base:0.48, alpha:0.55, mix:0},
-    {plum:[41,27,68],   blue:[29,44,82],   amp:0.066, len:0.0019, spd:-0.19, base:0.69, alpha:0.75, mix:0},
-    {plum:[31,20,51],   blue:[22,35,63],   amp:0.058, len:0.0024, spd:0.13, base:0.88, alpha:0.9, mix:0}
+    {plum:[41,27,68],   blue:[29,44,82],   teal:[26,92,88],   amp:0.052, len:0.0016, spd:0.16, base:0.06, alpha:0.55, mix:0, tmix:0},
+    {plum:[58,37,96],   blue:[42,61,117],  teal:[38,130,122], amp:0.060, len:0.0021, spd:-0.11, base:0.27, alpha:0.6, mix:0, tmix:0},
+    {plum:[109,79,161], blue:[79,111,196], teal:[96,200,188], amp:0.048, len:0.0028, spd:0.22, base:0.48, alpha:0.55, mix:0, tmix:0},
+    {plum:[41,27,68],   blue:[29,44,82],   teal:[26,92,88],   amp:0.066, len:0.0019, spd:-0.19, base:0.69, alpha:0.75, mix:0, tmix:0},
+    {plum:[31,20,51],   blue:[22,35,63],   teal:[20,70,66],   amp:0.058, len:0.0024, spd:0.13, base:0.88, alpha:0.9, mix:0, tmix:0}
   ];
   function surfY(L, x, t, H){
     return H*L.base
@@ -1774,23 +1779,53 @@ runners['sea-canvas'] = function(canvas, ctx, state){
   }
   /* plankton colonies (his 03:21 spec): tiny neon lives per layer,
      woken by a click, glowing like little stars in the water */
+  var PSHAPES = ['dot','dot','dot','diatom','diatom','radiolarian','copepod','chain','dino'];
   layers.forEach(function(L){
     L.bloom = 0; L.bloomOn = false; L.plank = [];
-    for(var i=0;i<26;i++) L.plank.push({xr:Math.random(), depth:6+Math.random()*90, r:0.8+Math.random()*1.7, ph:Math.random()*6.28, drift:0.004+Math.random()*0.010, bob:2+Math.random()*5});
+    for(var i=0;i<26;i++) L.plank.push({xr:Math.random(), depth:6+Math.random()*90, r:0.8+Math.random()*1.7, ph:Math.random()*6.28, drift:0.004+Math.random()*0.010, bob:2+Math.random()*5,
+      shape: PSHAPES[Math.floor(Math.random()*PSHAPES.length)]});
   });
+  /* real plankton forms (science-checked 2026-10-30): diatom = centric
+     glass disc with radial spokes ("jewel of the sea"); radiolarian =
+     silica ball with long spines; copepod = teardrop body, tail, two
+     long antennae; chain = linked diatom colony; dino = dinoflagellate,
+     the actual bioluminescent one — sphere, groove, two tiny horns */
+  function drawPlankton(pk, x, y, S, a, DPR){
+    ctx.strokeStyle = 'rgba(140,255,226,'+a.toFixed(3)+')';
+    ctx.fillStyle = 'rgba(77,255,210,'+a.toFixed(3)+')';
+    ctx.lineWidth = Math.max(1, 1.1*DPR);
+    if(pk.shape === 'diatom'){
+      ctx.beginPath(); ctx.arc(x, y, S, 0, 6.29); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, S*0.45, 0, 6.29); ctx.stroke();
+      for(var k=0;k<8;k++){ var an = k*Math.PI/4 + pk.ph; ctx.beginPath(); ctx.moveTo(x + Math.cos(an)*S*0.45, y + Math.sin(an)*S*0.45); ctx.lineTo(x + Math.cos(an)*S, y + Math.sin(an)*S); ctx.stroke(); }
+      ctx.beginPath(); ctx.arc(x, y, S*0.16, 0, 6.29); ctx.fill();
+    } else if(pk.shape === 'radiolarian'){
+      for(var k2=0;k2<10;k2++){ var a2 = k2*Math.PI/5 + pk.ph; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a2)*S*1.7, y + Math.sin(a2)*S*1.7); ctx.stroke(); }
+      ctx.beginPath(); ctx.arc(x, y, S*0.55, 0, 6.29); ctx.fill();
+    } else if(pk.shape === 'copepod'){
+      ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(pk.ph)*0.4);
+      ctx.beginPath(); ctx.ellipse(0, 0, S*0.55, S*1.05, 0, 0, 6.29); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(0, S*1.0); ctx.lineTo(0, S*1.9); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -S*0.9); ctx.quadraticCurveTo(-S*0.9, -S*1.7, -S*1.5, -S*1.9); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -S*0.9); ctx.quadraticCurveTo(S*0.9, -S*1.7, S*1.5, -S*1.9); ctx.stroke();
+      ctx.restore();
+    } else if(pk.shape === 'chain'){
+      for(var c=0;c<3;c++){ ctx.beginPath(); ctx.arc(x + (c-1)*S*1.15, y + Math.sin(pk.ph + c)*S*0.2, S*0.6, 0, 6.29); ctx.stroke(); }
+    } else if(pk.shape === 'dino'){
+      ctx.beginPath(); ctx.arc(x, y, S*0.8, 0, 6.29); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x - S*0.8, y); ctx.lineTo(x + S*0.8, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x - S*0.4, y - S*0.7); ctx.lineTo(x - S*0.7, y - S*1.3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x + S*0.4, y - S*0.7); ctx.lineTo(x + S*0.7, y - S*1.3); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.arc(x, y, S*0.6, 0, 6.29); ctx.fill();
+    }
+  }
   function frame(now){
     if(!running['sea-canvas']) return;
     var s = fitCanvas(canvas), W=s.w, H=s.h, t = now/1000;
     ctx.clearRect(0,0,W,H);
-    /* which layer is the pointer swimming in? (topmost fill at that point) */
     var rect = canvas.getBoundingClientRect();
     var px = (pointer.x - rect.left) * s.dpr, py = (pointer.y - rect.top) * s.dpr;
-    var hovered = -1;
-    if(px >= 0 && px <= W && py >= 0 && py <= H){
-      for(var i = layers.length-1; i >= 0; i--){
-        if(py >= surfY(layers[i], px, t, H)){ hovered = i; break; }
-      }
-    }
     /* a fresh click wakes (or sleeps) the plankton in the clicked layer */
     if(window.__seaClick && now - window.__seaClick.t < 150){
       var ck = window.__seaClick; window.__seaClick = null;
@@ -1802,12 +1837,33 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       }
     }
     layers.forEach(function(L, idx){
-      var target = (idx === hovered) ? 1 : 0;
-      L.mix += (target - L.mix) * 0.07;
-      if(Math.abs(target - L.mix) < 0.01) L.mix = target;
+      /* hover law (his 03:59–04:00 final): entering the Sea fires a BLUE
+         flash cascading wave→wave top to bottom; TURQUOISE follows
+         immediately behind it down the same path and HOLDS while you
+         hover; leaving lets everything fade SLOWLY back to plum. */
+      var sw = (typeof window.__seaSweep === 'number') ? window.__seaSweep : -1;
+      var bT = 0, tT = 0;
+      if(window.__seaHover && sw >= 0){
+        /* the loop (his 04:02 call): blue down, turquoise down, REPEAT
+           for as long as the hover lasts — a 2.6s cycle per wave-set */
+        var cyc = (now - sw) % 2600, loc = cyc - idx*150;
+        if(loc > 0 && loc < 650) bT = Math.sin((loc/650) * Math.PI);
+        if(loc > 480 && loc < 1100) tT = Math.sin(((loc-480)/620) * Math.PI/2);
+        else if(loc >= 1100 && loc < 1700) tT = 1;
+        else if(loc >= 1700 && loc < 2300) tT = 1 - (loc-1700)/600;
+      }
+      /* off hover (or off posting / in other tabs): the sea is PLUM —
+         colors drain home slowly, never snap */
+      var kB = window.__seaHover ? 0.35 : 0.02;
+      var kT = window.__seaHover ? 0.20 : 0.012;
+      L.mix += (bT - L.mix) * kB;
+      L.tmix += (tT - L.tmix) * kT;
       var r = Math.round(L.plum[0] + (L.blue[0]-L.plum[0]) * L.mix);
       var g = Math.round(L.plum[1] + (L.blue[1]-L.plum[1]) * L.mix);
       var b = Math.round(L.plum[2] + (L.blue[2]-L.plum[2]) * L.mix);
+      r = Math.round(r + (L.teal[0]-r) * L.tmix);
+      g = Math.round(g + (L.teal[1]-g) * L.tmix);
+      b = Math.round(b + (L.teal[2]-b) * L.tmix);
       ctx.beginPath(); ctx.moveTo(0, H);
       for(var x=0; x<=W; x+=6) ctx.lineTo(x, surfY(L, x, t, H));
       ctx.lineTo(W, H); ctx.closePath();
@@ -1820,11 +1876,14 @@ runners['sea-canvas'] = function(canvas, ctx, state){
           var y = surfY(L, x, t, H) + pk.depth*s.dpr + Math.sin(t*0.9 + pk.ph)*pk.bob*s.dpr;
           if(y > H - 2) return;
           var tw = 0.55 + 0.45*Math.sin(t*2 + pk.ph);
-          var a = L.bloom * (0.35 + 0.65*tw);
-          ctx.beginPath(); ctx.arc(x, y, pk.r*s.dpr*(1 + 0.3*tw), 0, 6.29);
-          ctx.fillStyle = 'rgba(77,255,210,'+a.toFixed(3)+')';
-          ctx.shadowColor = 'rgba(55,244,228,.95)'; ctx.shadowBlur = 9*s.dpr*L.bloom;
-          ctx.fill(); ctx.shadowBlur = 0;
+          /* the FLASH (his 04:00 call): sharp random bioluminescent spikes */
+          var fl = Math.pow(Math.max(0, Math.sin(t*0.8 + pk.ph*5.3)), 24);
+          var a = L.bloom * Math.min(1, 0.3 + 0.6*tw + fl*1.2);
+          var S = pk.r * s.dpr * (pk.shape === 'dot' ? 1 : 2.3) * (1 + 0.3*tw + 0.9*fl);
+          ctx.shadowColor = 'rgba(55,244,228,.95)';
+          ctx.shadowBlur = (8 + fl*26) * s.dpr * L.bloom;
+          drawPlankton(pk, x, y, S, a, s.dpr);
+          ctx.shadowBlur = 0;
         });
       }
     });

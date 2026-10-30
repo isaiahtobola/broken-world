@@ -165,7 +165,6 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
   .orb-moon{width:44px; right:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:calc(-18vh - 110px)}
   .orb-sun{width:48px; left:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:55vh}
 }
-@media (prefers-reduced-motion: reduce){ .orb{animation:none} .orb-sun .rays{animation:none} }
 .more-menu{
   position:absolute; top:calc(100% + 2px); left:50%; transform:translate(-50%,-6px);
   min-width:210px; background:var(--panel2); border:1px solid rgba(240,183,63,.5);
@@ -616,11 +615,10 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   .join-form .form-row{flex-direction:column}
 }
 
-/* ============ REDUCED MOTION ============ */
-@media (prefers-reduced-motion: reduce){
-  *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
-  html{scroll-behavior:auto}
-}
+/* ============ MOTION LAW (his 11:10 call) ============
+   This site does NOT obey the phone's Reduce Motion setting. It froze
+   every animation on his iPhone until he caught it (Settings >
+   Accessibility > Motion). His pages move because HE says so. */
 </style>
 </head>
 <body class="first-load" data-current="home">
@@ -942,7 +940,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
    ============================================================ */
 (function(){
 "use strict";
-var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var REDUCED = false; /* motion law (his 11:10 call): never frozen by a phone setting */
 
 /* ---------- tiny toast helper ---------- */
 var toastEl = document.getElementById('toast'), toastTimer = null;
@@ -1379,7 +1377,7 @@ runners['sky-home'] = function(canvas, ctx, state){
    ============================================================ */
 (function(){
 "use strict";
-var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var REDUCED = false; /* motion law (his 11:10 call): never frozen by a phone setting */
 var toastEl = document.getElementById('toast'), toastTimer = null;
 function toast(msg){
   toastEl.textContent = msg; toastEl.classList.add('show');

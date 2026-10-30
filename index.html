@@ -129,10 +129,15 @@ body[data-current="home"] .orbit-layer{opacity:1; visibility:visible}
 .orb-sun svg{filter:drop-shadow(0 0 16px rgba(240,183,63,.55))}
 .orb-sun .rays{transform-origin:50px 50px; animation:sunSpin 26s linear infinite}
 @keyframes sunSpin{to{transform:rotate(360deg)}}
-.orb-yang{left:calc(50% + 292px); top:16px; width:48px; --from:56px; --to:0px}
-.orb-yin{right:calc(50% + 292px); top:128px; width:48px; --from:-56px; --to:0px}
-@media (max-width: 1180px){ .orb-yang,.orb-yin{display:none} }
-@media (max-width: 760px){ .orb-moon{width:44px; right:10px} .orb-sun{width:48px; left:10px} }
+.orb-yang{left:calc(50% + 292px); top:13px; width:54px; --from:56px; --to:0px}
+.orb-yin{right:calc(50% + 292px); top:125px; width:54px; --from:-56px; --to:0px}
+.orb-yang svg,.orb-yin svg{filter:drop-shadow(0 0 9px rgba(240,183,63,.65))}
+@media (max-width: 760px){
+  .orb-moon{width:44px; right:10px} .orb-sun{width:48px; left:10px}
+  .orb-yang{left:calc(50% + 262px); width:38px; top:21px}
+  .orb-yin{right:calc(50% + 262px); width:38px; top:133px}
+}
+@media (max-width: 560px){ .orb-yang,.orb-yin{display:none} }
 @media (prefers-reduced-motion: reduce){ .orb{animation:none} .orb-sun .rays{animation:none} }
 .more-menu{
   position:absolute; top:calc(100% + 2px); left:50%; transform:translate(-50%,-6px);
@@ -627,8 +632,8 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 <!-- THE ORBIT DANCE — homepage only (see CSS note) -->
 <div class="orbit-layer" aria-hidden="true">
   <div class="orb orb-sun"><svg viewBox="0 0 100 100"><g class="rays" stroke="#f0b73f" stroke-width="5" stroke-linecap="round"><line x1="50" y1="6" x2="50" y2="20"/><line x1="50" y1="80" x2="50" y2="94"/><line x1="6" y1="50" x2="20" y2="50"/><line x1="80" y1="50" x2="94" y2="50"/><line x1="19" y1="19" x2="29" y2="29"/><line x1="71" y1="71" x2="81" y2="81"/><line x1="81" y1="19" x2="71" y2="29"/><line x1="29" y1="71" x2="19" y2="81"/></g><circle cx="50" cy="50" r="21" fill="#f0b73f"/><circle cx="50" cy="50" r="21" fill="none" stroke="#ffd166" stroke-width="2"/></svg></div>
-  <div class="orb orb-yin"><svg viewBox="0 0 100 100"><path transform="rotate(180 50 50)" d="M50,5 A45,45 0 0 1 50,95 A22.5,22.5 0 0 1 50,50 A22.5,22.5 0 0 0 50,5 Z" fill="#291b44" stroke="#f0b73f" stroke-width="2.5"/><circle cx="50" cy="27.5" r="6.5" fill="#f0b73f"/></svg></div>
-  <div class="orb orb-yang"><svg viewBox="0 0 100 100"><path d="M50,5 A45,45 0 0 1 50,95 A22.5,22.5 0 0 1 50,50 A22.5,22.5 0 0 0 50,5 Z" fill="#ffd166" stroke="rgba(240,183,63,.6)" stroke-width="2"/><circle cx="50" cy="72.5" r="6.5" fill="#291b44"/></svg></div>
+  <div class="orb orb-yin"><svg viewBox="0 0 100 100"><path transform="rotate(180 50 50)" d="M50,5 A45,45 0 0 1 50,95 A22.5,22.5 0 0 1 50,50 A22.5,22.5 0 0 0 50,5 Z" fill="#3a2560" stroke="#f0b73f" stroke-width="4"/><circle cx="50" cy="27.5" r="7" fill="#ffd166"/></svg></div>
+  <div class="orb orb-yang"><svg viewBox="0 0 100 100"><path d="M50,5 A45,45 0 0 1 50,95 A22.5,22.5 0 0 1 50,50 A22.5,22.5 0 0 0 50,5 Z" fill="#ffd166" stroke="#fff3c4" stroke-width="3"/><circle cx="50" cy="72.5" r="7" fill="#291b44"/></svg></div>
   <div class="orb orb-moon"><svg viewBox="0 0 100 100"><path d="M66,6 A46,46 0 1 0 66,94 A37,37 0 1 1 66,6 Z" fill="#ffe9a8"/></svg></div>
 </div>
 

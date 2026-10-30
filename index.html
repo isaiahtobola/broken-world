@@ -42,6 +42,10 @@ img{max-width:100%}
 .site-header{
   position:relative; overflow:hidden; background:var(--bg);
   border-bottom:2px solid var(--gold);
+  padding-top:30px; /* a slim plum sky-ledge above the banner, same color —
+                       gives the yang room to perch on the banner's top edge */
+  z-index:27; /* the header paints ABOVE the orbit layer, so the dance
+                 bodies truly emerge from BEHIND it (his 03:48 call) */
 }
 .header-row{
   display:grid; grid-template-columns:1fr auto 1fr; align-items:stretch;
@@ -116,14 +120,17 @@ body[data-current="home"] .orbit-layer{opacity:1; visibility:visible}
   to{transform:translateY(var(--to))}
 }
 .orb svg{display:block; width:100%; height:auto}
-.orb-moon{right:26px; top:170px; width:64px; --from:0px; --to:30vh}
+/* Emergence geometry (his 03:48 fix): every body starts HIDDEN — moon
+   tucked behind the header, sun off-screen at the bottom, yin/yang
+   behind the banner — and slides OUT to its resting place. */
+.orb-moon{right:26px; top:calc(215px + 26vh); width:64px; --from:calc(-26vh - 95px); --to:0px}
 .orb-moon svg{filter:drop-shadow(0 0 14px rgba(255,233,168,.45))}
-.orb-sun{left:26px; top:calc(170px + 60vh); width:72px; --from:0px; --to:-30vh}
+.orb-sun{left:26px; top:calc(215px + 26vh); width:72px; --from:70vh; --to:0px}
 .orb-sun svg{filter:drop-shadow(0 0 16px rgba(240,183,63,.55))}
 .orb-sun .rays{transform-origin:50px 50px; animation:sunSpin 26s linear infinite}
 @keyframes sunSpin{to{transform:rotate(360deg)}}
-.orb-yang{left:calc(50% + 356px); top:39px; width:54px; --from:0px; --to:-58px}
-.orb-yin{right:calc(50% + 356px); top:39px; width:54px; --from:0px; --to:58px}
+.orb-yang{left:calc(50% + 292px); top:16px; width:48px; --from:56px; --to:0px}
+.orb-yin{right:calc(50% + 292px); top:128px; width:48px; --from:-56px; --to:0px}
 @media (max-width: 1180px){ .orb-yang,.orb-yin{display:none} }
 @media (max-width: 760px){ .orb-moon{width:44px; right:10px} .orb-sun{width:48px; left:10px} }
 @media (prefers-reduced-motion: reduce){ .orb{animation:none} .orb-sun .rays{animation:none} }

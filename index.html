@@ -142,8 +142,11 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
 .orb-sun svg{filter:drop-shadow(0 0 16px rgba(240,183,63,.55))}
 .orb-sun .rays{transform-origin:50px 50px; animation:sunSpin 26s linear infinite}
 @keyframes sunSpin{to{transform:rotate(360deg)}}
-.orb-yang{left:6px; top:4px; width:44px; --from:172px; --to:0px}
-.orb-yin{left:6px; top:172px; width:44px; --from:-168px; --to:0px}
+/* entrances come from OFF-STAGE (his 05:12 fix): yang rises from UNDER
+   the header's bottom line (starts fully clipped below it), yin drops
+   in from ABOVE the page (starts fully clipped above the top edge) */
+.orb-yang{left:6px; top:4px; width:44px; --from:224px; --to:0px}
+.orb-yin{left:6px; top:172px; width:44px; --from:-220px; --to:0px}
 .orb-yang svg,.orb-yin svg{filter:drop-shadow(0 0 9px rgba(240,183,63,.65))}
 @media (max-width: 760px){
   .orb-moon{width:44px; right:10px} .orb-sun{width:48px; left:10px}

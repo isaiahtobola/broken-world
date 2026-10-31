@@ -406,6 +406,58 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   padding:10px 16px; color:var(--cream); font-family:var(--serif); font-size:15px; outline:none;
 }
 .comment-row input:focus{border-color:var(--gold)}
+/* --- Phase 3 social (2026-10-31): the Sea goes Discord-lite --- */
+.sea-note{
+  border:1px solid rgba(240,183,63,.55); border-radius:14px; padding:14px 18px; margin-bottom:18px;
+  background:linear-gradient(140deg, rgba(58,37,96,.75), rgba(31,20,51,.92));
+  font-size:16.5px; line-height:1.5; color:var(--cream);
+  box-shadow:0 0 0 1px rgba(240,183,63,.12), 0 10px 26px rgba(0,0,0,.35);
+}
+.sea-note b{color:var(--yellow)}
+.sea-note-sign{display:block; margin-top:4px; font-family:var(--mono); font-size:12px; letter-spacing:.08em; color:var(--gold); text-transform:uppercase}
+.feed-chips{display:flex; gap:8px; margin-bottom:16px}
+.chip{
+  font-family:var(--mono); font-size:12.5px; letter-spacing:.06em; cursor:pointer;
+  background:rgba(184,166,217,.08); color:var(--muted); border:1px solid rgba(184,166,217,.3);
+  border-radius:999px; padding:7px 14px; transition:all .2s;
+}
+.chip:hover{border-color:var(--gold); color:var(--cream)}
+.chip.active{background:rgba(240,183,63,.18); border-color:var(--gold); color:var(--yellow)}
+.media-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.media-link{
+  flex:1; min-width:180px; background:#150d20; border:1px solid #3a2560; border-radius:10px;
+  color:var(--cream); padding:9px 12px; font:inherit; font-size:14px;
+}
+.media-link:focus{outline:none; border-color:var(--gold)}
+.media-up{
+  font-family:var(--mono); font-size:12px; letter-spacing:.06em; cursor:pointer; white-space:nowrap;
+  color:var(--yellow); border:1px solid rgba(255,209,102,.55); border-radius:999px; padding:8px 13px;
+  background:rgba(255,209,102,.1); transition:background .2s;
+}
+.media-up:hover{background:rgba(255,209,102,.22)}
+.media-name{font-family:var(--mono); font-size:12px; color:var(--muted)}
+.post-media{margin:4px 0 14px}
+.post-media img{max-width:100%; max-height:430px; border-radius:10px; border:1px solid rgba(240,183,63,.3); display:block}
+.post-media video{max-width:100%; max-height:430px; border-radius:10px; border:1px solid rgba(240,183,63,.3); display:block}
+.reactions button .cnt{font-family:var(--mono); font-size:13px; margin-left:2px}
+.reactions button.mine{background:rgba(240,183,63,.28); border-color:var(--gold); color:var(--yellow)}
+.save-btn{
+  margin-left:auto; font-family:var(--mono); font-size:12px; letter-spacing:.05em; cursor:pointer;
+  background:rgba(184,166,217,.08); color:var(--muted); border:1px solid rgba(184,166,217,.3);
+  border-radius:999px; padding:6px 12px; transition:all .2s;
+}
+.save-btn:hover{border-color:var(--gold); color:var(--cream)}
+.save-btn.saved{background:rgba(240,183,63,.22); border-color:var(--gold); color:var(--yellow)}
+.post-head .post-del{margin-left:8px}
+.cmt-list{margin:2px 0 12px; display:flex; flex-direction:column; gap:10px}
+.cmt{background:rgba(13,7,22,.45); border:1px solid rgba(184,166,217,.18); border-radius:10px; padding:9px 13px}
+.cmt-head{display:flex; align-items:baseline; gap:8px}
+.cmt-head b{font-size:14.5px}
+.cmt-head span{font-family:var(--mono); font-size:11px; color:var(--muted)}
+.cmt-head .cmt-del{margin-left:auto; background:none; border:none; color:var(--muted); cursor:pointer; font-size:13px}
+.cmt-head .cmt-del:hover{color:var(--gold)}
+.cmt p{margin:3px 0 0; font-size:15px; line-height:1.45}
+.cmt img{max-width:100%; max-height:260px; border-radius:8px; margin-top:6px; border:1px solid rgba(240,183,63,.25); display:block}
 .side-panel{
   background:rgba(31,20,51,.92); border:1px solid rgba(184,166,217,.3); border-radius:14px; padding:20px;
 }
@@ -758,10 +810,13 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
     </div>
     <div class="sea-grid">
             <div class="feed">
+        <div class="sea-note">🌊 <b>Share, save, and react to each other's files</b> — save SFX, images, PNGs, and GIFs to your own PC!<span class="sea-note-sign">— BW File Sharing Waves</span></div>
+        <div class="feed-chips"><button class="chip active" id="chip-all" type="button">The Sea</button><button class="chip" id="chip-saved" type="button">🔖 Saved by me</button></div>
         <div class="post-composer">
           <div class="avatar">B</div>
           <div class="composer-main">
             <textarea id="sea-post-text" rows="3" placeholder="Share something with the Sea…" aria-label="Write a post"></textarea>
+            <div class="media-row"><input type="url" class="media-link" placeholder="GIF / image / video link (optional)" aria-label="Media link"><label class="media-up">⬆ Upload<input type="file" class="media-file" accept="image/*,video/*" hidden></label><span class="media-name"></span></div>
             <div class="composer-actions"><span class="composer-note">Open to read — join or log in to post</span><button class="post-btn" id="sea-post-btn">Post</button></div>
           </div>
         </div>
@@ -806,6 +861,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
       <div class="avatar">B</div>
       <div class="composer-main">
         <textarea id="hub-post-text" rows="3" placeholder="Share something with the Hub…" aria-label="Write a post"></textarea>
+        <div class="media-row"><input type="url" class="media-link" placeholder="GIF / image / video link (optional)" aria-label="Media link"><label class="media-up">⬆ Upload<input type="file" class="media-file" accept="image/*,video/*" hidden></label><span class="media-name"></span></div>
         <div class="composer-actions"><span class="composer-note">Open to read — join or log in to post</span><button class="post-btn" id="hub-post-btn">Post</button></div>
       </div>
     </div>
@@ -1390,15 +1446,17 @@ function bwApplyAuth(){
 }
 
 function bwFetchPosts(){
-  return BW.sb.from('posts').select('id, body, author, author_name, created_at')
+  return BW.sb.from('posts').select('id, body, author, author_name, media_url, media_type, created_at')
     .order('created_at', {ascending:false}).limit(100)
     .then(function(r){
       if(r.error) return;
       BW.posts = (r.data || []).map(function(row){
         return { id: row.id, text: row.body, ts: new Date(row.created_at).getTime(),
-                 author: row.author_name || 'member', author_id: row.author };
+                 author: row.author_name || 'member', author_id: row.author,
+                 media_url: row.media_url || null, media_type: row.media_type || null };
       });
       renderPosts();
+      bwFetchSocial();
     });
 }
 function bwFetchFiles(){
@@ -1415,18 +1473,47 @@ function bwFetchFiles(){
     });
 }
 
+function bwTypeOf(name, mime){
+  if((mime && mime.indexOf('video/') === 0) || /\.(mp4|webm|mov)(\?|#|$)/i.test(name || '')) return 'video';
+  return 'image';
+}
 function liveMakePost(textareaId){
   var ta = document.getElementById(textareaId);
   var text = (ta.value || '').trim();
-  if(!text){ toast('Write something first — the Sea is listening.'); return; }
+  var comp = ta.closest ? ta.closest('.post-composer') : null;
+  var linkEl = comp ? comp.querySelector('.media-link') : null;
+  var fileEl = comp ? comp.querySelector('.media-file') : null;
+  var link = linkEl ? (linkEl.value || '').trim() : '';
+  var file = (fileEl && fileEl.files && fileEl.files[0]) || null;
+  if(!text && !link && !file){ toast('Write something, or drop a link or a file — the Sea is listening.'); return; }
   if(!BW.user){ toast('Join or log in to post — reading is open to everyone.'); bwOpenModal(); return; }
-  BW.sb.from('posts').insert({ body: text, author: BW.user.id, author_name: BW.name })
-    .then(function(r){
-      if(r.error){ toast('The Sea refused that one: ' + r.error.message); return; }
-      ta.value = '';
-      bwFetchPosts();
-      toast('Posted to the Sea — live for everyone.');
-    });
+  var finish = function(mediaUrl, mediaType){
+    BW.sb.from('posts').insert({ body: text, author: BW.user.id, author_name: BW.name,
+      media_url: mediaUrl || null, media_type: mediaType || null })
+      .then(function(r){
+        if(r.error){ toast('The Sea refused that one: ' + r.error.message); return; }
+        ta.value = ''; if(linkEl) linkEl.value = ''; if(fileEl) fileEl.value = '';
+        var nm = comp ? comp.querySelector('.media-name') : null; if(nm) nm.textContent = '';
+        bwFetchPosts();
+        toast('Posted — live for everyone.');
+      });
+  };
+  if(file){
+    toast('Sending your file to the vault…');
+    var fd = new FormData(); fd.append('file', file);
+    fetch(BW_CONFIG.WORKER_URL + '/upload', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + BW.session.access_token },
+      body: fd
+    }).then(function(r){ return r.json(); }).then(function(res){
+      if(res.error){ toast(res.error); return; }
+      finish(BW_CONFIG.WORKER_URL + '/f/' + bwKey(res.key), bwTypeOf(file.name, file.type));
+    }).catch(function(){ toast('That upload got lost in the waves — try again.'); });
+  } else if(link){
+    finish(link, bwTypeOf(link, ''));
+  } else {
+    finish(null, null);
+  }
 }
 window.__bwDeletePost = function(post){
   if(!BW.sb || !post || typeof post.id !== 'string' || post.id.length < 20) return;
@@ -1471,6 +1558,206 @@ function liveUploadFiles(picked){
     if(!failed) toast(picked.length === 1 ? 'Filed in the vault — live for everyone.' : 'All files in the vault.');
   });
 }
+
+/* ============================================================
+   PHASE 3 SOCIAL — Discord-the-Sea (his call, 2026-10-31):
+   media posts, real reactions, comment threads, and SAVES —
+   bookmark a post, and its media downloads to YOUR PC.
+   Everyone keeps what they love; the vault stays light.
+   ============================================================ */
+BW.comments = {}; BW.reactions = {}; BW.saves = {}; BW.showSaved = false;
+var BW_EMOJIS = ['❤️','🔥','😂','💎','🌊'];
+function bwIsMediaUrl(t){
+  return /^https?:\/\/\S+$/i.test(t) &&
+    (/\.(gif|png|jpe?g|webp|mp4|webm|mov)(\?|#|$)/i.test(t) || /giphy\.com|tenor\.com|imgur\.com/i.test(t));
+}
+function bwFetchSocial(){
+  if(!BW.sb || !BW.posts){ bwDecorate(); return; }
+  if(!BW.posts.length){ BW.comments = {}; BW.reactions = {}; BW.saves = {}; bwDecorate(); return; }
+  var ids = BW.posts.map(function(p){ return p.id; });
+  var savesQ = BW.user
+    ? BW.sb.from('saves').select('post_id').eq('user_id', BW.user.id)
+    : Promise.resolve({ data: [] });
+  Promise.all([
+    BW.sb.from('comments').select('id, post_id, author, author_name, body, media_url, created_at')
+      .in('post_id', ids).order('created_at', { ascending: true }).limit(500),
+    BW.sb.from('reactions').select('post_id, user_id, emoji').in('post_id', ids).limit(2000),
+    savesQ
+  ]).then(function(res){
+    BW.comments = {};
+    ((res[0] && res[0].data) || []).forEach(function(c){
+      (BW.comments[c.post_id] = BW.comments[c.post_id] || []).push(c);
+    });
+    BW.reactions = {};
+    ((res[1] && res[1].data) || []).forEach(function(r){
+      var m = BW.reactions[r.post_id] = BW.reactions[r.post_id] || {};
+      var e = m[r.emoji] = m[r.emoji] || { n: 0, mine: false };
+      e.n++;
+      if(BW.user && r.user_id === BW.user.id) e.mine = true;
+    });
+    BW.saves = {};
+    ((res[2] && res[2].data) || []).forEach(function(s){ BW.saves[s.post_id] = true; });
+    bwDecorate();
+  }).catch(function(){ bwDecorate(); });
+}
+function bwMediaNode(url, type, cls){
+  var wrap = document.createElement('div'); wrap.className = cls;
+  if(type === 'video'){
+    var v = document.createElement('video');
+    v.src = url; v.controls = true; v.playsInline = true; v.preload = 'metadata';
+    wrap.appendChild(v);
+  } else {
+    var img = document.createElement('img');
+    img.src = url; img.alt = 'Shared media'; img.loading = 'lazy';
+    wrap.appendChild(img);
+  }
+  return wrap;
+}
+function bwToggleRx(post, emoji, mine){
+  if(!BW.user){ toast('Join or log in to react — reading is open to everyone.'); bwOpenModal(); return; }
+  var q = mine
+    ? BW.sb.from('reactions').delete().eq('post_id', post.id).eq('user_id', BW.user.id).eq('emoji', emoji)
+    : BW.sb.from('reactions').insert({ post_id: post.id, user_id: BW.user.id, emoji: emoji });
+  q.then(function(r){ if(r.error){ toast('Reaction refused: ' + r.error.message); return; } bwFetchSocial(); });
+}
+function bwSendComment(post, inp){
+  var val = (inp.value || '').trim();
+  if(!val) return;
+  if(!BW.user){ toast('Join or log in to comment — reading is open to everyone.'); bwOpenModal(); return; }
+  var row = { post_id: post.id, author: BW.user.id, author_name: BW.name, body: val, media_url: null };
+  if(bwIsMediaUrl(val)){ row.media_url = val; row.body = ''; }
+  BW.sb.from('comments').insert(row).then(function(r){
+    if(r.error){ toast('Comment refused: ' + r.error.message); return; }
+    inp.value = '';
+    bwFetchSocial();
+  });
+}
+function bwDownload(url){
+  var name = 'bw-shared-file';
+  try{ name = decodeURIComponent((url.split('/').pop() || name).split('?')[0]) || name; }catch(e){}
+  toast('Saving to your PC — your copy, your vault. 💾');
+  fetch(url).then(function(r){ return r.blob(); }).then(function(b){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(b); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  }).catch(function(){ window.open(url, '_blank'); });
+}
+function bwToggleSave(post){
+  if(!BW.user){ toast('Join or log in to save posts.'); bwOpenModal(); return; }
+  if(BW.saves[post.id]){
+    BW.sb.from('saves').delete().eq('post_id', post.id).eq('user_id', BW.user.id)
+      .then(function(r){ if(r.error){ toast(r.error.message); return; } toast('Removed from your saved.'); bwFetchSocial(); });
+  } else {
+    BW.sb.from('saves').insert({ post_id: post.id, user_id: BW.user.id })
+      .then(function(r){
+        if(r.error){ toast(r.error.message); return; }
+        toast('Saved to your list. 🔖');
+        if(post.media_url) bwDownload(post.media_url);
+        bwFetchSocial();
+      });
+  }
+}
+function bwDecorate(){
+  if(!BW.posts) return;
+  [['sea-feed', true], ['hub-feed', false]].forEach(function(pair){
+    var box = document.getElementById(pair[0]);
+    if(!box) return;
+    var cards = box.querySelectorAll('.post-card');
+    cards.forEach(function(card, i){
+      var post = BW.posts[i];
+      if(!post || typeof post.id !== 'string') return;
+      if(pair[1] && BW.showSaved && !BW.saves[post.id]){ card.style.display = 'none'; return; }
+      card.style.display = '';
+      if(card.dataset.bwSoc === post.id) return;
+      card.dataset.bwSoc = post.id;
+      /* media */
+      if(post.media_url){
+        var bodyEl = card.querySelector('.post-body');
+        var media = bwMediaNode(post.media_url, post.media_type, 'post-media');
+        if(bodyEl && bodyEl.nextSibling) card.insertBefore(media, bodyEl.nextSibling);
+        else card.appendChild(media);
+      }
+      /* save button in the head */
+      var head = card.querySelector('.post-head');
+      if(head && !head.querySelector('.save-btn')){
+        var sv = document.createElement('button');
+        sv.type = 'button'; sv.className = 'save-btn' + (BW.saves[post.id] ? ' saved' : '');
+        sv.textContent = BW.saves[post.id] ? '🔖 Saved' : '🔖 Save';
+        sv.addEventListener('click', function(){ bwToggleSave(post); });
+        var del = head.querySelector('.post-del');
+        if(del) head.insertBefore(sv, del); else head.appendChild(sv);
+      }
+      /* reactions — real now */
+      var rxBox = card.querySelector('.reactions');
+      if(rxBox){
+        rxBox.innerHTML = '';
+        var rxMap = BW.reactions[post.id] || {};
+        BW_EMOJIS.forEach(function(em){
+          var info = rxMap[em] || { n: 0, mine: false };
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          if(info.mine) btn.className = 'mine';
+          btn.textContent = em;
+          var cnt = document.createElement('span'); cnt.className = 'cnt';
+          cnt.textContent = info.n ? String(info.n) : '';
+          btn.appendChild(cnt);
+          btn.addEventListener('click', function(){ bwToggleRx(post, em, (BW.reactions[post.id] || {})[em] ? (BW.reactions[post.id][em].mine) : false); });
+          rxBox.appendChild(btn);
+        });
+      }
+      /* counts */
+      var counts = card.querySelector('.counts');
+      if(counts){
+        var total = 0, m = BW.reactions[post.id] || {};
+        Object.keys(m).forEach(function(k){ total += m[k].n; });
+        var nc = (BW.comments[post.id] || []).length;
+        counts.textContent = total + ' reactions · ' + nc + ' comments · Newest first';
+      }
+      /* comment thread */
+      var crow = card.querySelector('.comment-row');
+      if(crow){
+        var list = document.createElement('div'); list.className = 'cmt-list';
+        (BW.comments[post.id] || []).forEach(function(c){
+          var cd = document.createElement('div'); cd.className = 'cmt';
+          var ch = document.createElement('div'); ch.className = 'cmt-head';
+          var cb = document.createElement('b'); cb.textContent = c.author_name || 'member';
+          var cs = document.createElement('span'); cs.textContent = fmtWhen(new Date(c.created_at).getTime());
+          ch.appendChild(cb); ch.appendChild(cs);
+          if(BW.user && c.author === BW.user.id){
+            var cx = document.createElement('button');
+            cx.type = 'button'; cx.className = 'cmt-del'; cx.textContent = '✕'; cx.title = 'Delete comment';
+            cx.addEventListener('click', function(){
+              BW.sb.from('comments').delete().eq('id', c.id).then(function(){ bwFetchSocial(); });
+            });
+            ch.appendChild(cx);
+          }
+          cd.appendChild(ch);
+          if(c.body){ var cp = document.createElement('p'); cp.textContent = c.body; cd.appendChild(cp); }
+          if(c.media_url) cd.appendChild(bwMediaNode(c.media_url, bwTypeOf(c.media_url, ''), ''));
+          list.appendChild(cd);
+        });
+        card.insertBefore(list, crow);
+        var oldInp = crow.querySelector('input');
+        if(oldInp){
+          var inp = oldInp.cloneNode(true);
+          inp.placeholder = 'Write a comment… paste a GIF link to drop a GIF';
+          oldInp.parentNode.replaceChild(inp, oldInp);
+          inp.addEventListener('keydown', function(e){
+            if(e.key === 'Enter'){ e.preventDefault(); bwSendComment(post, inp); }
+          });
+        }
+      }
+    });
+  });
+}
+/* composer upload buttons show the staged file's name */
+document.querySelectorAll('.media-file').forEach(function(f){
+  f.addEventListener('change', function(){
+    var nm = f.closest('.media-row') ? f.closest('.media-row').querySelector('.media-name') : null;
+    if(nm) nm.textContent = (f.files && f.files[0]) ? f.files[0].name : '';
+  });
+});
 
 /* Auth entry point for the modal form (script 2 hands us the form). */
 window.__bwAuth = function(form){
@@ -1531,7 +1818,24 @@ window.__bwAuth = function(form){
     BW.user = session ? session.user : null;
     bwApplyAuth();
     bwFetchFiles();
+    bwFetchPosts();
   });
+  /* Sea filter chips: the whole Sea, or only what you saved */
+  var chipAll = document.getElementById('chip-all'), chipSaved = document.getElementById('chip-saved');
+  if(chipAll && chipSaved){
+    chipAll.addEventListener('click', function(){
+      BW.showSaved = false;
+      chipAll.classList.add('active'); chipSaved.classList.remove('active');
+      bwDecorate();
+    });
+    chipSaved.addEventListener('click', function(){
+      if(!BW.user){ toast('Log in to see your saved posts.'); bwOpenModal(); return; }
+      BW.showSaved = true;
+      chipSaved.classList.add('active'); chipAll.classList.remove('active');
+      bwDecorate();
+      toast('Your saved posts — your shelf of the Sea. 🔖');
+    });
+  }
   bwFetchPosts();
   bwFetchFiles();
 })();

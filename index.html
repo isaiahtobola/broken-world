@@ -2574,5 +2574,37 @@ document.getElementById('view-home').classList.contains('active') && window.__bw
 setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
 })();
 </script>
+<script>
+/* PHONE ORBIT MEASURE (his 2026-10-30 21:04 call): the right emblem
+   (yang) must rise UP FROM the gold line above the menu — the header's
+   bottom edge. On phones the header stacks tall, so yang's short slot
+   ended mid-banner and the rise started from nowhere. CSS can't know
+   the stacked header's height, so the page MEASURES it and stretches
+   yang's slot until its bottom edge sits exactly on that line; yang's
+   entrance distance stretches to match. Yin is NOT touched — his word:
+   the left downward is PERFECT. Desktop keeps its CSS geometry. */
+(function(){
+  function fit(){
+    var slot = document.querySelector('.slot-yang');
+    var orb = document.querySelector('.orb-yang');
+    var hdr = document.querySelector('.site-header');
+    if(!slot || !orb || !hdr) return;
+    if(window.innerWidth <= 760){
+      var dist = hdr.getBoundingClientRect().bottom - slot.getBoundingClientRect().top;
+      if(dist > 60){
+        slot.style.height = dist + 'px';
+        orb.style.setProperty('--from', (dist + 8) + 'px');
+      }
+    } else {
+      slot.style.height = '';
+      orb.style.removeProperty('--from');
+    }
+  }
+  fit();
+  window.addEventListener('resize', fit);
+  window.addEventListener('load', fit);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+})();
+</script>
 </body>
 </html>

@@ -128,8 +128,8 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
   pointer-events:none; z-index:28; opacity:0; visibility:hidden; transition:opacity .8s;
 }
 .slot{position:absolute; overflow:hidden}
-.slot-yang{left:calc(50% + 450px); top:0; width:56px; height:220px}
-.slot-yin{right:calc(50% + 450px); top:0; width:56px; height:220px}
+.slot-yang{left:calc(50% + 368px); top:0; width:56px; height:220px}
+.slot-yin{right:calc(50% + 368px); top:0; width:56px; height:220px}
 @media (max-width:1180px){
   .slot-yang{left:auto; right:10px}
   .slot-yin{right:auto; left:10px}
@@ -150,9 +150,9 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
    from below on the left. What actually fixed the "menu covers the
    moon" complaint is the layer itself: .orbit-layer now rides at
    z-index 31, ABOVE all the boxes, so the moon is never covered. */
-.orb-moon{right:26px; top:calc(273px + 24vh); width:64px; --from:calc(-24vh - 153px); --to:0px}
+.orb-moon{right:26px; top:calc(273px + 24vh); width:64px; --from:calc(-24vh - 345px); --to:0px}
 .orb-moon svg{filter:drop-shadow(0 0 14px rgba(255,233,168,.45))}
-.orb-sun{left:26px; top:calc(273px + 24vh); width:72px; --from:70vh; --to:0px}
+.orb-sun{left:26px; top:calc(273px + 24vh); width:72px; --from:calc(76vh - 265px); --to:0px}
 .orb-sun svg{filter:drop-shadow(0 0 16px rgba(240,183,63,.55))}
 .orb-sun .rays{transform-origin:50px 50px; animation:sunSpin 26s linear infinite}
 @keyframes sunSpin{to{transform:rotate(360deg)}}
@@ -197,8 +197,8 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
      sets the exact descent distance from the measured perch. */
   /* phone moon restored to the sky layer, same perch height as the
      sun (his 22:21: "moon and sun, end at same spot") */
-  .orb-moon{width:44px; right:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:calc(-18vh - 110px)}
-  .orb-sun{width:48px; left:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:55vh}
+  .orb-moon{width:44px; right:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:calc(-18vh - 240px); --from:calc(-18svh - 240px)}
+  .orb-sun{width:48px; left:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:calc(82vh - 196px); --from:calc(82svh - 196px)}
 }
 .more-menu{
   position:absolute; top:calc(100% + 2px); left:50%; transform:translate(-50%,-6px);
@@ -2619,16 +2619,33 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       if(dist > 60){
         slot.style.height = dist + 'px';
         orb.style.setProperty('--from', (dist + 8) + 'px');
-        if(slotYin && orbYin){
-          var yinTop = dist - 42;
-          slotYin.style.height = dist + 'px';
-          orbYin.style.top = yinTop + 'px';
-          orbYin.style.setProperty('--from', (-(yinTop + 42)) + 'px');
+        if(slotYin && orbYin) slotYin.style.height = dist + 'px';
+        /* PERCHES HUG THE BANNER (his 2026-10-31 01:43 call: the pair
+           drifted too far from the header — not too far, not too close,
+           just room for the glow). Yang perches at the banner's top
+           corner, yin at its bottom corner, measured off the banner
+           image itself. Entrances unchanged: yang still rises the full
+           slot from the gold line; yin still descends from above. */
+        var bnr = hdr.querySelector('.header-banner img');
+        if(bnr){
+          var br = bnr.getBoundingClientRect();
+          var slotTop = slot.getBoundingClientRect().top;
+          orb.style.top = ((br.top - slotTop) + 2) + 'px';
+          if(orbYin){
+            var yinTop = (br.bottom - slotTop) - 34;
+            orbYin.style.top = yinTop + 'px';
+            orbYin.style.setProperty('--from', (-(yinTop + 42)) + 'px');
+          }
+        } else if(orbYin){
+          var yinTop2 = dist - 42;
+          orbYin.style.top = yinTop2 + 'px';
+          orbYin.style.setProperty('--from', (-(yinTop2 + 42)) + 'px');
         }
       }
     } else {
       slot.style.height = '';
       orb.style.removeProperty('--from');
+      orb.style.top = '';
       if(slotYin && orbYin){
         slotYin.style.height = '';
         orbYin.style.top = '';

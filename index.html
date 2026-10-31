@@ -1212,7 +1212,7 @@ runners['sky-home'] = function(canvas, ctx, state){
   var nodes = [], W=0, H=0, t0 = performance.now();
   function build(){
     var s = fitCanvas(canvas); W=s.w; H=s.h;
-    var n = (W < 800) ? 64 : 140;
+    var n = (W/s.dpr < 800) ? 64 : 140;
     nodes = [];
     for(var i=0;i<n;i++){
       var hx = Math.random()*W, hy = Math.random()*H;
@@ -1282,26 +1282,34 @@ runners['sky-home'] = function(canvas, ctx, state){
       p.x += (tx-p.x)*ez; p.y += (ty-p.y)*ez;
     });
     var linkNow = LINKP * (0.04 + 0.96*ease*ease);
+    var drawn = {};
     for(var i=0;i<nodes.length;i++){
-      for(var j=i+1;j<nodes.length;j++){
-        var a=nodes[i], b=nodes[j];
-        var dx=a.x-b.x, dy=a.y-b.y, d2=dx*dx+dy*dy;
-        if(d2 < linkNow*linkNow){
-          var pr = 1 - Math.sqrt(d2)/linkNow;
-          var pulse = 0.5 + 0.5*Math.sin(now/900 + a.ph + b.ph);
-          var near = 0;
-          if(pointer.inside){
-            var cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
-            var cd = Math.hypot(cx-mx, cy-my);
-            near = Math.max(0, 1 - cd/((pointer.down? 360:300)*dpr));
-          }
-          var alpha = pr * (0.10 + glow*0.5) * (0.55 + 0.45*pulse) + near*0.45*pr;
-          var yell = Math.min(1, pulse*0.6 + near);
-          var Rr = Math.round(240 + (255-240)*yell), Gg = Math.round(183 + (209-183)*yell), Bb = Math.round(63 + (102-63)*yell);
-          ctx.strokeStyle = 'rgba('+Rr+','+Gg+','+Bb+','+Math.min(alpha,0.9).toFixed(3)+')';
-          ctx.lineWidth = (0.7 + pr*1.1)*dpr;
-          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      var cand = [];
+      for(var j=0;j<nodes.length;j++){
+        if(j===i) continue;
+        var a0=nodes[i], b0=nodes[j];
+        var dx0=a0.x-b0.x, dy0=a0.y-b0.y, d20=dx0*dx0+dy0*dy0;
+        if(d20 < linkNow*linkNow) cand.push({j:j, d2:d20});
+      }
+      cand.sort(function(p,q){ return p.d2-q.d2; });
+      for(var k=0;k<Math.min(3, cand.length);k++){
+        var j2 = cand[k].j, key = i<j2 ? i+'-'+j2 : j2+'-'+i;
+        if(drawn[key]) continue; drawn[key]=1;
+        var a=nodes[i], b=nodes[j2];
+        var pr = 1 - Math.sqrt(cand[k].d2)/linkNow;
+        var pulse = 0.5 + 0.5*Math.sin(now/900 + a.ph + b.ph);
+        var near = 0;
+        if(pointer.inside){
+          var cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
+          var cd = Math.hypot(cx-mx, cy-my);
+          near = Math.max(0, 1 - cd/((pointer.down? 360:300)*dpr));
         }
+        var alpha = pr * (0.10 + glow*0.5) * (0.55 + 0.45*pulse) + near*0.45*pr;
+        var yell = Math.min(1, pulse*0.6 + near);
+        var Rr = Math.round(240 + (255-240)*yell), Gg = Math.round(183 + (209-183)*yell), Bb = Math.round(63 + (102-63)*yell);
+        ctx.strokeStyle = 'rgba('+Rr+','+Gg+','+Bb+','+Math.min(alpha,0.9).toFixed(3)+')';
+        ctx.lineWidth = (0.7 + pr*1.1)*dpr;
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
       }
     }
     nodes.forEach(function(p){

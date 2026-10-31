@@ -2112,6 +2112,11 @@ runners['sea-canvas'] = function(canvas, ctx, state){
         if(loc > 480 && loc < 1100) tT = Math.sin(((loc-480)/620) * Math.PI/2);
         else if(loc >= 1100 && loc < 1700) tT = 1;
         else if(loc >= 1700 && loc < 2300) tT = 1 - (loc-1700)/600;
+        /* THE MISSING HOLD (his 2026-10-30 19:30 catch): while turquoise
+           is anywhere in its phase, blue stays PINNED at full — it never
+           lets go early, so the base can't slide back through plum and
+           flash purple between blue and turquoise */
+        if(tT > 0) bT = 1;
       }
       /* off hover (or off posting / in other tabs): the sea is PLUM —
          colors drain home slowly, never snap */
@@ -2131,7 +2136,10 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       ctx.beginPath(); ctx.moveTo(0, H);
       for(var x=0; x<=W; x+=6) ctx.lineTo(x, surfY(L, x, t, H));
       ctx.lineTo(W, H); ctx.closePath();
-      ctx.fillStyle = 'rgb('+r+','+g+','+b+')'; ctx.globalAlpha = L.alpha; ctx.fill(); ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgb('+r+','+g+','+b+')';
+      /* while pulsing, waves go near-solid so the plum page behind them
+         can't bleed through the translucency and purple the mix */
+      ctx.globalAlpha = L.alpha + (1 - L.alpha) * 0.7 * mx; ctx.fill(); ctx.globalAlpha = 1;
       /* plankton bloom — neon specks drifting in this layer's water */
       L.bloom += ((L.bloomOn ? 1 : 0) - L.bloom) * 0.06;
       if(L.bloom > 0.02){

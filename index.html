@@ -151,6 +151,10 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
   .slot-yin{right:auto; left:10px}
 }
 .orb{position:absolute; animation:orbitTick 15s ease-in-out 1 both; will-change:transform}
+/* yin/yang entrance (his 2026-10-31 simplification): no slide — they
+   materialize, opacity 0 -> 100 over 5 seconds, in their perfect spots */
+.slot .orb{animation:yyFade 5s ease-out 1 both}
+@keyframes yyFade{from{opacity:0}to{opacity:1}}
 @keyframes orbitTick{
   from{transform:translateY(var(--from))}
   to{transform:translateY(var(--to))}
@@ -773,6 +777,16 @@ body[data-theme="xmas"] .view canvas{filter:hue-rotate(-32deg) saturate(1.22)}
 /* the sky dancers dress for the season as well */
 body[data-theme="halloween"] .orb-yang svg path{fill:#ffa53a}
 body[data-theme="xmas"] .orb-yang svg path{fill:#ff5a4d}
+/* the header words dress too (his 2026-10-31 call): Broken World + the
+   REM tagline take the season's colors and glow; the plum stays put */
+body[data-theme="halloween"] .header-side .brand-name{color:#ffd2a1}
+body[data-theme="halloween"] .header-side .brand-name span{text-shadow:0 0 14px rgba(255,140,26,.55)}
+body[data-theme="halloween"] .header-side .tagline{color:#d9a05f}
+body[data-theme="halloween"] .header-side .tagline b{text-shadow:0 0 12px rgba(255,165,58,.6)}
+body[data-theme="xmas"] .header-side .brand-name{color:#e6f4ea}
+body[data-theme="xmas"] .header-side .brand-name span{text-shadow:0 0 14px rgba(217,54,54,.55)}
+body[data-theme="xmas"] .header-side .tagline{color:#a8c9ae}
+body[data-theme="xmas"] .header-side .tagline b{text-shadow:0 0 12px rgba(255,90,77,.6)}
 body[data-theme="halloween"] .orb-sun svg circle{fill:#ff8c1a; stroke:#ffa53a}
 body[data-theme="xmas"] .orb-sun svg circle{fill:#d93636; stroke:#ff5a4d}
 body[data-theme="halloween"] .orb-sun svg .rays{stroke:#ff8c1a}
@@ -918,8 +932,9 @@ body[data-current="sea"] .depth-gauge{display:flex}
 .about-card .hearth-line{transition:color 1.1s ease, text-shadow 1.1s ease; color:var(--muted)}
 .about-card .hearth-line.lit{color:#ffe9b0; text-shadow:0 0 16px rgba(240,183,63,.6)}
 .about-card .hearth-line.lit b, .about-card .hearth-line.lit .hl{color:var(--yellow)}
-.post-body{transition:color 1.1s ease, text-shadow 1.1s ease}
-.post-body.hearth-lit{color:#ffe9b0; text-shadow:0 0 14px rgba(240,183,63,.55)}
+.hl-w{white-space:nowrap}
+.hl-ch{transition:color .9s ease, text-shadow .9s ease}
+.hl-ch.on{color:#ffe9b0; text-shadow:0 0 12px rgba(240,183,63,.8); transition-duration:.08s}
 
 /* ============ MOTION LAW (his 11:10 call) ============
    This site does NOT obey the phone's Reduce Motion setting. It froze
@@ -3508,63 +3523,85 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   window.addEventListener('resize', seaDepthTick);
   if(seaFeed && window.MutationObserver) new MutationObserver(seaDepthTick).observe(seaFeed, {childList:true});
 
-  /* ---------- 4 · Hearth reading (Hub About): lines warm as you read ---------- */
-  var hearthDone = false;
-  function hearthArm(){
-    var card = document.querySelector('#hubpanel-about .about-card');
-    if(!card) return;
-    if(!hearthDone){
-      hearthDone = true;
-      card.querySelectorAll('p').forEach(function(p){
-        var parts = p.textContent.split(/(?<=[.!?])\s+/).filter(function(s){ return s.trim(); });
-        p.textContent = '';
-        parts.forEach(function(s){
-          var span = document.createElement('span');
-          span.className = 'hearth-line'; span.textContent = s + ' ';
-          p.appendChild(span);
-        });
+  /* ---------- 4 · LIVING TEXT (his 2026-10-31 finale): the hearth grew
+     hands. Every text box on the site is split into letters; drag a
+     cursor or a finger across the words and each letter catches gold
+     as you pass it, then cools. Click a box, or scroll it into view,
+     and the whole text cascades alight, fading after 6 seconds.
+     Nothing is one-time — touch it again and it comes back. The Hub
+     About hearth runs on the same letters now. ---------- */
+  var LIVING_SEL = '.post-body, .about-card p, .home-note, .join-copy, .big, .hero-line, .modal-sub, .feed-empty';
+  function splitLetters(el){
+    if(!el || el._split || el.children.length || !el.textContent.trim()) return;
+    if(el.closest('header, nav, footer, form, button')) return;
+    var text = el.textContent;
+    if(text.length > 1500) return;
+    el._split = true; el.dataset.living = '1'; el.textContent = '';
+    text.split(/(\s+)/).forEach(function(part){
+      if(!part) return;
+      if(/^\s+$/.test(part)){ el.appendChild(document.createTextNode(' ')); return; }
+      var w = document.createElement('span'); w.className = 'hl-w';
+      part.split('').forEach(function(ch){
+        var c = document.createElement('span'); c.className = 'hl-ch'; c.textContent = ch;
+        w.appendChild(c);
       });
-    }
-    var lines = card.querySelectorAll('.hearth-line');
-    lines.forEach(function(l){ l.classList.remove('lit'); });
-    lines.forEach(function(l, i){ setTimeout(function(){ l.classList.add('lit'); }, 350 + i * 420); });
+      el.appendChild(w);
+    });
+  }
+  function lightLetter(ch, hold){
+    if(!ch) return;
+    ch.classList.add('on');
+    if(ch._coolT) clearTimeout(ch._coolT);
+    ch._coolT = setTimeout(function(){ ch.classList.remove('on'); }, hold || 1100);
+  }
+  function cascadeText(el, hold){
+    if(!el) return;
+    splitLetters(el);
+    el.querySelectorAll('.hl-ch').forEach(function(ch, i){
+      setTimeout(function(){ lightLetter(ch, hold || 6000); }, Math.min(i * 12, 900));
+    });
+  }
+  /* the drag trail: whichever letter sits under the pointer lights up */
+  var lastCh = null;
+  document.addEventListener('pointermove', function(e){
+    var t = document.elementFromPoint(e.clientX, e.clientY);
+    var ch = (t && typeof t.closest === 'function') ? t.closest('.hl-ch') : null;
+    if(ch && ch !== lastCh) lightLetter(ch, 1100);
+    lastCh = ch;
+  }, {passive:true});
+  /* a click on any living text (or anywhere on a post card) cascades it */
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if(!t || typeof t.closest !== 'function') return;
+    var liv = t.closest('[data-living]');
+    if(liv){ cascadeText(liv, 6000); return; }
+    var card = t.closest('.post-card');
+    if(card) cascadeText(card.querySelector('.post-body'), 6000);
+  });
+  /* scrolling a text into view cascades it too — every time, never once */
+  var livingIO = ('IntersectionObserver' in window) ? new IntersectionObserver(function(entries){
+    entries.forEach(function(en){ if(en.isIntersecting) cascadeText(en.target, 6000); });
+  }, {threshold: 0.15}) : null;
+  function livingWatch(root){
+    (root || document).querySelectorAll(LIVING_SEL).forEach(function(el){
+      splitLetters(el);
+      if(livingIO && el._split && !el._livWatched){ el._livWatched = true; livingIO.observe(el); }
+    });
+  }
+  ['sea-feed','hub-feed'].forEach(function(id){
+    var box = document.getElementById(id);
+    if(box && window.MutationObserver) new MutationObserver(function(){ livingWatch(box); }).observe(box, {childList:true, subtree:true});
+  });
+  livingWatch(document);
+  /* the original hearth: the Hub About text cascades when its room opens */
+  function hearthArm(){
+    document.querySelectorAll('#hubpanel-about .about-card p').forEach(function(p){ cascadeText(p, 6000); });
   }
   document.querySelectorAll('.hub-tab-btn').forEach(function(b){
     b.addEventListener('click', function(){
       if(b.getAttribute('data-hubtab') === 'about') setTimeout(hearthArm, 60);
     });
   });
-
-  /* ---------- 4b · Hearth everywhere (his 2026-10-31 call): every text
-     post does the hearth thing — click it, read it, or scroll past it
-     and the words warm gold; the warmth fades away after 6 seconds.
-     "Than the website is basically DONE." ---------- */
-  function warmPostBody(body){
-    if(!body) return;
-    body.classList.add('hearth-lit');
-    if(body._warmT) clearTimeout(body._warmT);
-    body._warmT = setTimeout(function(){ body.classList.remove('hearth-lit'); }, 6000);
-  }
-  var warmIO = ('IntersectionObserver' in window) ? new IntersectionObserver(function(entries){
-    entries.forEach(function(en){ if(en.isIntersecting) warmPostBody(en.target); });
-  }, {threshold: 0.15}) : null;
-  function warmWatch(root){
-    (root || document).querySelectorAll('.post-card .post-body').forEach(function(body){
-      if(body._warmWatched) return;
-      body._warmWatched = true;
-      if(warmIO) warmIO.observe(body);
-    });
-  }
-  document.addEventListener('click', function(e){
-    var t = e.target;
-    var card = (t && typeof t.closest === 'function') ? t.closest('.post-card') : null;
-    if(card) warmPostBody(card.querySelector('.post-body'));
-  });
-  ['sea-feed','hub-feed'].forEach(function(id){
-    var box = document.getElementById(id);
-    if(box && window.MutationObserver) new MutationObserver(function(){ warmWatch(box); }).observe(box, {childList:true, subtree:true});
-  });
-  warmWatch(document);
 
   /* ---------- view hooks: start/stop the Kintsugi game, refresh the gauge ---------- */
   var _afterShow = window.afterShow, _beforeHide = window.beforeHide;

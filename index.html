@@ -765,8 +765,8 @@ body[data-theme="xmas"] .deco-xmas{display:block}
 .deco .d-igloo{bottom:8px; right:12px; width:118px}
 .deco .d-snowman{bottom:10px; left:130px; width:74px}
 .deco .d-sleigh{bottom:168px; right:26px; width:180px}
-.deco .d-bell1{top:120px; left:22px; width:40px}
-.deco .d-bell2{top:120px; right:22px; width:40px}
+.deco .d-bell1{top:172px; left:22px; width:40px}
+.deco .d-bell2{top:172px; right:22px; width:40px}
 .deco .d-cane1{bottom:120px; left:8px; width:30px; transform:rotate(-8deg)}
 .deco .d-cane2{bottom:150px; right:10px; width:30px; transform:rotate(9deg)}
 @media (max-width:760px){
@@ -848,8 +848,8 @@ body[data-current="sea"] .depth-gauge{display:flex}
 .deco .d-ghost{top:40%; right:18px; width:56px; opacity:.92}
 .deco .d-tomb{bottom:10px; left:238px; width:54px}
 .deco .d-cauldron{bottom:8px; right:118px; width:78px}
-.deco .d-garland{top:54px; left:0; width:100%; height:56px}
-.deco .d-wreath{top:128px; left:14px; width:68px}
+.deco .d-garland{top:100px; left:0; width:100%; height:56px}
+.deco .d-wreath{top:262px; right:18px; width:68px}
 .deco .d-gifts{bottom:4px; left:238px; width:96px}
 .deco .flake{position:absolute; top:-12px; background:#fff; border-radius:50%; opacity:.9; animation:snowfall linear infinite}
 @keyframes snowfall{to{transform:translateY(106vh)}}
@@ -3542,6 +3542,12 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     sh.rot = Math.random() * 1.1 - 0.55;
   }
   function setStatus(html){ if(statusEl) statusEl.innerHTML = html; }
+  function progressStatus(){
+    var n = shards.filter(function(s){ return s.locked; }).length;
+    if(n === BANDS) setStatus('Mended. <b>Broken — and worth more.</b> 💛');
+    else if(n > 0) setStatus('Seam set — <b>' + n + ' of ' + BANDS + '</b>. The gold holds. Keep going.');
+    else setStatus('The pot lies broken on the floor. <b>Mend it.</b>');
+  }
   function buildShards(keepLocked){
     buildGeometry();
     var wasLocked = shards.map(function(s){ return s.locked; });
@@ -3555,10 +3561,8 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       shards.push(sh);
     }
     builtW = W; builtH = H;
-    var n = shards.filter(function(s){ return s.locked; }).length;
-    if(n === BANDS){ complete = true; setStatus('Mended. <b>Broken — and worth more.</b> 💛'); }
-    else if(n > 0) setStatus('Seam set — <b>' + n + ' of ' + BANDS + '</b>. Keep going.');
-    else setStatus('The pot lies broken on the floor. <b>Mend it.</b>');
+    if(shards.every(function(s){ return s.locked; })) complete = true;
+    progressStatus();
   }
   function burst(x, y, n){
     for(var i = 0; i < n; i++){
@@ -3619,6 +3623,19 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       ctx.beginPath(); ctx.ellipse(vase.cx, vase.baseY - rt * vase.h * 0.9, vase.maxHalf * (0.7 + rt * 0.9), vase.maxHalf * (0.24 + rt * 0.3), 0, 0, Math.PI * 2); ctx.stroke();
       ctx.restore();
     }
+    /* the dragged shard's home glows — "your piece goes here" */
+    if(drag && !drag.sh.locked){
+      var hs = drag.sh, hd = Math.hypot(hs.dx, hs.dy);
+      ctx.save();
+      ctx.translate(hs.home.x, hs.home.y);
+      tracePath(hs.poly, hs.home.x, hs.home.y);
+      ctx.fillStyle = 'rgba(255,209,102,' + (hd < 130 ? 0.16 : 0.07) + ')';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,209,102,' + (hd < 130 ? 0.75 : 0.4) + ')';
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+      ctx.restore();
+    }
     /* shards */
     shards.forEach(function(sh){
       var cx = sh.home.x + sh.dx, cy = sh.home.y + sh.dy;
@@ -3677,7 +3694,9 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     if(drag && pointerDown){
       var sh = drag.sh;
       var d = Math.hypot(sh.dx, sh.dy);
-      sh.snapped = d < 34;
+      var wasSnapped = sh.snapped;
+      sh.snapped = d < 58;
+      if(sh.snapped && !wasSnapped) setStatus('That\'s its home — <b>keep holding</b> while the seam heats…');
       if(sh.snapped){
         sh.dx *= 0.86; sh.dy *= 0.86; sh.rot *= 0.82;
         sh.heat = Math.min(1, sh.heat + dt / 900);
@@ -3728,7 +3747,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     e.preventDefault();
   });
   function endDrag(){
-    if(drag && !drag.sh.locked) drag.sh.heat = 0;
+    if(drag && !drag.sh.locked){ drag.sh.heat = 0; drag.sh.snapped = false; progressStatus(); }
     drag = null; pointerDown = false;
   }
   canvas.addEventListener('pointerup', endDrag);

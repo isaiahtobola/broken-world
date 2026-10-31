@@ -3970,8 +3970,9 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
 /* ================= THE VINYL CEREMONY (his 2026-10-31 call) =================
    "take the broken world vinyl logo in the girls headphones, pin that
    point center" — measured off banner.png itself: the vinyl's center
-   sits at 59.61% across and 45.19% down the banner, and the disc is
-   8.3% of the banner's width across. The two emblems are the two
+   sits at 59.61% across and 45.19% down the banner, and the full disc
+   (not just its inner label ring — the first read, corrected by the
+   landing screenshot) is 15.12% of the banner's width across. The two emblems are the two
    HALVES of one taijitu (the same path — yin is yang rotated 180°),
    so the ceremony lifts them out of their clipping slots and flies
    them BOTH to that pinned point, fading in over 12 seconds on the
@@ -3983,7 +3984,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   var layer = document.querySelector('.orbit-top');
   var img = document.querySelector('.header-banner img');
   if(!layer || !img) return;
-  var VX = 0.5961, VY = 0.4519, VD = 0.083;
+  var VX = 0.5961, VY = 0.4519, VD = 0.1512;
   function fly(orb, tx, ty, td){
     var r = orb.getBoundingClientRect();
     var lr = layer.getBoundingClientRect();

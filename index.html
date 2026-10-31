@@ -756,7 +756,7 @@ body[data-theme="xmas"] .orb-sun svg .rays{stroke:#d93636}
 body[data-theme="halloween"] .deco-halloween{display:block}
 body[data-theme="xmas"] .deco-xmas{display:block}
 .deco svg{position:absolute; overflow:visible}
-.deco .d-web{top:64px; right:0; width:170px; opacity:.85}
+.deco .d-web{top:60px; right:0; width:215px; opacity:1}
 .deco .d-pumpkin{bottom:14px; left:14px; width:104px}
 .deco .d-witch{top:86px; left:6%; width:120px; opacity:.9}
 .deco .d-basket{bottom:16px; right:16px; width:88px}
@@ -764,9 +764,9 @@ body[data-theme="xmas"] .deco-xmas{display:block}
 .deco .d-tree2{bottom:0; right:64px; width:76px; opacity:.92}
 .deco .d-igloo{bottom:8px; right:12px; width:118px}
 .deco .d-snowman{bottom:10px; left:130px; width:74px}
-.deco .d-sleigh{top:70px; right:9%; width:190px}
-.deco .d-bell1{top:60px; left:22px; width:40px}
-.deco .d-bell2{top:60px; right:22px; width:40px}
+.deco .d-sleigh{bottom:168px; right:26px; width:180px}
+.deco .d-bell1{top:120px; left:22px; width:40px}
+.deco .d-bell2{top:120px; right:22px; width:40px}
 .deco .d-cane1{bottom:120px; left:8px; width:30px; transform:rotate(-8deg)}
 .deco .d-cane2{bottom:150px; right:10px; width:30px; transform:rotate(9deg)}
 @media (max-width:760px){
@@ -831,8 +831,8 @@ body[data-current="sea"] .depth-gauge{display:flex}
 .kint-reset:hover{background:rgba(240,183,63,.14); color:var(--yellow)}
 
 /* deco extras (his 03:16 stack + Lux's filling-in) */
-.deco .d-cat{bottom:12px; right:178px; width:86px; pointer-events:auto; cursor:pointer}
-.deco .d-cat svg{position:static; width:100%}
+.deco .d-cat{position:absolute; bottom:12px; right:212px; width:86px; pointer-events:auto; cursor:pointer}
+.deco .d-cat svg{position:static; width:100%; filter:drop-shadow(0 0 5px rgba(255,140,26,.55))}
 .d-cat .mow{
   position:absolute; top:-26px; left:50%; transform:translateX(-50%) scale(.6);
   background:#0f2a0c; color:#9dff7a; border:1px solid #3f7a34; border-radius:999px;
@@ -3457,6 +3457,18 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     if(_beforeHide) _beforeHide(id);
     if(id === 'kintsugi' && window.__kintStop) window.__kintStop();
   };
+  /* Scope-proof view hook: switchView lives inside the main script's own
+     scope, so the wrap above may never fire — but switchView ALWAYS sets
+     body[data-current], and that attribute is observable from anywhere. */
+  var lastView = document.body.getAttribute('data-current') || 'home';
+  new MutationObserver(function(){
+    var v = document.body.getAttribute('data-current') || 'home';
+    if(v === lastView) return;
+    var prev = lastView; lastView = v;
+    if(prev === 'kintsugi' && window.__kintStop) window.__kintStop();
+    if(v === 'kintsugi' && window.__kintStart) window.__kintStart();
+    if(v === 'sea') seaDepthTick();
+  }).observe(document.body, { attributes: true, attributeFilter: ['data-current'] });
   seaDepthTick();
 })();
 </script>
@@ -3650,9 +3662,17 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       ctx.restore();
     });
   }
+  var frameCount = 0;
   function frame(now){
     if(!running) return;
     var dt = Math.min(50, now - lastT); lastT = now;
+    /* size watchdog: the canvas may have been measured while its view was
+       still hidden (fade-in) — re-measure once it is truly on screen and
+       rebuild in place, keeping any seams already set */
+    if(++frameCount % 45 === 0){
+      var rr = canvas.getBoundingClientRect();
+      if(Math.abs(rr.width - W) > 40 || Math.abs(rr.height - H) > 40){ sizeCanvas(); buildShards(true); }
+    }
     if(complete && completeT < 1) completeT = Math.min(1, completeT + dt / 1400);
     if(drag && pointerDown){
       var sh = drag.sh;

@@ -75,7 +75,12 @@ img{max-width:100%}
 .header-side .tagline b{color:var(--yellow); font-weight:600}
 .header-banner{display:flex; align-items:center; justify-content:center; padding:10px 0}
 .header-banner img{
-  height:112px; width:auto; display:block;
+  height:112px; width:auto; aspect-ratio:2420/401; display:block;
+  /* HEADER LOCK (his 2026-10-31 call): the banner box is pinned to the
+     image's own 2420x401 ratio, so Normal / Halloween / Christmas render
+     at the EXACT same size on PC and phone — the per-breakpoint heights
+     (112 / 86 / 50) now fix the width by math in every theme, loaded or
+     not. Normal mode computes to the identical pixels as before. */
   filter:drop-shadow(0 6px 24px rgba(0,0,0,.55));
   /* THE BLEND (his 2026-10-31 02:08 call): the banner's own edges melt
      into the header plum instead of ending at a cutoff line — the
@@ -884,7 +889,7 @@ body[data-current="sea"] .depth-gauge{display:flex}
       <div class="brand-name">Broken<br><span>World</span></div>
     </div>
     <div class="header-banner">
-      <img src="banner.png" alt="Broken World banner — a listener in profile, plum and gold">
+      <img src="banner.png" width="2420" height="401" alt="Broken World banner — a listener in profile, plum and gold">
     </div>
     <div class="header-side right">
       <div class="tagline">Love your <b>REM</b><br>Chase your <b>dreams</b></div>

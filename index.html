@@ -1635,7 +1635,7 @@ window.addEventListener('scroll', function(){
   if(seaViewEl.classList.contains('active')) seaWake();
 }, {passive:true});
 setInterval(function(){
-  if(window.__seaHover && performance.now() - window.__seaAct > 6000){
+  if(window.__seaHover && performance.now() - window.__seaAct > 7500){
     window.__seaHover = false; window.__seaLeave = performance.now();
   }
 }, 500);
@@ -2098,46 +2098,37 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       }
     }
     layers.forEach(function(L, idx){
-      /* hover law (his 03:59–04:00 final): entering the Sea fires a BLUE
-         flash cascading wave→wave top to bottom; TURQUOISE follows
-         immediately behind it down the same path and HOLDS while you
-         hover; leaving lets everything fade SLOWLY back to plum. */
-      var sw = (typeof window.__seaSweep === 'number') ? window.__seaSweep : -1;
-      var bT = 0, tT = 0;
-      if(window.__seaHover && sw >= 0){
-        /* the loop (his 04:02 call): blue down, turquoise down, REPEAT
-           for as long as the hover lasts — a 2.6s cycle per wave-set */
-        var cyc = (now - sw) % 2600, loc = cyc - idx*150;
-        if(loc > 0 && loc < 650) bT = Math.sin((loc/650) * Math.PI);
-        if(loc > 480 && loc < 1100) tT = Math.sin(((loc-480)/620) * Math.PI/2);
-        else if(loc >= 1100 && loc < 1700) tT = 1;
-        else if(loc >= 1700 && loc < 2300) tT = 1 - (loc-1700)/600;
-        /* THE MISSING HOLD (his 2026-10-30 19:30 catch): while turquoise
-           is anywhere in its phase, blue stays PINNED at full — it never
-           lets go early, so the base can't slide back through plum and
-           flash purple between blue and turquoise */
-        if(tT > 0) bT = 1;
-      }
-      /* off hover (or off posting / in other tabs): the sea is PLUM —
-         colors drain home slowly, never snap */
-      var kB = window.__seaHover ? 0.35 : 0.02;
-      var kT = window.__seaHover ? 0.20 : 0.012;
-      L.mix += (bT - L.mix) * kB;
-      L.tmix += (tT - L.tmix) * kT;
-      /* NO purple in between (his 04:15 law): the blue phase saturates
-         fully first, then blue crossfades DIRECTLY into turquoise */
-      var mx = Math.max(L.mix, L.tmix);
-      var r = Math.round(L.plum[0] + (L.blue[0]-L.plum[0]) * mx);
-      var g = Math.round(L.plum[1] + (L.blue[1]-L.plum[1]) * mx);
-      var b = Math.round(L.plum[2] + (L.blue[2]-L.plum[2]) * mx);
-      r = Math.round(r + (L.teal[0]-r) * L.tmix);
-      g = Math.round(g + (L.teal[1]-g) * L.tmix);
-      b = Math.round(b + (L.teal[2]-b) * L.tmix);
+      /* THE SEA EQUATION (his 2026-10-30 19:36 final, GD-trigger style):
+         while ACTIVE, plum is OUT of the equation entirely — a wave's
+         color is a blend of BLUE and TURQUOISE only. The turquoise
+         trigger fires MID-BLUE (900ms into the 2.6s cycle), so the two
+         OVERLAP and crossfade; turquoise holds; the overlap runs back
+         to blue; repeat. Plum returns ONLY through restK, which starts
+         filling after 7.5s of stillness and drains the color home. */
+      if(L.restK === undefined) L.restK = 1;
+      var act = !!window.__seaHover;
+      L.restK += ((act ? 0 : 1) - L.restK) * (act ? 0.22 : 0.016);
+      if(L.restK < 0.001) L.restK = 0; if(L.restK > 0.999) L.restK = 1;
+      var sw = (typeof window.__seaSweep === 'number' && window.__seaSweep >= 0) ? window.__seaSweep : now;
+      var loc = ((now - sw) % 2600) - idx*150; if(loc < 0) loc += 2600;
+      var tp = 0;
+      if(loc < 900) tp = 0;
+      else if(loc < 1600) tp = (loc - 900) / 700;
+      else if(loc < 2100) tp = 1;
+      else tp = 1 - (loc - 2100) / 500;
+      tp = tp * tp * (3 - 2 * tp);
+      var ar = L.blue[0] + (L.teal[0] - L.blue[0]) * tp;
+      var ag = L.blue[1] + (L.teal[1] - L.blue[1]) * tp;
+      var ab = L.blue[2] + (L.teal[2] - L.blue[2]) * tp;
+      var mx = 1 - L.restK;
+      var r = Math.round(ar + (L.plum[0] - ar) * L.restK);
+      var g = Math.round(ag + (L.plum[1] - ag) * L.restK);
+      var b = Math.round(ab + (L.plum[2] - ab) * L.restK);
       ctx.beginPath(); ctx.moveTo(0, H);
       for(var x=0; x<=W; x+=6) ctx.lineTo(x, surfY(L, x, t, H));
       ctx.lineTo(W, H); ctx.closePath();
       ctx.fillStyle = 'rgb('+r+','+g+','+b+')';
-      /* while pulsing, waves go near-solid so the plum page behind them
+      /* while active, waves go near-solid so the plum page behind them
          can't bleed through the translucency and purple the mix */
       ctx.globalAlpha = L.alpha + (1 - L.alpha) * 0.7 * mx; ctx.fill(); ctx.globalAlpha = 1;
       /* plankton bloom — neon specks drifting in this layer's water */

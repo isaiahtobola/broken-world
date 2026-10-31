@@ -148,11 +148,14 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
    (dropped in under the header, got covered by the menu) is retired
    everywhere. The moon now lives in the top layer on desktop too:
    perched at the header's bottom-right, its bottom edge 12px above
-   the gold line, entering yang-style — rising from behind the menu,
-   up from under the line. Desktop header is a fixed 220px
-   (44 pad + 132 row + 44 pad), so the perch is pure CSS here;
-   phones get the measured version in the <=760 rules + script. */
-.orb-moon-top{display:block; right:26px; top:144px; width:64px; --from:132px; --to:0px}
+   the gold line. DIRECTION IS THE ORIGINAL PLAN (his 21:32 ruling,
+   after Lux flipped it once): the MOON GOES DOWN — it descends from
+   above the page into its perch, like yin; the SUN GOES UP. Only the
+   perch moved (above the menu, so the menu can't cover it) — never
+   the direction. Desktop header is a fixed 220px (44 pad + 132 row
+   + 44 pad), so the perch is pure CSS here; phones get the measured
+   version in the <=760 rules + script. */
+.orb-moon-top{display:block; right:26px; top:144px; width:64px; --from:-220px; --to:0px}
 .orb-moon-top svg{filter:drop-shadow(0 0 14px rgba(255,233,168,.45))}
 .orb-sun{left:26px; top:calc(273px + 24vh); width:72px; --from:70vh; --to:0px}
 .orb-sun svg{filter:drop-shadow(0 0 16px rgba(240,183,63,.55))}
@@ -188,15 +191,17 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
   .slot-yin{left:2px; right:auto; width:68px}
   .orb-yang{width:32px; left:18px; top:3px; --from:101px}
   .orb-yin{width:32px; left:18px; top:63px; --from:-101px}
-  /* MOON MOVES UP (his 2026-10-30 21:14 call): the old phone moon
-     dropped in below the header and the MENU TAB covered it mid-dance.
-     Now the layer moon hides on phones and the top-layer moon takes
-     its place: perched above the menu (its top is measured onto the
-     header by the script at the end of body), entering by RISING from
-     under the gold line — the nav itself is the curtain it hides
-     behind at the start, exactly like yang's slot trick. */
+  /* MOON MOVES UP — THE PERCH, NOT THE DIRECTION (his 2026-10-30
+     21:14 + 21:32 calls): the old phone moon dropped in below the
+     header and the MENU TAB covered it mid-dance. Now the layer moon
+     hides on phones and the top-layer moon takes its place: perched
+     above the menu (its top is measured onto the header by the script
+     at the end of body), and it still travels the ORIGINAL way —
+     DOWN from above the screen, like yin. The sun goes up; the moon
+     goes down. The --from here is only a fallback; the measure script
+     sets the exact descent distance from the measured perch. */
   .orb-moon{display:none}
-  .orb-moon-top{display:block; right:16px; width:44px; top:150px; --from:58px; --to:0px}
+  .orb-moon-top{display:block; right:16px; width:44px; top:150px; --from:-220px; --to:0px}
   .orb-sun{width:48px; left:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:55vh}
 }
 .more-menu{
@@ -2618,17 +2623,22 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
         orb.style.setProperty('--from', (dist + 8) + 'px');
       }
       /* the phone moon's perch: its bottom edge floats 10px above the
-         gold line (header bottom), on the right side, above the menu */
+         gold line (header bottom), on the right side, above the menu.
+         And its descent: --from is set to start it fully ABOVE the
+         screen top, so it travels DOWN into the perch (original plan:
+         moon goes down, sun goes up). */
       if(moon){
         var mr = moon.getBoundingClientRect();
         var curTop = parseFloat(moon.style.top) || 150;
         var targetBottom = hdr.getBoundingClientRect().bottom - 10;
-        moon.style.top = (curTop + (targetBottom - mr.bottom)) + 'px';
+        var newTop = curTop + (targetBottom - mr.bottom);
+        moon.style.top = newTop + 'px';
+        moon.style.setProperty('--from', (-(newTop + 54)) + 'px');
       }
     } else {
       slot.style.height = '';
       orb.style.removeProperty('--from');
-      if(moon) moon.style.top = '';
+      if(moon){ moon.style.top = ''; moon.style.removeProperty('--from'); }
     }
   }
   fit();

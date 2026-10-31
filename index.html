@@ -755,6 +755,16 @@ body[data-theme="xmas"] .orb-sun svg .rays{stroke:#d93636}
 #holiday-btn{white-space:nowrap}
 #holiday-btn.locked{opacity:.42; filter:grayscale(1); cursor:not-allowed}
 #holiday-btn .h-emo{font-style:normal}
+/* BUTTON LOCK (his 2026-10-31 mobile catch): the button's words shrink
+   per theme ("Happy Holidays" -> "Halloween"), so on a phone — where
+   the nav wraps — the slimmer Halloween button climbed off the beneath
+   row it sits on in OG. The label now rides in a grid stack over a
+   hidden sizer that always carries the OG words, so the button's box
+   IS the OG box in every theme, at every width. OG renders unchanged. */
+#holiday-btn .h-stack{display:inline-grid; vertical-align:top}
+#holiday-btn .h-stack>*{grid-area:1/1}
+#holiday-btn .h-sizer{visibility:hidden}
+#holiday-btn .h-label{text-align:center; white-space:nowrap}
 
 /* ---- seasonal decoration layers (real-life colors, his spec) ---- */
 .deco{position:fixed; inset:0; pointer-events:none; z-index:26; display:none}
@@ -914,7 +924,7 @@ body[data-current="sea"] .depth-gauge{display:flex}
         <button data-view="kintsugi">⚱ Kintsugi</button>
       </div>
     </div>
-    <button class="nav-btn" id="holiday-btn" type="button" title="Cycle the season: Normal → Halloween → Christmas → Normal"><i class="h-emo">🎄</i> Happy Holidays</button>
+    <button class="nav-btn" id="holiday-btn" type="button" title="Cycle the season: Normal → Halloween → Christmas → Normal"><span class="h-stack"><span class="h-sizer" aria-hidden="true">🎄 Happy Holidays</span><span class="h-label"><i class="h-emo">🎄</i> Happy Holidays</span></span></button>
   </div>
 </nav>
 
@@ -3367,12 +3377,12 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       if(open){
         holidayBtn.removeAttribute('disabled');
         holidayBtn.classList.remove('locked');
-        holidayBtn.innerHTML = '<i class="h-emo">' + meta.emo + '</i> ' + meta.label;
+        holidayBtn.innerHTML = '<span class="h-stack"><span class="h-sizer" aria-hidden="true">🎄 Happy Holidays</span><span class="h-label"><i class="h-emo">' + meta.emo + '</i> ' + meta.label + '</span></span>';
         holidayBtn.title = 'Cycle the season: Normal → Halloween → Christmas → Normal';
       } else {
         holidayBtn.setAttribute('disabled', '');
         holidayBtn.classList.add('locked');
-        holidayBtn.innerHTML = '<i class="h-emo">🔒</i> Happy Holidays';
+        holidayBtn.innerHTML = '<span class="h-stack"><span class="h-sizer" aria-hidden="true">🎄 Happy Holidays</span><span class="h-label"><i class="h-emo">🔒</i> Happy Holidays</span></span>';
         holidayBtn.title = 'Locked — the season runs Sep 30 to Jan 1.';
       }
     }

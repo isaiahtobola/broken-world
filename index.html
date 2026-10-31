@@ -1614,20 +1614,31 @@ window.addEventListener('wheel', function(e){
 /* Sea plankton-bloom clicks (shared): the Sea runner consumes fresh clicks. */
 window.__seaClick = null;
 window.addEventListener('pointerdown', function(e){ window.__seaClick = {x:e.clientX, y:e.clientY, t:performance.now()}; });
-/* Sea blue→turquoise cascade (his 03:59–04:00 law): entering fires it,
-   leaving starts the slow fade home */
+/* Sea blue→turquoise cascade — THE SEA ILLUSION (his 2026-10-30 19:21
+   spec, final): while the visitor is ACTIVE on the Sea — posting,
+   tapping, scrolling, moving — the water pulses blue → turquoise
+   (NO purple between, his 04:15 law). After 6 SECONDS of inactivity
+   it fades back to resting plum. Activity, not hover, is the switch. */
 window.__seaSweep = -1; window.__seaHover = false; window.__seaLeave = 0;
+window.__seaAct = 0;
 var seaViewEl = document.getElementById('view-sea');
-seaViewEl.addEventListener('pointerenter', function(e){ if(e.pointerType === 'mouse'){ window.__seaHover = true; window.__seaLeave = 0; window.__seaSweep = performance.now(); } });
-seaViewEl.addEventListener('pointerleave', function(e){ if(e.pointerType === 'mouse'){ window.__seaHover = false; window.__seaLeave = performance.now(); } });
-/* touch twin (his 10:48 call — replace cursor with TAP): a tap on the
-   Sea toggles the blue→turquoise cascade on; the next tap rests it */
-seaViewEl.addEventListener('pointerdown', function(e){
-  if(e.pointerType === 'mouse') return;
-  window.__seaHover = !window.__seaHover;
-  if(window.__seaHover){ window.__seaLeave = 0; window.__seaSweep = performance.now(); }
-  else window.__seaLeave = performance.now();
-});
+function seaWake(){
+  var now = performance.now();
+  window.__seaAct = now;
+  if(!window.__seaHover){ window.__seaHover = true; window.__seaLeave = 0; window.__seaSweep = now; }
+}
+seaViewEl.addEventListener('pointerenter', function(e){ if(e.pointerType === 'mouse') seaWake(); });
+seaViewEl.addEventListener('pointermove', function(){ window.__seaAct = performance.now(); });
+seaViewEl.addEventListener('pointerdown', function(){ seaWake(); });
+seaViewEl.addEventListener('keydown', function(){ window.__seaAct = performance.now(); }, true);
+window.addEventListener('scroll', function(){
+  if(seaViewEl.classList.contains('active')) seaWake();
+}, {passive:true});
+setInterval(function(){
+  if(window.__seaHover && performance.now() - window.__seaAct > 6000){
+    window.__seaHover = false; window.__seaLeave = performance.now();
+  }
+}, 500);
 /* touch twins for the car (his 10:48 call — replace scroll with TAP
    and DRAG): HOLD a finger on the Login scene = throttle (the 7-second
    zoom counts holds too); DRAG up = extra gas, same gain as the wheel */

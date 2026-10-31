@@ -77,6 +77,16 @@ img{max-width:100%}
 .header-banner img{
   height:112px; width:auto; display:block;
   filter:drop-shadow(0 6px 24px rgba(0,0,0,.55));
+  /* THE BLEND (his 2026-10-31 02:08 call): the banner's own edges melt
+     into the header plum instead of ending at a cutoff line — the
+     sides dissolve over the outer ~11%, the top softens over ~12%,
+     and the bottom keeps only a short 8% fade so the boundary above
+     the gold line still reads clean (his hard-bottom law, softened
+     only at the seam). Uses OUR existing banner.png — unedited. */
+  -webkit-mask-image:linear-gradient(to right, transparent 0, #000 11%, #000 89%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 12%, #000 92%, transparent 100%);
+  -webkit-mask-composite:source-in;
+  mask-image:linear-gradient(to right, transparent 0, #000 11%, #000 89%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 12%, #000 92%, transparent 100%);
+  mask-composite:intersect;
 }
 
 /* ============ NAV ============ */
@@ -128,8 +138,8 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
   pointer-events:none; z-index:28; opacity:0; visibility:hidden; transition:opacity .8s;
 }
 .slot{position:absolute; overflow:hidden}
-.slot-yang{left:calc(50% + 368px); top:0; width:56px; height:220px}
-.slot-yin{right:calc(50% + 368px); top:0; width:56px; height:220px}
+.slot-yang{left:calc(50% + 352px); top:0; width:56px; height:220px}
+.slot-yin{right:calc(50% + 352px); top:0; width:56px; height:220px}
 @media (max-width:1180px){
   .slot-yang{left:auto; right:10px}
   .slot-yin{right:auto; left:10px}
@@ -159,9 +169,19 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
 /* entrances come from OFF-STAGE (his 05:12 fix): yang rises from UNDER
    the header's bottom line (starts fully clipped below it), yin drops
    in from ABOVE the page (starts fully clipped above the top edge) */
-.orb-yang{left:6px; top:22px; width:44px; --from:224px; --to:0px}
-.orb-yin{left:6px; top:134px; width:44px; --from:-220px; --to:0px}
-.orb-yang svg,.orb-yin svg{filter:drop-shadow(0 0 9px rgba(240,183,63,.65))}
+/* THE LEVEL MEET (his 2026-10-31 02:05–02:10 law, superseding the
+   diagonal corner perches): yin and yang rest at the SAME height,
+   directly across from each other — both centers on the banner
+   image's vertical center (the img spans y 54–166 in the 220px
+   header, center 110; emblems 44 tall → top 88). Short, equal
+   journeys that STOP when they meet: yang rises 56px, yin descends
+   56px — no more full-header travel to opposite extremes.
+   ZERO GLOW (his call, same night): the old drop-shadow rule is
+   DELETED — it clashed with the boxes and layers and its edges
+   were being cut by the slot clip and WebKit's filter region.
+   Sun and moon keep their glow and their frozen dance (untouched). */
+.orb-yang{left:6px; top:88px; width:44px; --from:56px; --to:0px}
+.orb-yin{left:6px; top:88px; width:44px; --from:-56px; --to:0px}
 @media (max-width: 760px){
   /* PHONE BRIDGE (his 10:48 spec): same site, same dance — the header
      shrinks, the slots ride to the screen edges beside the smaller
@@ -184,8 +204,8 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
      room inside the clip instead of being sliced at the slot edge. */
   .slot-yang{left:auto; right:2px; width:68px}
   .slot-yin{left:2px; right:auto; width:68px}
-  .orb-yang{width:32px; left:18px; top:10px; --from:101px}
-  .orb-yin{width:32px; left:18px; top:63px; --from:-101px}
+  .orb-yang{width:32px; left:18px; top:61px; --from:56px}
+  .orb-yin{width:32px; left:18px; top:61px; --from:-56px}
   /* MOON MOVES UP — THE PERCH, NOT THE DIRECTION (his 2026-10-30
      21:14 + 21:32 calls): the old phone moon dropped in below the
      header and the MENU TAB covered it mid-dance. Now the layer moon
@@ -2928,28 +2948,28 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       var dist = hdr.getBoundingClientRect().bottom - slot.getBoundingClientRect().top;
       if(dist > 60){
         slot.style.height = dist + 'px';
-        orb.style.setProperty('--from', (dist + 8) + 'px');
         if(slotYin && orbYin) slotYin.style.height = dist + 'px';
-        /* PERCHES HUG THE BANNER (his 2026-10-31 01:43 call: the pair
-           drifted too far from the header — not too far, not too close,
-           just room for the glow). Yang perches at the banner's top
-           corner, yin at its bottom corner, measured off the banner
-           image itself. Entrances unchanged: yang still rises the full
-           slot from the gold line; yin still descends from above. */
+        /* THE LEVEL MEET (his 2026-10-31 02:10 law): both emblems rest
+           at the SAME height — their centers on the banner image's
+           vertical center, directly across from each other (phone
+           emblems are 32 tall, so top = banner center − 16). Short,
+           equal journeys that stop when they meet: yang rises 56px,
+           yin descends 56px. If the banner image hasn't loaded yet
+           (rect height ~0), fall back to the header's middle — the
+           load listener re-runs this and lands it exactly. */
         var bnr = hdr.querySelector('.header-banner img');
+        var meetTop = null;
         if(bnr){
           var br = bnr.getBoundingClientRect();
           var slotTop = slot.getBoundingClientRect().top;
-          orb.style.top = ((br.top - slotTop) + 2) + 'px';
-          if(orbYin){
-            var yinTop = (br.bottom - slotTop) - 34;
-            orbYin.style.top = yinTop + 'px';
-            orbYin.style.setProperty('--from', (-(yinTop + 42)) + 'px');
-          }
-        } else if(orbYin){
-          var yinTop2 = dist - 42;
-          orbYin.style.top = yinTop2 + 'px';
-          orbYin.style.setProperty('--from', (-(yinTop2 + 42)) + 'px');
+          if(br.height > 10) meetTop = (br.top - slotTop) + (br.height / 2) - 16;
+        }
+        if(meetTop === null) meetTop = (dist / 2) - 16;
+        orb.style.top = meetTop + 'px';
+        orb.style.setProperty('--from', '56px');
+        if(orbYin){
+          orbYin.style.top = meetTop + 'px';
+          orbYin.style.setProperty('--from', '-56px');
         }
       }
     } else {

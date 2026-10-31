@@ -524,6 +524,14 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 .composer-main textarea{background:#150d20; border:1px solid #3a2560; border-radius:10px; color:var(--cream); padding:12px 14px; font:inherit; resize:vertical}
 .composer-main textarea:focus{outline:none; border-color:var(--gold)}
 .composer-actions{display:flex; align-items:center; gap:12px}
+/* UPLOAD BAR (his 2026-10-31 call): a real loading bar while a file
+   rides up to the Sea — gold fill + % , driven by the upload's own
+   progress events, hidden the moment the post lands. */
+.up-bar{display:flex; align-items:center; gap:10px}
+.up-bar[hidden]{display:none}
+.up-track{flex:1; height:10px; background:#150d20; border:1px solid #3a2560; border-radius:99px; overflow:hidden}
+.up-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--gold), var(--yellow)); transition:width .18s ease}
+.up-pct{font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--yellow); min-width:36px; text-align:right}
 .composer-note{font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--muted); text-transform:uppercase}
 .post-btn{margin-left:auto; background:var(--gold); color:#150d20; border:none; border-radius:999px; padding:9px 22px; font-family:var(--mono); font-size:13px; letter-spacing:.08em; cursor:pointer}
 .post-btn:hover{background:var(--yellow)}
@@ -670,9 +678,17 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 .hub-panel.active{display:block; animation:viewFadeIn .45s ease both}
 .media-grid .mtile span.fname{text-transform:none; letter-spacing:.02em; font-size:10px; color:var(--yellow); text-align:center; padding:0 8px; word-break:break-all}
 .file-row{
-  display:flex; align-items:center; gap:16px; background:var(--panel);
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap; row-gap:8px; background:var(--panel);
   border:1px solid rgba(184,166,217,.3); border-radius:12px; padding:16px 20px; margin-bottom:12px;
 }
+/* NAME ON TOP (his 2026-10-31 call): the filename gets its own full
+   line at the top of its box — room to read "You Say (OG Version)"
+   whole, never jumbled against the meta on PC or phone. The meta
+   (date / views / fav / contributor / actions) flows on the line
+   beneath, actions pushed right. */
+.file-row .fcell-name{flex:1 1 100%; min-width:0; display:flex; align-items:baseline; flex-wrap:wrap}
+.file-row .fname{word-break:normal; overflow-wrap:anywhere; line-height:1.35}
+.file-row .fcell-last{margin-left:auto}
 .file-row .file-ico{font-size:24px; color:var(--gold)}
 .file-row .file-meta b{display:block; font-size:18px}
 .file-row .file-meta span{font-family:var(--mono); font-size:12px; color:var(--muted)}
@@ -682,6 +698,14 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   transition:background .2s, color .2s; white-space:nowrap;
 }
 .dl-btn:hover{background:var(--gold); color:var(--ink)}
+/* SFX PREVIEW (his 2026-10-31 call): hear it before you download it */
+.play-btn{
+  background:none; border:1px solid var(--gold); color:var(--yellow);
+  font-family:var(--mono); font-size:12.5px; letter-spacing:.08em; padding:9px 14px; border-radius:999px;
+  transition:background .2s, color .2s; white-space:nowrap;
+}
+.play-btn:hover{background:rgba(240,183,63,.16)}
+.play-btn.playing{background:var(--gold); color:var(--ink)}
 .member-row{
   display:flex; align-items:center; gap:14px; padding:11px 6px;
   border-bottom:1px solid rgba(184,166,217,.16); font-size:17px;
@@ -1044,6 +1068,7 @@ body[data-current="sea"] .depth-gauge{display:flex}
           <div class="composer-main">
             <textarea id="sea-post-text" rows="3" placeholder="Share something with the Sea…" aria-label="Write a post"></textarea>
             <div class="media-row"><input type="url" class="media-link" placeholder="GIF / image / video link (optional)" aria-label="Media link"><label class="media-up">⬆ Upload<input type="file" class="media-file" accept="image/*,video/*" hidden></label><span class="media-name"></span></div>
+            <div class="up-bar" hidden><div class="up-track"><div class="up-fill"></div></div><span class="up-pct">0%</span></div>
             <div class="composer-actions"><span class="composer-note">Open to read — join or log in to post</span><button class="post-btn" id="sea-post-btn">Post</button></div>
           </div>
         </div>
@@ -1089,6 +1114,7 @@ body[data-current="sea"] .depth-gauge{display:flex}
       <div class="composer-main">
         <textarea id="hub-post-text" rows="3" placeholder="Share something with the Hub…" aria-label="Write a post"></textarea>
         <div class="media-row"><input type="url" class="media-link" placeholder="GIF / image / video link (optional)" aria-label="Media link"><label class="media-up">⬆ Upload<input type="file" class="media-file" accept="image/*,video/*" hidden></label><span class="media-name"></span></div>
+        <div class="up-bar" hidden><div class="up-track"><div class="up-fill"></div></div><span class="up-pct">0%</span></div>
         <div class="composer-actions"><span class="composer-note">Open to read — join or log in to post</span><button class="post-btn" id="hub-post-btn">Post</button></div>
       </div>
     </div>
@@ -1418,6 +1444,28 @@ function fmtSize(b){
   if(b < 1048576) return (b/1024).toFixed(1) + ' KB';
   return (b/1048576).toFixed(2) + ' MB';
 }
+/* SFX PREVIEW (his 2026-10-31 call): one shared player — a Play tap
+   starts the file, a second tap pauses, starting another file stops
+   the first. Buttons re-sync themselves off the player's own events. */
+function isAudioFile(name){ return /\.(mp3|wav|ogg|oga|m4a|flac|aac|opus)$/i.test(name || ''); }
+function bwTogglePlay(f, sync){
+  var cur = window.__bwAudio;
+  if(cur && cur.id === f.id && cur.a){
+    if(cur.a.paused) cur.a.play(); else cur.a.pause();
+    if(sync) sync(); if(cur.sync && cur.sync !== sync) cur.sync();
+    return;
+  }
+  if(cur && cur.a){ try{ cur.a.pause(); }catch(e){} if(cur.sync) cur.sync(); }
+  var url = fileUrls[f.id] || (f.key && typeof bwWorkerGet === 'function' ? bwWorkerGet(f) : null);
+  if(!url){ toast('That entry has no file behind it yet.'); return; }
+  var a = new Audio(url);
+  window.__bwAudio = { a: a, id: f.id, sync: sync };
+  a.addEventListener('ended', function(){ if(sync) sync(); });
+  a.addEventListener('pause', function(){ if(sync) sync(); });
+  a.addEventListener('play', function(){ if(sync) sync(); });
+  a.play();
+  if(sync) sync();
+}
 function renderFiles(){
   var all = loadFiles();
   var files = all.slice();
@@ -1436,7 +1484,7 @@ function renderFiles(){
   }
   files.forEach(function(f){
     var row = document.createElement('div'); row.className = 'file-row';
-    var nameCell = document.createElement('span');
+    var nameCell = document.createElement('span'); nameCell.className = 'fcell-name';
     var nm = document.createElement('span'); nm.className = 'fname'; nm.textContent = f.name;
     var sz = document.createElement('span'); sz.className = 'fsize'; sz.textContent = fmtSize(f.size);
     nameCell.appendChild(nm); nameCell.appendChild(sz);
@@ -1470,10 +1518,21 @@ function renderFiles(){
       saveFiles(loadFiles().filter(function(x){ return x.id !== f.id; }));
       renderFiles(); toast('Removed from the library.');
     });
+    if(isAudioFile(f.name)){
+      var pb = document.createElement('button'); pb.className = 'play-btn'; pb.type = 'button';
+      var syncPb = function(){
+        var on = window.__bwAudio && window.__bwAudio.id === f.id && window.__bwAudio.a && !window.__bwAudio.a.paused;
+        pb.textContent = on ? '⏸ Pause' : '▶ Play';
+        pb.classList.toggle('playing', !!on);
+      };
+      syncPb();
+      pb.addEventListener('click', function(e){ e.stopPropagation(); bwTogglePlay(f, syncPb); });
+      acts.appendChild(pb);
+    }
     acts.appendChild(dl); acts.appendChild(del);
     var contrib = document.createElement('span'); contrib.className = 'fmeta'; contrib.textContent = f.contrib || 'bwyoungbo';
     row.appendChild(nameCell); row.appendChild(date); row.appendChild(views); row.appendChild(fav);
-    var last = document.createElement('span'); last.style.display = 'flex'; last.style.gap = '14px'; last.style.alignItems = 'center';
+    var last = document.createElement('span'); last.className = 'fcell-last'; last.style.display = 'flex'; last.style.gap = '14px'; last.style.alignItems = 'center';
     last.appendChild(contrib); last.appendChild(acts);
     row.appendChild(last);
     row.addEventListener('click', function(ev){
@@ -1821,6 +1880,30 @@ function bwTypeOf(name, mime){
   if((mime && mime.indexOf('video/') === 0) || /\.(mp4|webm|mov)(\?|#|$)/i.test(name || '')) return 'video';
   return 'image';
 }
+/* UPLOAD BAR driver (his 2026-10-31 call): XHR carries real upload
+   progress (fetch cannot report it) — the composer's .up-bar fills
+   with the file's own bytes on their way to the vault, then hides. */
+function bwUploadFile(file, comp, cb){
+  var bar = comp ? comp.querySelector('.up-bar') : null;
+  var fill = bar ? bar.querySelector('.up-fill') : null;
+  var pct = bar ? bar.querySelector('.up-pct') : null;
+  var show = function(p){ if(!bar) return; bar.hidden = false; if(fill) fill.style.width = p + '%'; if(pct) pct.textContent = p + '%'; };
+  var hide = function(){ if(bar) bar.hidden = true; };
+  show(0);
+  var fd = new FormData(); fd.append('file', file);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', BW_CONFIG.WORKER_URL + '/upload');
+  xhr.setRequestHeader('Authorization', 'Bearer ' + BW.session.access_token);
+  if(xhr.upload) xhr.upload.onprogress = function(ev){ if(ev.lengthComputable) show(Math.round(ev.loaded / ev.total * 100)); };
+  xhr.onload = function(){
+    hide();
+    var res = null;
+    try{ res = JSON.parse(xhr.responseText || ''); }catch(e){}
+    cb(res);
+  };
+  xhr.onerror = function(){ hide(); cb(null); };
+  xhr.send(fd);
+}
 function liveMakePost(textareaId){
   var ta = document.getElementById(textareaId);
   var text = (ta.value || '').trim();
@@ -1844,15 +1927,11 @@ function liveMakePost(textareaId){
   };
   if(file){
     toast('Sending your file to the vault…');
-    var fd = new FormData(); fd.append('file', file);
-    fetch(BW_CONFIG.WORKER_URL + '/upload', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + BW.session.access_token },
-      body: fd
-    }).then(function(r){ return r.json(); }).then(function(res){
+    bwUploadFile(file, comp, function(res){
+      if(!res){ toast('That upload got lost in the waves — try again.'); return; }
       if(res.error){ toast(res.error); return; }
       finish(BW_CONFIG.WORKER_URL + '/f/' + bwKey(res.key), bwTypeOf(file.name, file.type));
-    }).catch(function(){ toast('That upload got lost in the waves — try again.'); });
+    });
   } else if(link){
     finish(link, bwTypeOf(link, ''));
   } else {

@@ -1275,13 +1275,13 @@ runners['sky-home'] = function(canvas, ctx, state){
       var wob = Math.sin(now/2400 + p.ph)*6*dpr;
       var tx = p.hx + p.wx*(1-ease) + wob, ty = p.hy + p.wy*(1-ease) + Math.cos(now/2900 + p.ph)*6*dpr;
       if(pointer.inside){
-        var dx = mx-tx, dy = my-ty, d = Math.hypot(dx,dy), R = (pointer.down? 350:260)*dpr;
-        if(d < R && d > 0.01){ var pull = (1-d/R)*(pointer.down? 95:26)*dpr; tx += dx/d*pull; ty += dy/d*pull; }
+        var dx = mx-tx, dy = my-ty, d = Math.hypot(dx,dy), R = (pointer.down? 290:260)*dpr;
+        if(d < R && d > 0.01){ var pull = (1-d/R)*(pointer.down? 48:26)*dpr; tx += dx/d*pull; ty += dy/d*pull; }
       }
-      var ez = pointer.down? 0.16 : 0.06;
+      var ez = pointer.down? 0.10 : 0.06;
       p.x += (tx-p.x)*ez; p.y += (ty-p.y)*ez;
     });
-    var linkNow = LINKP * (0.55 + 0.45*ease);
+    var linkNow = LINKP * (0.55 + 0.45*ease) * (pointer.down? 1.25 : 1);
     for(var i=0;i<nodes.length;i++){
       for(var j=i+1;j<nodes.length;j++){
         var a=nodes[i], b=nodes[j];

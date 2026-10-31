@@ -1381,6 +1381,46 @@ runners['sky-home'] = function(canvas, ctx, state){
     for(var c=0; c<chain.length; c++) m[chain[c].i] = 1 - (now - chain[c].at) / CHAIN_MS;
     return m;
   }
+  /* THE STRING (his 2026-10-31 02:58 call): the mouse-trail and the
+     web's own string must CO-EXIST. Every node gets a design
+     partner — its nearest neighbor by HOME position, baked from
+     the design itself, independent of the frame's link radius —
+     so at the glowy pulse moment (pulse high, nodes home) the
+     whole string blazes fully connected, no gaps, while the
+     breathing on/off link cycle and the hand-drawn trail stay
+     exactly as they were. Partners are computed lazily because
+     the node field is rebuilt on resize. */
+  var partner = [];
+  function ensurePartners(){
+    if(partner.length === nodes.length) return;
+    partner = nodes.map(function(p, i){
+      var best = -1, bestD = Infinity;
+      nodes.forEach(function(q, j){
+        if(j === i) return;
+        var d = (q.hx-p.hx)*(q.hx-p.hx) + (q.hy-p.hy)*(q.hy-p.hy);
+        if(d < bestD){ bestD = d; best = j; }
+      });
+      return best;
+    });
+  }
+  function drawString(pr, ease, dpr){
+    var s = pr * ease * ease;
+    if(s < 0.02 || partner.length !== nodes.length) return;
+    var drawnS = {};
+    ctx.strokeStyle = 'rgba(255,214,110,' + (0.8*s).toFixed(3) + ')';
+    ctx.lineWidth = (0.7 + 1.2*s) * dpr;
+    ctx.beginPath();
+    for(var i=0; i<nodes.length; i++){
+      var j = partner[i];
+      if(j < 0) continue;
+      var key = i < j ? i+'_'+j : j+'_'+i;
+      if(drawnS[key]) continue;
+      drawnS[key] = 1;
+      ctx.moveTo(nodes[i].x, nodes[i].y);
+      ctx.lineTo(nodes[j].x, nodes[j].y);
+    }
+    ctx.stroke();
+  }
   var lastT = 0;
   function pulseStep(dt){
     pulse.t += dt;
@@ -1435,6 +1475,7 @@ runners['sky-home'] = function(canvas, ctx, state){
     });
     pruneChain(now);
     catchNode(now, dpr);
+    ensurePartners();
     var heatOf = heatMap(now);
     var linkNow = LINKP * (0.04 + 0.96*ease*ease);
     var drawn = {};
@@ -1467,6 +1508,7 @@ runners['sky-home'] = function(canvas, ctx, state){
         ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
       }
     }
+    drawString(pk, ease, dpr);
     drawChain(now, dpr);
     nodes.forEach(function(p, idx){
       var near = 0;

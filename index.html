@@ -142,6 +142,11 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
    behind the banner — and slides OUT to its resting place. */
 .orb-moon{right:26px; top:calc(273px + 24vh); width:64px; --from:calc(-24vh - 153px); --to:0px}
 .orb-moon svg{filter:drop-shadow(0 0 14px rgba(255,233,168,.45))}
+/* the PHONE moon lives in the top layer (see the <=760 rules + the
+   measure script): it perches ABOVE the menu and rises from under
+   the gold line, yang-style — the layer moon stays desktop-only */
+.orb-moon-top{display:none}
+.orb-moon-top svg{filter:drop-shadow(0 0 14px rgba(255,233,168,.45))}
 .orb-sun{left:26px; top:calc(273px + 24vh); width:72px; --from:70vh; --to:0px}
 .orb-sun svg{filter:drop-shadow(0 0 16px rgba(240,183,63,.55))}
 .orb-sun .rays{transform-origin:50px 50px; animation:sunSpin 26s linear infinite}
@@ -176,7 +181,15 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
   .slot-yin{left:2px; right:auto; width:68px}
   .orb-yang{width:32px; left:18px; top:3px; --from:101px}
   .orb-yin{width:32px; left:18px; top:63px; --from:-101px}
-  .orb-moon{width:44px; right:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:calc(-18vh - 110px)}
+  /* MOON MOVES UP (his 2026-10-30 21:14 call): the old phone moon
+     dropped in below the header and the MENU TAB covered it mid-dance.
+     Now the layer moon hides on phones and the top-layer moon takes
+     its place: perched above the menu (its top is measured onto the
+     header by the script at the end of body), entering by RISING from
+     under the gold line — the nav itself is the curtain it hides
+     behind at the start, exactly like yang's slot trick. */
+  .orb-moon{display:none}
+  .orb-moon-top{display:block; right:16px; width:44px; top:150px; --from:58px; --to:0px}
   .orb-sun{width:48px; left:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:55vh}
 }
 .more-menu{
@@ -678,6 +691,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 <div class="orbit-top" aria-hidden="true">
   <div class="slot slot-yang"><div class="orb orb-yang"><svg viewBox="0 0 100 100"><path d="M50,5 A45,45 0 0 1 50,95 A22.5,22.5 0 0 1 50,50 A22.5,22.5 0 0 0 50,5 Z" fill="#ffd166" stroke="#fff3c4" stroke-width="3"/><circle cx="50" cy="72.5" r="7" fill="#291b44"/></svg></div></div>
   <div class="slot slot-yin"><div class="orb orb-yin"><svg viewBox="0 0 100 100"><path transform="rotate(180 50 50)" d="M50,5 A45,45 0 0 1 50,95 A22.5,22.5 0 0 1 50,50 A22.5,22.5 0 0 0 50,5 Z" fill="#3a2560" stroke="#f0b73f" stroke-width="4"/><circle cx="50" cy="27.5" r="7" fill="#ffd166"/></svg></div></div>
+  <div class="orb orb-moon-top"><svg viewBox="0 0 100 100"><path d="M66,6 A46,46 0 1 0 66,94 A37,37 0 1 1 66,6 Z" fill="#ffe9a8"/></svg></div>
 </div>
 
 <main>
@@ -2588,6 +2602,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     var slot = document.querySelector('.slot-yang');
     var orb = document.querySelector('.orb-yang');
     var hdr = document.querySelector('.site-header');
+    var moon = document.querySelector('.orb-moon-top');
     if(!slot || !orb || !hdr) return;
     if(window.innerWidth <= 760){
       var dist = hdr.getBoundingClientRect().bottom - slot.getBoundingClientRect().top;
@@ -2595,9 +2610,18 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
         slot.style.height = dist + 'px';
         orb.style.setProperty('--from', (dist + 8) + 'px');
       }
+      /* the phone moon's perch: its bottom edge floats 10px above the
+         gold line (header bottom), on the right side, above the menu */
+      if(moon){
+        var mr = moon.getBoundingClientRect();
+        var curTop = parseFloat(moon.style.top) || 150;
+        var targetBottom = hdr.getBoundingClientRect().bottom - 10;
+        moon.style.top = (curTop + (targetBottom - mr.bottom)) + 'px';
+      }
     } else {
       slot.style.height = '';
       orb.style.removeProperty('--from');
+      if(moon) moon.style.top = '';
     }
   }
   fit();

@@ -3401,20 +3401,20 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
           if(br.height > 10) meetTop = (br.top - slotTop) + (br.height / 2) - 16;
         }
         if(meetTop === null) meetTop = (dist / 2) - 16;
-        orb.style.top = meetTop + 'px';
+        if(!orb.dataset.yyMoved) orb.style.top = meetTop + 'px';
         orb.style.setProperty('--from', '56px');
         if(orbYin){
-          orbYin.style.top = meetTop + 'px';
+          if(!orbYin.dataset.yyMoved) orbYin.style.top = meetTop + 'px';
           orbYin.style.setProperty('--from', '-56px');
         }
       }
     } else {
       slot.style.height = '';
       orb.style.removeProperty('--from');
-      orb.style.top = '';
+      if(!orb.dataset.yyMoved) orb.style.top = '';
       if(slotYin && orbYin){
         slotYin.style.height = '';
-        orbYin.style.top = '';
+        if(!orbYin.dataset.yyMoved) orbYin.style.top = '';
         orbYin.style.removeProperty('--from');
       }
     }
@@ -3523,30 +3523,58 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   window.addEventListener('resize', seaDepthTick);
   if(seaFeed && window.MutationObserver) new MutationObserver(seaDepthTick).observe(seaFeed, {childList:true});
 
-  /* ---------- 4 · LIVING TEXT (his 2026-10-31 finale): the hearth grew
-     hands. Every text box on the site is split into letters; drag a
-     cursor or a finger across the words and each letter catches gold
-     as you pass it, then cools. Click a box, or scroll it into view,
+  /* ---------- 4 · LIVING TEXT (his 2026-10-31 finale, made LITERAL at
+     his word the same day): EVERY letter on EVERY page is alive. Glide
+     a cursor or a finger across any words — posts, nav, buttons,
+     labels, the lot — and each letter catches the hearth-gold as you
+     pass it, then cools. Click a text box, or scroll it into view,
      and the whole text cascades alight, fading after 6 seconds.
-     Nothing is one-time — touch it again and it comes back. The Hub
-     About hearth runs on the same letters now. ---------- */
+     Nothing is one-time: touch it again and it comes back. ---------- */
   var LIVING_SEL = '.post-body, .about-card p, .home-note, .join-copy, .big, .hero-line, .modal-sub, .feed-empty';
-  function splitLetters(el){
-    if(!el || el._split || el.children.length || !el.textContent.trim()) return;
-    if(el.closest('header, nav, footer, form, button')) return;
-    var text = el.textContent;
-    if(text.length > 1500) return;
-    el._split = true; el.dataset.living = '1'; el.textContent = '';
+  var LIT_SKIP = 'script, style, noscript, textarea, input, select, svg, canvas, [contenteditable], .hl-w';
+  function litSkip(node){
+    var p = node.parentNode;
+    if(!p || typeof p.closest !== 'function') return true;
+    return !!p.closest(LIT_SKIP);
+  }
+  function splitTextNode(node){
+    if(litSkip(node)) return;
+    var parent = node.parentNode;
+    var text = node.nodeValue;
+    if(!text || !text.trim()) return;
+    var frag = document.createDocumentFragment();
     text.split(/(\s+)/).forEach(function(part){
       if(!part) return;
-      if(/^\s+$/.test(part)){ el.appendChild(document.createTextNode(' ')); return; }
+      if(/^\s+$/.test(part)){ frag.appendChild(document.createTextNode(part)); return; }
       var w = document.createElement('span'); w.className = 'hl-w';
-      part.split('').forEach(function(ch){
-        var c = document.createElement('span'); c.className = 'hl-ch'; c.textContent = ch;
+      for(var i = 0; i < part.length; i++){
+        var c = document.createElement('span'); c.className = 'hl-ch'; c.textContent = part[i];
         w.appendChild(c);
-      });
-      el.appendChild(w);
+      }
+      frag.appendChild(w);
     });
+    /* a bare text node inside a flex/grid row counts as ONE item —
+       wrap the whole run in one span so the row keeps its shape */
+    var disp = '';
+    try{ disp = getComputedStyle(parent).display; }catch(e){}
+    if(/flex|grid/.test(disp)){
+      var wrap = document.createElement('span'); wrap.className = 'hl-wrap';
+      wrap.appendChild(frag); parent.replaceChild(wrap, node);
+    } else {
+      parent.replaceChild(frag, node);
+    }
+  }
+  function splitDeep(root){
+    if(!root || !root.querySelector) return;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(n){
+        if(!n.nodeValue || !n.nodeValue.trim() || litSkip(n)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var nodes = [];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(splitTextNode);
   }
   function lightLetter(ch, hold){
     if(!ch) return;
@@ -3556,7 +3584,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   }
   function cascadeText(el, hold){
     if(!el) return;
-    splitLetters(el);
+    if(!el.querySelector('.hl-ch')) splitDeep(el);
     el.querySelectorAll('.hl-ch').forEach(function(ch, i){
       setTimeout(function(){ lightLetter(ch, hold || 6000); }, Math.min(i * 12, 900));
     });
@@ -3584,15 +3612,30 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   }, {threshold: 0.15}) : null;
   function livingWatch(root){
     (root || document).querySelectorAll(LIVING_SEL).forEach(function(el){
-      splitLetters(el);
-      if(livingIO && el._split && !el._livWatched){ el._livWatched = true; livingIO.observe(el); }
+      el.dataset.living = '1';
+      if(livingIO && !el._livWatched){ el._livWatched = true; livingIO.observe(el); }
     });
   }
-  ['sea-feed','hub-feed'].forEach(function(id){
-    var box = document.getElementById(id);
-    if(box && window.MutationObserver) new MutationObserver(function(){ livingWatch(box); }).observe(box, {childList:true, subtree:true});
-  });
+  /* the literal pass: split the whole page now, then keep watch —
+     anything the site writes later (posts, toasts, modals, counters)
+     gets its letters the moment it lands */
+  splitDeep(document.body);
   livingWatch(document);
+  var litQueue = [], litT = null;
+  if(window.MutationObserver){
+    new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        m.addedNodes.forEach(function(n){ if(n.nodeType === 1) litQueue.push(n); });
+      });
+      if(litT) return;
+      litT = setTimeout(function(){
+        litT = null;
+        var q = litQueue; litQueue = [];
+        q.forEach(function(n){ if(n.isConnected) splitDeep(n); });
+        livingWatch(document);
+      }, 180);
+    }).observe(document.body, {childList:true, subtree:true});
+  }
   /* the original hearth: the Hub About text cascades when its room opens */
   function hearthArm(){
     document.querySelectorAll('#hubpanel-about .about-card p').forEach(function(p){ cascadeText(p, 6000); });
@@ -3921,6 +3964,63 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     if(raf) cancelAnimationFrame(raf);
     endDrag();
   };
+})();
+</script>
+<script>
+/* ================= THE VINYL CEREMONY (his 2026-10-31 call) =================
+   "take the broken world vinyl logo in the girls headphones, pin that
+   point center" — measured off banner.png itself: the vinyl's center
+   sits at 59.61% across and 45.19% down the banner, and the disc is
+   8.3% of the banner's width across. The two emblems are the two
+   HALVES of one taijitu (the same path — yin is yang rotated 180°),
+   so the ceremony lifts them out of their clipping slots and flies
+   them BOTH to that pinned point, fading in over 12 seconds on the
+   way, growing until together they enclose the disc — fully opaque
+   the moment they land — holds 6 seconds, then fades out completely.
+   Plays once per page load. Sun and moon are not touched. */
+(function(){
+  'use strict';
+  var layer = document.querySelector('.orbit-top');
+  var img = document.querySelector('.header-banner img');
+  if(!layer || !img) return;
+  var VX = 0.5961, VY = 0.4519, VD = 0.083;
+  function fly(orb, tx, ty, td){
+    var r = orb.getBoundingClientRect();
+    var lr = layer.getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    layer.appendChild(orb);
+    orb.dataset.yyMoved = '1';
+    orb.style.left = (r.left - lr.left) + 'px';
+    orb.style.top = (r.top - lr.top) + 'px';
+    orb.style.width = r.width + 'px';
+    orb.style.animation = 'none';
+    orb.style.opacity = '0';
+    var dx = tx - cx, dy = ty - cy, s = td / r.width;
+    var land = 'translate(' + dx + 'px,' + dy + 'px) scale(' + s + ')';
+    orb.animate([
+      {transform: 'translate(0px,0px) scale(1)', opacity: 0, easing: 'ease-in-out'},
+      {transform: land, opacity: 1, offset: 12 / 21, easing: 'linear'},
+      {transform: land, opacity: 1, offset: 18 / 21, easing: 'ease-in-out'},
+      {transform: land, opacity: 0}
+    ], {duration: 21000, fill: 'forwards'});
+  }
+  function run(){
+    var yang = document.querySelector('.orb-yang');
+    var yin = document.querySelector('.orb-yin');
+    if(!yang || !yin) return true;
+    if(yang.dataset.yyMoved) return true;
+    if(!yang.animate) return true;   /* no WAAPI: the slots' own fade stands */
+    var ir = img.getBoundingClientRect();
+    if(ir.width < 40) return false;  /* banner not laid out yet — retry */
+    var tx = ir.left + VX * ir.width, ty = ir.top + VY * ir.height, td = VD * ir.width;
+    fly(yang, tx, ty, td);
+    fly(yin, tx, ty, td);
+    return true;
+  }
+  if(!run()){
+    window.addEventListener('load', run);
+    setTimeout(run, 1200);
+  }
 })();
 </script>
 </body>

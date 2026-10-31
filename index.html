@@ -140,12 +140,19 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
 /* Emergence geometry (his 03:48 fix): every body starts HIDDEN — moon
    tucked behind the header, sun off-screen at the bottom, yin/yang
    behind the banner — and slides OUT to its resting place. */
-.orb-moon{right:26px; top:calc(273px + 24vh); width:64px; --from:calc(-24vh - 153px); --to:0px}
+.orb-moon{display:none}
 .orb-moon svg{filter:drop-shadow(0 0 14px rgba(255,233,168,.45))}
-/* the PHONE moon lives in the top layer (see the <=760 rules + the
-   measure script): it perches ABOVE the menu and rises from under
-   the gold line, yang-style — the layer moon stays desktop-only */
-.orb-moon-top{display:none}
+/* THE MOON, ONE FUNCTION ON EVERY SCREEN (his 2026-10-30 21:19 law:
+   same function + animation everywhere, only the LAYOUT matches its
+   version — mobile coded for mobile, PC for PC). The old layer moon
+   (dropped in under the header, got covered by the menu) is retired
+   everywhere. The moon now lives in the top layer on desktop too:
+   perched at the header's bottom-right, its bottom edge 12px above
+   the gold line, entering yang-style — rising from behind the menu,
+   up from under the line. Desktop header is a fixed 220px
+   (44 pad + 132 row + 44 pad), so the perch is pure CSS here;
+   phones get the measured version in the <=760 rules + script. */
+.orb-moon-top{display:block; right:26px; top:144px; width:64px; --from:132px; --to:0px}
 .orb-moon-top svg{filter:drop-shadow(0 0 14px rgba(255,233,168,.45))}
 .orb-sun{left:26px; top:calc(273px + 24vh); width:72px; --from:70vh; --to:0px}
 .orb-sun svg{filter:drop-shadow(0 0 16px rgba(240,183,63,.55))}

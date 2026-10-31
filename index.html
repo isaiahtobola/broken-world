@@ -1196,9 +1196,11 @@ document.querySelectorAll('.reactions button').forEach(function(b){
 });
 
 /* ---------- pointer tracking (shared) ---------- */
-var pointer = {x:-9999, y:-9999, inside:false};
+var pointer = {x:-9999, y:-9999, inside:false, down:false};
 window.addEventListener('pointermove', function(e){ pointer.x=e.clientX; pointer.y=e.clientY; pointer.inside=true; });
-window.addEventListener('pointerdown', function(e){ pointer.x=e.clientX; pointer.y=e.clientY; pointer.inside=true; });
+window.addEventListener('pointerdown', function(e){ pointer.x=e.clientX; pointer.y=e.clientY; pointer.inside=true; pointer.down=true; });
+window.addEventListener('pointerup', function(){ pointer.down=false; });
+window.addEventListener('pointercancel', function(){ pointer.down=false; });
 window.addEventListener('pointerleave', function(){ pointer.inside=false; });
 
 /* ============================================================
@@ -1273,10 +1275,11 @@ runners['sky-home'] = function(canvas, ctx, state){
       var wob = Math.sin(now/2400 + p.ph)*6*dpr;
       var tx = p.hx + p.wx*(1-ease) + wob, ty = p.hy + p.wy*(1-ease) + Math.cos(now/2900 + p.ph)*6*dpr;
       if(pointer.inside){
-        var dx = mx-tx, dy = my-ty, d = Math.hypot(dx,dy), R = 260*dpr;
-        if(d < R && d > 0.01){ var pull = (1-d/R)*26*dpr; tx += dx/d*pull; ty += dy/d*pull; }
+        var dx = mx-tx, dy = my-ty, d = Math.hypot(dx,dy), R = (pointer.down? 350:260)*dpr;
+        if(d < R && d > 0.01){ var pull = (1-d/R)*(pointer.down? 95:26)*dpr; tx += dx/d*pull; ty += dy/d*pull; }
       }
-      p.x += (tx-p.x)*0.06; p.y += (ty-p.y)*0.06;
+      var ez = pointer.down? 0.16 : 0.06;
+      p.x += (tx-p.x)*ez; p.y += (ty-p.y)*ez;
     });
     var linkNow = LINKP * (0.55 + 0.45*ease);
     for(var i=0;i<nodes.length;i++){

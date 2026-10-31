@@ -2780,6 +2780,35 @@ runners['eq-canvas'] = function(canvas, ctx, state){
   canvas.parentElement.addEventListener('pointerdown', function(){ poke(); });
   canvas.parentElement.addEventListener('pointerleave', function(){ mouseNX = -1; hoverBar = -1; lastX = -1; });
   var pulses = new Array(N).fill(0);
+  /* THE ORGANIC DIP (his 2026-10-31 02:20 call): the valley ceiling
+     used to be one smooth power curve, so the bars traced a perfect
+     monotone STAIRCASE up both sides — too EQ, not musical enough.
+     Now the ceiling is terrain: two octaves of value noise (random
+     control points, smoothstep-blended) give every bar its own
+     roughness — a jagged coastline instead of stairs — plus a slow
+     per-bar drift so the shoreline itself breathes over time, and
+     a per-bar musical envelope so zones of the field swell and fade
+     at their own slow rates, like instruments taking turns. A new
+     coastline is dealt on every page load. */
+  function vnoise(step, amp){
+    var cps = [], out = [];
+    for(var i=0; i<N+step; i+=step) cps.push((Math.random()*2 - 1) * amp);
+    cps.push((Math.random()*2 - 1) * amp);
+    for(var k=0; k<N; k++){
+      var pos = k/step, i0 = Math.floor(pos), f = pos - i0;
+      var u = f*f*(3 - 2*f);
+      out.push(cps[i0]*(1-u) + cps[Math.min(i0+1, cps.length-1)]*u);
+    }
+    return out;
+  }
+  var rough1 = vnoise(6, 1), rough2 = vnoise(2, 0.55);
+  var capRough = [], driftPh = [], envPh = [], envPh2 = [];
+  for(var q=0; q<N; q++){
+    capRough.push(rough1[q] + rough2[q]);
+    driftPh.push(Math.random()*6.283);
+    envPh.push(Math.random()*6.283);
+    envPh2.push(Math.random()*6.283);
+  }
   /* the library panel pokes the wall through here (fully-interactive File Share) */
   window.__eqRipple = function(nx){
     poke();
@@ -2884,15 +2913,33 @@ runners['eq-canvas'] = function(canvas, ctx, state){
       });
       var pulseGlow = pulses[k] * (0.55 + 0.45*Math.sin(now/130));
       animH += pulses[k]*0.13;
+      /* the musical envelope: each bar's zone swells and fades at its
+         own slow rate — instruments taking turns, not a meter bank */
+      var env = 0.78 + 0.22 * Math.sin(t*0.35 + envPh[k]) * Math.sin(t*0.13 + envPh2[k]);
+      animH = 0.31 + (animH - 0.31) * env;
       /* touched, the whole field RISES up off the line (+0.12 lift) */
       var hgt = stillH + (animH - stillH) * energy + 0.12 * energy;
-      /* the center valley (his law): a ceiling that dips lower and
-         lower toward the middle, so center bars can never grow up
-         into the molten circle. It's a cap, not a scale — the level
-         still line (0.22) sits under the center cap (0.30) and stays
-         perfectly flat. */
-      var capH = 0.30 + 0.67 * Math.pow(Math.abs(2*nx - 1), 1.15);
-      if(hgt > capH) hgt = capH;
+      /* the valley, gone organic (his 2026-10-31 law): the ceiling is
+         TERRAIN now — the old power curve, roughened by per-bar noise
+         (quiet near the center where the circle hangs, wilder toward
+         the edges) and breathing on a slow drift. And the ceiling is
+         a SOFT SHORE, not a shelf: only the rise above the rest line
+         is capped, through an exponential approach, so bars press up
+         against the coastline and bunch like water instead of
+         stopping dead at a meter line. The rest line itself (0.22)
+         is never touched — it stays perfectly flat in sleep. */
+      var ax = Math.abs(2*nx - 1);
+      var capH = 0.30 + 0.67 * Math.pow(ax, 1.15)
+        + capRough[k] * (0.030 + 0.105*ax)
+        + 0.018 * Math.sin(now*0.00019 + driftPh[k]);
+      capH = Math.max(0.28, Math.min(0.97, capH));
+      var riseCap = Math.max(0.01, capH - stillH);
+      var rise = hgt - stillH;
+      if(rise > 0){
+        var knee = riseCap * 0.62;
+        if(rise > knee) rise = knee + riseCap * 0.38 * (1 - Math.exp(-(rise - knee) / (riseCap * 0.38)));
+        hgt = stillH + rise;
+      }
       hgt = Math.max(0.05, Math.min(0.97, hgt));
       var bh = hgt * H * 0.86;
       var x = k*bw + bw*0.16, wdt = bw*0.68;

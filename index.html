@@ -1329,6 +1329,58 @@ runners['sky-home'] = function(canvas, ctx, state){
      settles back. Rests run 7–16s; rises/holds/falls are randomized —
      sometimes slow, sometimes fast. */
   var pulse = {k:0, phase:'rest', t:0, dur:7 + Math.random()*9};
+  /* THE SILK TRAIL (his 2026-10-31 02:29 add — the ONLY change to
+     this runner; the breathing web above and below stays exactly as
+     it was). While the visitor drags a finger/cursor through the
+     web, the nearest node catches the light, then the next, then
+     the next — a chain of lit nodes in the order the hand chose
+     them. Segments shade bright-to-dark by age, so the path trails
+     off behind the hand. The chain stores node INDEXES, never
+     positions — the threads follow the nodes as they drift, which
+     is what makes it silk instead of a frozen line. Small bits:
+     a catcher, a pruner, a drawer. */
+  var chain = [];            /* [{i: node index, at: ms}] in touch order */
+  var CHAIN_MS = 3400;       /* a caught node stays lit ~3.4s, fading */
+  var CATCH_R = 120;         /* css px — how close the hand must pass */
+  function pruneChain(now){
+    while(chain.length && now - chain[0].at > CHAIN_MS) chain.shift();
+    if(chain.length > 26) chain.splice(0, chain.length - 26);
+  }
+  function chainHas(i){
+    for(var c=0; c<chain.length; c++) if(chain[c].i === i) return true;
+    return false;
+  }
+  function catchNode(now, dpr){
+    if(!pointer.inside || !nodes.length) return;
+    var rect = canvas.getBoundingClientRect();
+    var px = (pointer.x - rect.left) * dpr, py = (pointer.y - rect.top) * dpr;
+    var best = -1, bestD = CATCH_R * dpr;
+    for(var i=0; i<nodes.length; i++){
+      var d = Math.hypot(nodes[i].x - px, nodes[i].y - py);
+      if(d < bestD){ bestD = d; best = i; }
+    }
+    if(best < 0) return;
+    var last = chain[chain.length - 1];
+    if(last && last.i === best){ last.at = now; return; }
+    if(chainHas(best)) return;
+    chain.push({i: best, at: now});
+  }
+  function drawChain(now, dpr){
+    for(var c=1; c<chain.length; c++){
+      var A = nodes[chain[c-1].i], B = nodes[chain[c].i];
+      if(!A || !B) continue;
+      var heat = 1 - (now - chain[c].at) / CHAIN_MS;
+      if(heat <= 0) continue;
+      ctx.strokeStyle = 'rgba(255,' + Math.round(150 + 59*heat) + ',102,' + (0.85*heat).toFixed(3) + ')';
+      ctx.lineWidth = (0.8 + 2.2*heat) * dpr;
+      ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+    }
+  }
+  function heatMap(now){
+    var m = {};
+    for(var c=0; c<chain.length; c++) m[chain[c].i] = 1 - (now - chain[c].at) / CHAIN_MS;
+    return m;
+  }
   var lastT = 0;
   function pulseStep(dt){
     pulse.t += dt;
@@ -1381,6 +1433,9 @@ runners['sky-home'] = function(canvas, ctx, state){
       var ez = 0.06;
       p.x += (tx-p.x)*ez; p.y += (ty-p.y)*ez;
     });
+    pruneChain(now);
+    catchNode(now, dpr);
+    var heatOf = heatMap(now);
     var linkNow = LINKP * (0.04 + 0.96*ease*ease);
     var drawn = {};
     for(var i=0;i<nodes.length;i++){
@@ -1412,13 +1467,15 @@ runners['sky-home'] = function(canvas, ctx, state){
         ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
       }
     }
-    nodes.forEach(function(p){
+    drawChain(now, dpr);
+    nodes.forEach(function(p, idx){
       var near = 0;
       if(pointer.inside){ var cd = Math.hypot(p.x-mx, p.y-my); near = Math.max(0, 1 - cd/((pointer.down? 330:240)*dpr)); }
+      var heat = heatOf[idx] || 0;
       var tw = 0.65 + 0.35*Math.sin(now/700 + p.ph*3);
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r*(1+near*(pointer.down? 2.3:1.6)), 0, Math.PI*2);
-      ctx.fillStyle = 'rgba(255,209,102,'+(0.35+0.45*glow*tw+near*0.4)+')';
-      ctx.shadowColor = 'rgba(240,183,63,.9)'; ctx.shadowBlur = (6+near*(pointer.down? 28:16))*dpr;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r*(1+near*(pointer.down? 2.3:1.6)+heat*0.9), 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,209,102,'+Math.min(1, 0.35+0.45*glow*tw+near*0.4+heat*0.45)+')';
+      ctx.shadowColor = 'rgba(240,183,63,.9)'; ctx.shadowBlur = (6+near*(pointer.down? 28:16)+heat*22)*dpr;
       ctx.fill(); ctx.shadowBlur = 0;
     });
     state.raf = requestAnimationFrame(frame);

@@ -25,6 +25,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{
+  position:relative;
   background:var(--bg); color:var(--cream); font-family:var(--serif);
   min-height:100vh; min-height:100svh; overflow-x:hidden; scrollbar-gutter:stable;
   background-image:radial-gradient(1200px 600px at 50% -10%, rgba(109,79,161,.18), transparent 60%);
@@ -790,14 +791,19 @@ body[data-theme="xmas"] .orb-sun svg .rays{stroke:#d93636}
 #holiday-btn .h-sizer{visibility:hidden}
 #holiday-btn .h-label{text-align:center; white-space:nowrap}
 
-/* ---- seasonal decoration layers (real-life colors, his spec) ---- */
-.deco{position:fixed; inset:0; pointer-events:none; z-index:1; display:none}
+/* ---- seasonal decoration layers (real-life colors, his spec) ----
+   BAKED IN (his 2026-10-31 order): position:absolute — the designs are
+   part of the page background and SCROLL with it, and they lay on the
+   HOME page only (gates below carry [data-current="home"], the same
+   pattern as the frozen orbit layers). Layer still z-1: above the sky
+   canvases (z-0), beneath all content (z-2+). */
+.deco{position:absolute; inset:0; pointer-events:none; z-index:1; display:none}
 /* BACKGROUND LAYER (his 2026-10-31 call): the holiday icons live ON
    the background now — above the web strings (layer 0), beneath
    every box, menu and card (layer 2+) — still fixed to the screen,
    never scrolling, so they can never clash with the menus. */
-body[data-theme="halloween"] .deco-halloween{display:block}
-body[data-theme="xmas"] .deco-xmas{display:block}
+body[data-theme="halloween"][data-current="home"] .deco-halloween{display:block}
+body[data-theme="xmas"][data-current="home"] .deco-xmas{display:block}
 .deco svg{position:absolute; overflow:visible}
 .deco .d-web{top:300px; right:0; width:215px; opacity:1}
 .deco .d-pumpkin{bottom:14px; left:14px; width:104px}

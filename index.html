@@ -1496,7 +1496,7 @@ function bwRoute(a){
     if(!BW_AN){
       BW_AN = BW_ACTX.createAnalyser();
       BW_AN.fftSize = 512;
-      BW_AN.smoothingTimeConstant = 0.55;
+      BW_AN.smoothingTimeConstant = 0.30;  /* his 2026-10-31 tune: 0.55 smeared claps/lyrics into mush */
       BW_FREQ = new Uint8Array(BW_AN.frequencyBinCount);
       BW_AN.connect(BW_ACTX.destination);
     }
@@ -3263,6 +3263,10 @@ runners['lava-canvas'] = function(canvas, ctx, state){
   canvas.parentElement.addEventListener('pointerdown', poke);
   /* the library pokes the circle through here (row clicks, uploads) */
   window.__lavaKick = function(){ poke(); };
+  /* SPIKE TUNE (his 2026-10-31 call): the rim's high-frequency points
+     swing FAR harder than the bass end — lyrics and claps read as
+     spikes, not mush — while the bass end keeps its liquid swell */
+  function rimGain(k){ return 0.30 + 0.65*(k/96); }
   function wobAt(th, lt, sw){
     return 1
       + 0.075*Math.sin(3*th + lt*0.7)
@@ -3285,7 +3289,7 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     ctx.beginPath();
     for(var i=0; i<=96; i++){
       var th = (i/96) * Math.PI * 2;
-      var rr = R * pump * (1 + 0.13*sw) * wobAt(th, lt, sw) * (1 + 0.34*spec[i]*aEnv);
+      var rr = R * pump * (1 + 0.13*sw) * wobAt(th, lt, sw) * (1 + rimGain(i)*spec[i]*aEnv);
       var x = cx + Math.cos(th)*rr, y = cy + Math.sin(th)*rr;
       if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
@@ -3305,7 +3309,7 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     ctx.beginPath();
     for(var j=0; j<=96; j++){
       var th2 = (j/96) * Math.PI * 2;
-      var rr2 = R * pump * (1 + 0.13*sw) * wobAt(th2, lt, sw) * (1 + 0.34*spec[j]*aEnv);
+      var rr2 = R * pump * (1 + 0.13*sw) * wobAt(th2, lt, sw) * (1 + rimGain(j)*spec[j]*aEnv);
       var x2 = cx + Math.cos(th2)*rr2, y2 = cy + Math.sin(th2)*rr2;
       if(j === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
     }
@@ -3325,13 +3329,13 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     if(L && L.playing){
       aEnv += (1 - aEnv) * 0.30;
       bassNow += (L.bass - bassNow) * 0.45;
-      highNow += (L.high - highNow) * 0.45;
+      highNow += (L.high - highNow) * 0.6;
       var bins = L.bins, nb = bins.length;
       for(var i=0;i<=96;i++){
-        var bi = Math.floor((i/96) * nb * 0.72);
+        var bi = Math.floor((i/96) * nb * 0.85);
         var tgt = (bins[bi] || 0) / 255;
         var cur = spec[i];
-        spec[i] = cur + (tgt - cur) * (tgt > cur ? 0.55 : 0.14);
+        spec[i] = cur + (tgt - cur) * (tgt > cur ? 0.8 : 0.3);  /* snap out, fall fast = spikes */
       }
     } else {
       aEnv *= 0.94; bassNow *= 0.92; highNow *= 0.92;

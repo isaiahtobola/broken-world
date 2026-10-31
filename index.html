@@ -163,9 +163,19 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
   .header-side .tagline{display:none}
   .orbit-top{height:104px}
   .slot{height:98px}
-  .slot-yang{left:4px} .slot-yin{right:4px}
-  .orb-yang{width:32px; left:5px; top:3px; --from:101px}
-  .orb-yin{width:32px; left:5px; top:63px; --from:-101px}
+  /* THE PHONE PILE-UP FIX (his 2026-10-30 20:56 catch, diagnosed same
+     night): the old phone rule set only left:4px on yang / right:4px on
+     yin, but the <=1180px rule's right:10px / left:10px were STILL
+     active — with left+right+width all set, the browser ignores right,
+     so BOTH slots landed on the LEFT, 6px apart, emblems stacked.
+     Now each slot's far-side property is explicitly cleared: yin owns
+     the LEFT, yang owns the RIGHT. Slots widened to 68px with the 32px
+     emblem centered (left:18px) so the drop-shadow glow has ~18px of
+     room inside the clip instead of being sliced at the slot edge. */
+  .slot-yang{left:auto; right:2px; width:68px}
+  .slot-yin{left:2px; right:auto; width:68px}
+  .orb-yang{width:32px; left:18px; top:3px; --from:101px}
+  .orb-yin{width:32px; left:18px; top:63px; --from:-101px}
   .orb-moon{width:44px; right:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:calc(-18vh - 110px)}
   .orb-sun{width:48px; left:10px; top:calc(196px + 18vh); top:calc(196px + 18svh); --from:55vh}
 }

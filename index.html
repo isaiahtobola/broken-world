@@ -125,8 +125,12 @@ body[data-current="home"] .orbit-top{opacity:1; visibility:visible}
   pointer-events:none; z-index:28; opacity:0; visibility:hidden; transition:opacity .8s;
 }
 .slot{position:absolute; overflow:hidden}
-.slot-yang{left:calc(50% + 385px); top:0; width:56px; height:220px}
-.slot-yin{right:calc(50% + 385px); top:0; width:56px; height:220px}
+.slot-yang{left:calc(50% + 450px); top:0; width:56px; height:220px}
+.slot-yin{right:calc(50% + 450px); top:0; width:56px; height:220px}
+@media (max-width:1180px){
+  .slot-yang{left:auto; right:10px}
+  .slot-yin{right:auto; left:10px}
+}
 .orb{position:absolute; animation:orbitTick 15s ease-in-out 1 both; will-change:transform}
 @keyframes orbitTick{
   from{transform:translateY(var(--from))}
@@ -683,27 +687,6 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
       <a href="https://www.youtube.com/@BWYoungBo" target="_blank" rel="noopener"><b>YouTube</b> · @BWYoungBo</a>
       <a href="https://www.tiktok.com/@bwyoungbo.t" target="_blank" rel="noopener"><b>TikTok</b> · @bwyoungbo.t</a>
     </div>
-    <div class="video-row">
-      <a class="media-card" href="https://www.youtube.com/@BWYoungBo" target="_blank" rel="noopener">
-        <div class="glyph">♪</div>
-        <h3>Glad You Came — (unreleased)</h3>
-        <span class="chip">Audio · BW Young Bo</span>
-        <div class="player-bar">
-          <div class="track"><div class="fill" style="width:0%"></div></div>
-          <div class="times"><span>00:00</span><span>01:31</span></div>
-        </div>
-      </a>
-      <a class="media-card" href="https://www.youtube.com/@BWYoungBo" target="_blank" rel="noopener">
-        <div class="glyph">▶</div>
-        <h3>FORKY &amp; FROM? WTF! Escape The Backrooms with FarmerTodd - 1</h3>
-        <span class="chip">Latest video</span>
-        <div class="player-bar">
-          <div class="track"><div class="fill" style="width:12%"></div></div>
-          <div class="times"><span>Watch on YouTube</span><span>↗</span></div>
-        </div>
-      </a>
-      <div class="spectrum-panel" aria-hidden="true"><span>Spectrum · plum / violet / gold</span></div>
-    </div>
     <p class="home-note">Move your cursor — the sky leans in</p>
   </div>
 </section>
@@ -768,7 +751,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
           <h4>Suggested Groups</h4>
           <div class="group-line">
             <div class="avatar">BW</div>
-            <div class="meta"><b>BW Hub</b><span>Public · 25 members</span></div>
+            <div class="meta"><b>BW Hub</b><span>Public · brand new</span></div>
             <button class="join-btn" id="hub-join-btn">Join</button>
           </div>
         </div>
@@ -782,14 +765,10 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   <div class="hub-inner wrap">
     <div class="page-head">
       <h1>BW Hub</h1>
-      <p>Public · 25 members · the front porch of Broken World</p>
+      <p>Public · brand new · the front porch of Broken World</p>
     </div>
     <div class="members-strip">
-      <span class="member-chip"><span class="avatar">B</span> bwyoungbo <span class="role">Owner</span></span>
-      <span class="member-chip"><span class="avatar">S</span> shay</span>
-      <span class="member-chip"><span class="avatar">T</span> terrence</span>
-      <span class="member-chip"><span class="avatar">F</span> farmertodd</span>
-      <span class="member-chip more">+ 21 more</span>
+      <span class="member-chip more">✦ No members yet — be the first through the door</span>
     </div>
     <div class="hub-tabs" role="tablist" aria-label="BW Hub sections">
       <button class="hub-tab-btn active" data-hubtab="discussion">Discussion</button>
@@ -810,43 +789,18 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
     <p class="feed-empty" id="hub-empty">No posts yet — yours will be the first thing on the porch.</p>
     </div><!-- /hubpanel-discussion -->
     <div class="hub-panel" id="hubpanel-media">
-      <div class="media-grid">
-        <div class="mtile">▶<span class="fname">speed_anger_1.mp4</span></div>
-        <div class="mtile">▶<span class="fname">Bill Nye.mp4</span></div>
-        <div class="mtile">▶<span class="fname">Terraria Master Mode [YouTube]</span></div>
-        <div class="mtile">▶<span class="fname">IMG_20260920_100101_598.mov</span></div>
-        <div class="mtile">♪<span>Audio</span></div>
-        <div class="mtile">▦<span>Photo</span></div>
-        <div class="mtile">▶<span>Video</span></div>
-        <div class="mtile">▦<span>Photo</span></div>
-      </div>
+      <p class="feed-empty">No media yet — the gallery walls are bare, swept, and ready for the first pieces.</p>
     </div><!-- /hubpanel-media -->
     <div class="hub-panel" id="hubpanel-files">
-      <div class="file-row">
-        <span class="file-ico">♪</span>
-        <div class="file-meta"><b>song4 pop ep..wav</b><span>Audio · shared by bwyoungbo</span></div>
-        <button class="dl-btn">⬇ Download · 26.88 MB</button>
-      </div>
-      <div class="file-row">
-        <span class="file-ico">▦</span>
-        <div class="file-meta"><b>puppet-jumpscare.gif</b><span>GIF · shared by bwyoungbo</span></div>
-        <button class="dl-btn">⬇ Download · 337.1 KB</button>
-      </div>
+      <p class="feed-empty">No files yet — members will hang files here. The live two-way vault lives in File Share.</p>
     </div><!-- /hubpanel-files -->
     <div class="hub-panel" id="hubpanel-members">
-      <div class="member-row"><span class="avatar">B</span> bwyoungbo <span class="role">Owner</span></div>
-      <div class="member-row"><span class="avatar">S</span> shay</div>
-      <div class="member-row"><span class="avatar">S</span> Sanjay Kokate</div>
-      <div class="member-row"><span class="avatar">P</span> pandccole</div>
-      <div class="member-row"><span class="avatar">I</span> infinitymarketr</div>
-      <div class="member-row"><span class="avatar">J</span> Janay j. Flora</div>
-      <div class="member-row"><span class="avatar">J</span> Joseph Nik.</div>
-      <p class="members-total">+ 17 more · 25 total</p>
+      <p class="feed-empty">No members yet — join, and your name is the first one on this wall.</p>
     </div><!-- /hubpanel-members -->
     <div class="hub-panel" id="hubpanel-about">
       <div class="about-card">
         <p class="about-lede">Broken World Hub — scroll and post authentically.</p>
-        <p>Public — anyone can view · Created Sep 22, 2025 by isaiah t · Last 30 days: 27 new posts, 4 new members</p>
+        <p>Public — anyone can view · A fresh start, 2026 · The story begins with the first members</p>
       </div>
     </div><!-- /hubpanel-about -->
   </div>

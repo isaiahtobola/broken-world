@@ -1275,13 +1275,13 @@ runners['sky-home'] = function(canvas, ctx, state){
       var wob = Math.sin(now/2400 + p.ph)*6*dpr;
       var tx = p.hx + p.wx*(1-ease) + wob, ty = p.hy + p.wy*(1-ease) + Math.cos(now/2900 + p.ph)*6*dpr;
       if(pointer.inside){
-        var dx = mx-tx, dy = my-ty, d = Math.hypot(dx,dy), R = (pointer.down? 290:260)*dpr;
-        if(d < R && d > 0.01){ var pull = (1-d/R)*(pointer.down? 48:26)*dpr; tx += dx/d*pull; ty += dy/d*pull; }
+        var dx = mx-tx, dy = my-ty, d = Math.hypot(dx,dy), R = 260*dpr;
+        if(d < R && d > 0.01){ var pull = (1-d/R)*26*dpr; tx += dx/d*pull; ty += dy/d*pull; }
       }
-      var ez = pointer.down? 0.10 : 0.06;
+      var ez = 0.06;
       p.x += (tx-p.x)*ez; p.y += (ty-p.y)*ez;
     });
-    var linkNow = LINKP * (0.55 + 0.45*ease) * (pointer.down? 1.12 : 1);
+    var linkNow = LINKP * (0.04 + 0.96*ease*ease);
     for(var i=0;i<nodes.length;i++){
       for(var j=i+1;j<nodes.length;j++){
         var a=nodes[i], b=nodes[j];
@@ -1293,7 +1293,7 @@ runners['sky-home'] = function(canvas, ctx, state){
           if(pointer.inside){
             var cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
             var cd = Math.hypot(cx-mx, cy-my);
-            near = Math.max(0, 1 - cd/(300*dpr));
+            near = Math.max(0, 1 - cd/((pointer.down? 360:300)*dpr));
           }
           var alpha = pr * (0.10 + glow*0.5) * (0.55 + 0.45*pulse) + near*0.45*pr;
           var yell = Math.min(1, pulse*0.6 + near);
@@ -1306,11 +1306,11 @@ runners['sky-home'] = function(canvas, ctx, state){
     }
     nodes.forEach(function(p){
       var near = 0;
-      if(pointer.inside){ var cd = Math.hypot(p.x-mx, p.y-my); near = Math.max(0, 1 - cd/(240*dpr)); }
+      if(pointer.inside){ var cd = Math.hypot(p.x-mx, p.y-my); near = Math.max(0, 1 - cd/((pointer.down? 330:240)*dpr)); }
       var tw = 0.65 + 0.35*Math.sin(now/700 + p.ph*3);
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r*(1+near*1.6), 0, Math.PI*2);
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r*(1+near*(pointer.down? 2.3:1.6)), 0, Math.PI*2);
       ctx.fillStyle = 'rgba(255,209,102,'+(0.35+0.45*glow*tw+near*0.4)+')';
-      ctx.shadowColor = 'rgba(240,183,63,.9)'; ctx.shadowBlur = (6+near*16)*dpr;
+      ctx.shadowColor = 'rgba(240,183,63,.9)'; ctx.shadowBlur = (6+near*(pointer.down? 28:16))*dpr;
       ctx.fill(); ctx.shadowBlur = 0;
     });
     state.raf = requestAnimationFrame(frame);

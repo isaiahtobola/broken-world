@@ -1575,7 +1575,7 @@ function bwTogglePlay(f, sync){
   var a = new Audio();
   a.crossOrigin = 'anonymous';
   a.preload = 'auto';
-  window.__bwAudio = { a: a, id: f.id, sync: sync, routed: false, fellBack: false };
+  window.__bwAudio = { a: a, id: f.id, sync: sync, routed: false, fellBack: false, retried: false };
   wire(a);
   a.addEventListener('canplay', function(){
     var c = window.__bwAudio;
@@ -1586,13 +1586,15 @@ function bwTogglePlay(f, sync){
   a.addEventListener('error', function(){
     var c = window.__bwAudio;
     if(!c || c.a !== a || c.fellBack) return;
+    if(!c.retried){ c.retried = true; try{ a.src = playUrl; a.load(); }catch(e){} return; }
     var b = new Audio(url);
     c.a = b; c.fellBack = true;
     wire(b);
     b.play();
     if(sync) sync();
   });
-  a.src = url;
+  var playUrl = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'bwplay=1';
+  a.src = playUrl;
   if(sync) sync();
 }
 function renderFiles(){
@@ -3884,7 +3886,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
 </script>
 <script>
 /* ================= KINTSUGI — the mending game =================
-   BUILD #75 REBUILD (his redesign, 2026-11-02 02:49): the pot now
+   BUILD #75 REBUILD (his redesign, 2026-11-02 02:49) + #76 (his 03:12 correction: the seams are the EXACT puzzle edges, tabs and all, and the gold is a THIN light that runs along the plum line itself as you drag — no blobs, no straight guide lines): the pot now
    breaks into NINE puzzle pieces — a jittered 3x3 break with
    interlocking tabs, freshly random every visit and every reset.
    Drag each piece home; it LOCKS when you let go sitting right
@@ -3909,6 +3911,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   var outline = [], J = [];
   var vase = {cx:0, baseY:0, h:0, maxHalf:0};
   var seed = (Math.random() * 1e9) | 0;
+  var vSignG = null, hSignG = null;
 
   function mulberry(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   function halfW(t){
@@ -3951,6 +3954,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     for(i = 0; i <= COLS; i++){ vSign.push([0,0,0]); hSign.push([0,0,0,0]); }
     for(j = 0; j < ROWS; j++) for(i = 1; i < COLS; i++) vSign[i][j] = rng() < 0.5 ? 1 : -1;
     for(j = 1; j < ROWS; j++) for(i = 0; i < COLS; i++) hSign[i][j] = rng() < 0.5 ? 1 : -1;
+    vSignG = vSign; hSignG = hSign;
     pieces = [];
     for(var r = 0; r < ROWS; r++) for(var c = 0; c < COLS; c++){
       var tl = J[r + 1][c], tr = J[r + 1][c + 1], br = J[r][c + 1], bl = J[r][c];
@@ -3971,9 +3975,25 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   }
   function buildSeams(){
     seams = [];
-    var i, j, pts;
-    for(i = 1; i < COLS; i++){ pts = []; for(j = 0; j <= ROWS; j++) pts.push(J[j][i]); seams.push({ pts: pts, blobs: [], done: false }); }
-    for(j = 1; j < ROWS; j++){ pts = []; for(i = 0; i <= COLS; i++) pts.push(J[j][i]); seams.push({ pts: pts, blobs: [], done: false }); }
+    var i, r, c;
+    function mkSeam(a, b, s){
+      var pts = s ? [a, bumpPt(a, b, s), b] : [a, b];
+      var samples = [], total = 0, k;
+      var lens = [];
+      for(k = 0; k < pts.length - 1; k++){ var L = Math.hypot(pts[k + 1].x - pts[k].x, pts[k + 1].y - pts[k].y); lens.push(L); total += L; }
+      var step = 3, acc = 0;
+      for(k = 0; k < pts.length - 1; k++){
+        var n = Math.max(2, Math.round(lens[k] / step));
+        for(var q = 0; q < n; q++){
+          var f = q / n;
+          samples.push({ x: pts[k].x + (pts[k + 1].x - pts[k].x) * f, y: pts[k].y + (pts[k + 1].y - pts[k].y) * f, hit: false });
+        }
+      }
+      samples.push({ x: b.x, y: b.y, hit: false });
+      seams.push({ pts: pts, samples: samples, done: false });
+    }
+    for(i = 1; i < COLS; i++) for(r = 0; r < ROWS; r++) mkSeam(J[r + 1][i], J[r][i], vSignG ? vSignG[i][r] : 0);
+    for(r = 1; r < ROWS; r++) for(c = 0; c < COLS; c++) mkSeam(J[r][c + 1], J[r][c], hSignG ? hSignG[c][r] : 0);
   }
   function centroid(poly){
     var x = 0, y = 0;
@@ -4041,37 +4061,23 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     tracePt = p;
     seams.forEach(function(sm){
       if(sm.done) return;
-      for(var i = 0; i < sm.pts.length - 1; i++){
-        if(distSeg(p, sm.pts[i], sm.pts[i + 1]) < 17){
-          if(!lastStamp || Math.hypot(p.x - lastStamp.x, p.y - lastStamp.y) > 5){
-            sm.blobs.push({ x: p.x, y: p.y, r: 4.5 + Math.random() * 2.5 });
-            lastStamp = { x: p.x, y: p.y };
-          }
-          return;
-        }
+      for(var i = 0; i < sm.samples.length; i++){
+        var smp = sm.samples[i];
+        if(!smp.hit && Math.abs(smp.x - p.x) < 14 && Math.abs(smp.y - p.y) < 14 && Math.hypot(smp.x - p.x, smp.y - p.y) < 13) smp.hit = true;
       }
     });
   }
   function seamCoverage(sm){
-    var total = 0, hit = 0, i, s, b;
-    for(i = 0; i < sm.pts.length - 1; i++){
-      for(s = 0; s <= 4; s++){
-        total++;
-        var qx = sm.pts[i].x + (sm.pts[i + 1].x - sm.pts[i].x) * s / 4;
-        var qy = sm.pts[i].y + (sm.pts[i + 1].y - sm.pts[i].y) * s / 4;
-        for(b = 0; b < sm.blobs.length; b++){
-          if(Math.hypot(qx - sm.blobs[b].x, qy - sm.blobs[b].y) < 15){ hit++; break; }
-        }
-      }
-    }
-    return total ? hit / total : 0;
+    var hit = 0;
+    sm.samples.forEach(function(s){ if(s.hit) hit++; });
+    return sm.samples.length ? hit / sm.samples.length : 0;
   }
   function checkSeams(){
     var changed = false;
     seams.forEach(function(sm){
-      if(!sm.done && seamCoverage(sm) >= 0.78){
-        sm.done = true; sm.blobs = []; changed = true;
-        var mid = sm.pts[1];
+      if(!sm.done && seamCoverage(sm) >= 0.85){
+        sm.done = true; changed = true;
+        var mid = sm.samples[Math.floor(sm.samples.length / 2)];
         burst(mid.x, mid.y, 18);
       }
     });
@@ -4152,22 +4158,32 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
         ctx.beginPath();
         sm.pts.forEach(function(p, i){ if(i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
         ctx.strokeStyle = 'rgba(141,123,176,.55)';
-        ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        ctx.lineWidth = 2.6; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
         ctx.stroke();
-        sm.blobs.forEach(function(b){
-          var bg = ctx.createRadialGradient(b.x, b.y, 0.5, b.x, b.y, b.r + 3);
-          bg.addColorStop(0, '#ffe9b0'); bg.addColorStop(0.6, '#f0b73f'); bg.addColorStop(1, 'rgba(240,183,63,0)');
-          ctx.fillStyle = bg;
-          ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 3, 0, Math.PI * 2); ctx.fill();
-        });
+        if(!sm.done){
+          ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+          ctx.shadowColor = 'rgba(240,183,63,.85)'; ctx.shadowBlur = 7;
+          for(var pass = 0; pass < 2; pass++){
+            ctx.strokeStyle = pass === 0 ? '#f0b73f' : '#ffe9b0';
+            ctx.lineWidth = pass === 0 ? 2.6 : 1.1;
+            ctx.beginPath();
+            var pen = false;
+            sm.samples.forEach(function(smp){
+              if(smp.hit){ if(!pen){ ctx.moveTo(smp.x, smp.y); pen = true; } else ctx.lineTo(smp.x, smp.y); }
+              else pen = false;
+            });
+            ctx.stroke();
+          }
+          ctx.shadowBlur = 0;
+        }
         if(sm.done){
           ctx.beginPath();
           sm.pts.forEach(function(p, i){ if(i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
-          ctx.shadowColor = 'rgba(240,183,63,.9)'; ctx.shadowBlur = 10;
-          ctx.strokeStyle = '#f0b73f'; ctx.lineWidth = 3.5;
+          ctx.shadowColor = 'rgba(240,183,63,.9)'; ctx.shadowBlur = 8;
+          ctx.strokeStyle = '#f0b73f'; ctx.lineWidth = 2.6;
           ctx.stroke();
           ctx.shadowBlur = 0;
-          ctx.strokeStyle = '#ffe9b0'; ctx.lineWidth = 1.3;
+          ctx.strokeStyle = '#ffe9b0'; ctx.lineWidth = 1.1;
           ctx.stroke();
         }
       });

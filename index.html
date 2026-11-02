@@ -2182,14 +2182,17 @@ function bwDecorate(){
       if(!post || typeof post.id !== 'string') return;
       if(pair[1] && BW.showSaved && !BW.saves[post.id]){ card.style.display = 'none'; return; }
       card.style.display = '';
-      if(card.dataset.bwSoc === post.id) return;
-      card.dataset.bwSoc = post.id;
-      /* media */
-      if(post.media_url){
-        var bodyEl = card.querySelector('.post-body');
-        var media = bwMediaNode(post.media_url, post.media_type, 'post-media');
-        if(bodyEl && bodyEl.nextSibling) card.insertBefore(media, bodyEl.nextSibling);
-        else card.appendChild(media);
+      var firstPaint = card.dataset.bwSoc !== post.id;
+      if(firstPaint){
+        card.dataset.bwSoc = post.id;
+        /* media — inserted once; everything below repaints on every pass
+           so reactions, counts, saves and comments update live */
+        if(post.media_url){
+          var bodyEl = card.querySelector('.post-body');
+          var media = bwMediaNode(post.media_url, post.media_type, 'post-media');
+          if(bodyEl && bodyEl.nextSibling) card.insertBefore(media, bodyEl.nextSibling);
+          else card.appendChild(media);
+        }
       }
       /* save button in the head */
       var head = card.querySelector('.post-head');
@@ -2201,6 +2204,8 @@ function bwDecorate(){
         var del = head.querySelector('.post-del');
         if(del) head.insertBefore(sv, del); else head.appendChild(sv);
       }
+      var svNow = head ? head.querySelector('.save-btn') : null;
+      if(svNow){ svNow.className = 'save-btn' + (BW.saves[post.id] ? ' saved' : ''); svNow.textContent = BW.saves[post.id] ? '🔖 Saved' : '🔖 Save'; }
       /* reactions — real now */
       var rxBox = card.querySelector('.reactions');
       if(rxBox){
@@ -2250,8 +2255,10 @@ function bwDecorate(){
           if(c.media_url) cd.appendChild(bwMediaNode(c.media_url, bwTypeOf(c.media_url, ''), ''));
           list.appendChild(cd);
         });
+        var prevList = card.querySelector('.cmt-list');
+        if(prevList) prevList.remove();
         card.insertBefore(list, crow);
-        var oldInp = crow.querySelector('input');
+        var oldInp = firstPaint ? crow.querySelector('input') : null;
         if(oldInp){
           var inp = oldInp.cloneNode(true);
           inp.placeholder = 'Write a comment… paste a GIF link to drop a GIF';

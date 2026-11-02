@@ -1614,7 +1614,23 @@ function renderFiles(){
   files.forEach(function(f){
     var row = document.createElement('div'); row.className = 'file-row';
     var nameCell = document.createElement('span'); nameCell.className = 'fcell-name';
-    var nm = document.createElement('span'); nm.className = 'fname'; nm.textContent = f.name;
+    /* RIGHT-CLICK & SAVE for music (build #74 hotfix — his
+       2026-11-02 order, minutes after he saved the wave GIF off
+       the Sea): a song's name is a REAL link to its file, so
+       right-click → "Save link as…" keeps the song, exactly like
+       right-clicking an image. Left-click is swallowed so the
+       name never bounces anyone off the site — Play still plays. */
+    var nm;
+    var dlUrl = isAudioFile(f.name) ? (fileUrls[f.id] || (f.key ? bwWorkerGet(f) : null)) : null;
+    if(dlUrl){
+      nm = document.createElement('a'); nm.className = 'fname'; nm.href = dlUrl;
+      nm.style.color = 'inherit'; nm.style.textDecoration = 'none';
+      nm.title = 'Right-click → Save link as… to keep this song';
+      nm.addEventListener('click', function(e){ e.preventDefault(); });
+    } else {
+      nm = document.createElement('span'); nm.className = 'fname';
+    }
+    nm.textContent = f.name;
     var sz = document.createElement('span'); sz.className = 'fsize'; sz.textContent = fmtSize(f.size);
     nameCell.appendChild(nm); nameCell.appendChild(sz);
     var date = document.createElement('span'); date.className = 'fmeta';

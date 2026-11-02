@@ -1518,6 +1518,14 @@ function bwRoute(a){
     if(window.__bwAudio) window.__bwAudio.routed = true;
   }catch(e){ /* analysis unavailable for this element — playback goes on */ }
 }
+/* TRAP CITY FEED (build #72, his 2026-11-02 order — research in
+   WAVEFORM-RESEARCH.md): alongside the raw bins, hand the circle
+   (1) 64 LOG-SPACED bands, 40 Hz to 16 kHz, so bass gets a small
+   neighborhood, voices their own streets, and sibilance its own
+   spikes; (2) a BEAT pulse — bass-energy flux against its own slow
+   average, threshold + cooldown, so kicks and drops fire a swell;
+   (3) adaptive gain from a rolling peak, so quiet songs spike too. */
+var BW_BANDS = null, BW_FLUXAVG = 0, BW_LASTBEAT = 0, BW_PEAK = 0.35;
 window.__bwLevels = function(){
   if(!BW_AN || !BW_FREQ) return null;
   var cur = window.__bwAudio;
@@ -1527,7 +1535,25 @@ window.__bwLevels = function(){
   for(i=0;i<8;i++) bass += BW_FREQ[i];
   for(i=8;i<64;i++) mid += BW_FREQ[i];
   for(i=64;i<n;i++) high += BW_FREQ[i];
-  return { bins: BW_FREQ, bass: bass/8/255, mid: mid/56/255, high: high/(n-64)/255,
+  bass /= 8*255; mid /= 56*255; high /= (n-64)*255;
+  var sr = (BW_ACTX ? BW_ACTX.sampleRate : 44100) / 2;
+  if(!BW_BANDS) BW_BANDS = new Float32Array(64);
+  var fMin = Math.log(40), fMax = Math.log(16000);
+  for(var b=0;b<64;b++){
+    var f0 = Math.exp(fMin + (fMax-fMin)*b/64), f1 = Math.exp(fMin + (fMax-fMin)*(b+1)/64);
+    var i0 = Math.max(1, Math.floor(f0/sr*n)), i1 = Math.min(n-1, Math.max(i0+1, Math.ceil(f1/sr*n)));
+    var mx = 0; for(i=i0;i<i1;i++) if(BW_FREQ[i] > mx) mx = BW_FREQ[i];
+    BW_BANDS[b] = mx/255;
+  }
+  BW_PEAK = Math.max(0.35, BW_PEAK*0.9985, bass, mid, high);
+  var gain = Math.min(1.9, 0.8/BW_PEAK);
+  var flux = Math.max(0, bass - BW_FLUXAVG);
+  BW_FLUXAVG += (bass - BW_FLUXAVG) * 0.08;
+  var nowMs = (window.performance && performance.now) ? performance.now() : Date.now();
+  var beat = 0;
+  if(flux > 0.09 && nowMs - BW_LASTBEAT > 190){ beat = Math.min(1, flux*3.2); BW_LASTBEAT = nowMs; }
+  return { bins: BW_FREQ, bands: BW_BANDS, bass: bass, mid: mid, high: high,
+           beat: beat, gain: gain,
            playing: !cur.a.paused && !cur.a.ended };
 };
 function bwTogglePlay(f, sync){
@@ -3392,7 +3418,7 @@ runners['lava-canvas'] = function(canvas, ctx, state){
   /* the smoothed spectrum around the rim (97 points), how deep
      we are in the music, and the live bass/high readings */
   var spec = new Float32Array(97);
-  var aEnv = 0, bassNow = 0, highNow = 0;
+  var aEnv = 0, bassNow = 0, highNow = 0, beatNow = 0;
   function poke(){ lava.kick = Math.min(1, lava.kick + 0.7); }
   canvas.parentElement.addEventListener('pointerdown', poke);
   /* the library pokes the circle through here (row clicks, uploads) */
@@ -3411,10 +3437,10 @@ runners['lava-canvas'] = function(canvas, ctx, state){
   function drawLava(W, H, s){
     var cx = W/2, cy = H*0.44, R = Math.min(W, H) * 0.36;
     var lt = lava.lt, sw = lava.swell;
-    var pump = 1 + 0.10*bassNow*aEnv + 0.05*lava.kick;
+    var pump = 1 + 0.10*bassNow*aEnv + 0.05*lava.kick + 0.07*beatNow*aEnv;
     /* soft halo — bass and kicks feed the glow */
     var halo = ctx.createRadialGradient(cx, cy, R*0.4, cx, cy, R*1.9);
-    halo.addColorStop(0, 'rgba(240,183,63,'+(0.12 + 0.14*sw + 0.22*bassNow*aEnv + 0.10*lava.kick)+')');
+    halo.addColorStop(0, 'rgba(240,183,63,'+(0.12 + 0.14*sw + 0.22*bassNow*aEnv + 0.10*lava.kick + 0.16*beatNow*aEnv)+')');
     halo.addColorStop(1, 'rgba(240,183,63,0)');
     ctx.fillStyle = halo;
     ctx.fillRect(cx - R*1.9, cy - R*1.9, R*3.8, R*3.8);
@@ -3464,15 +3490,24 @@ runners['lava-canvas'] = function(canvas, ctx, state){
       aEnv += (1 - aEnv) * 0.30;
       bassNow += (L.bass - bassNow) * 0.45;
       highNow += (L.high - highNow) * 0.6;
-      var bins = L.bins, nb = bins.length;
+      if(L.beat) beatNow = Math.max(beatNow, L.beat);
+      beatNow *= 0.90;
+      /* the rim now reads the 64 LOG BANDS (build #72): each angle
+         owns a pitch neighborhood — bass down low, voices in the
+         middle streets, sibilance and hats up high — interpolated
+         smooth around the circle, adaptively gained, with a vocal
+         presence lift so loud lines throw the tallest spikes */
+      var bands = L.bands, g = L.gain || 1;
       for(var i=0;i<=96;i++){
-        var bi = Math.floor((i/96) * nb * 0.85);
-        var tgt = (bins[bi] || 0) / 255;
+        var fb = (i/96) * 63, b0 = Math.floor(fb), fr = fb - b0;
+        var bv = bands[b0] * (1-fr) + bands[Math.min(63, b0+1)] * fr;
+        var pres = 1 + 0.45 * Math.exp(-Math.pow((fb-40)/9, 2));
+        var tgt = Math.min(1, bv * g * pres);
         var cur = spec[i];
         spec[i] = cur + (tgt - cur) * (tgt > cur ? 0.8 : 0.3);  /* snap out, fall fast = spikes */
       }
     } else {
-      aEnv *= 0.94; bassNow *= 0.92; highNow *= 0.92;
+      aEnv *= 0.94; bassNow *= 0.92; highNow *= 0.92; beatNow *= 0.9;
       for(var j=0;j<=96;j++) spec[j] *= 0.96;
     }
     /* --- lava life cycle: pulse -> stagnant -> random move --- */

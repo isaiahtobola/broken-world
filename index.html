@@ -1246,7 +1246,7 @@ body[data-current="sea"] .depth-gauge{display:flex}
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <button class="modal-x" id="modal-close" aria-label="Close">✕</button>
     <h3 id="modal-title">Sign Up</h3>
-    <p class="modal-sub">Already a member? <a href="#" id="modal-login-link">Log In</a></p>
+    <p class="modal-sub"><span id="modal-sub-prompt">Already a member?</span> <a href="#" id="modal-login-link">Log In</a></p>
     <button class="auth-btn" data-auth>Sign up with Google</button>
     <button class="auth-btn" data-auth>Sign up with Facebook</button>
     <button class="auth-btn gold" id="auth-email-toggle">Sign up with email</button>
@@ -2386,8 +2386,8 @@ document.getElementById('modal-login-link').addEventListener('click', function(e
   var toLogin = window.__bwAuthMode !== 'login';
   window.__bwAuthMode = toLogin ? 'login' : 'signup';
   document.getElementById('modal-title').textContent = toLogin ? 'Log In' : 'Sign Up';
-  var sub = document.querySelector('#login-modal .modal-sub');
-  if(sub && sub.firstChild) sub.firstChild.textContent = toLogin ? 'New here? ' : 'Already a member? ';
+  var subPrompt = document.getElementById('modal-sub-prompt');
+  if(subPrompt) subPrompt.textContent = toLogin ? 'New here?' : 'Already a member?';
   e.target.textContent = toLogin ? 'Sign Up' : 'Log In';
   document.getElementById('auth-email-toggle').textContent = toLogin ? 'Log in with email' : 'Sign up with email';
   var submitBtn = emailForm.querySelector('button[type="submit"]');
@@ -3629,7 +3629,10 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   if(window.MutationObserver){
     new MutationObserver(function(muts){
       muts.forEach(function(m){
-        m.addedNodes.forEach(function(n){ if(n.nodeType === 1) litQueue.push(n); });
+        m.addedNodes.forEach(function(n){
+          if(n.nodeType === 1) litQueue.push(n);
+          else if(n.nodeType === 3 && n.parentElement) litQueue.push(n.parentElement);
+        });
       });
       if(litT) return;
       litT = setTimeout(function(){
@@ -3642,7 +3645,9 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   }
   /* the original hearth: the Hub About text cascades when its room opens */
   function hearthArm(){
-    document.querySelectorAll('#hubpanel-about .about-card p').forEach(function(p){ cascadeText(p, 6000); });
+    document.querySelectorAll('#hubpanel-about .about-card p').forEach(function(p, idx){
+      setTimeout(function(){ cascadeText(p, 14000); }, idx * 2400);
+    });
   }
   document.querySelectorAll('.hub-tab-btn').forEach(function(b){
     b.addEventListener('click', function(){

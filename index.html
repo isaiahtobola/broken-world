@@ -3419,6 +3419,22 @@ runners['lava-canvas'] = function(canvas, ctx, state){
      we are in the music, and the live bass/high readings */
   var spec = new Float32Array(97);
   var aEnv = 0, bassNow = 0, highNow = 0, beatNow = 0;
+  /* THE EIGHT SPIKES (build #73 — his redesign, 2026-11-02 02:43,
+     replacing the all-around rim spectrum): an X of four magma
+     spikes on the diagonals (45° angles) fed by bass, kicks, loud
+     arps and decibel hits — and a + of four spikes on the cardinals
+     fed by claps and high frequencies, spiking HIGHER than the X.
+     xEnv/pEnv are the two families' fast-attack/slow-release
+     envelopes; spikeAt() shapes them around the rim. */
+  var xEnv = 0, pEnv = 0;
+  var X_C = [Math.PI/4, 3*Math.PI/4, 5*Math.PI/4, 7*Math.PI/4];
+  var P_C = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
+  function spikeAt(th){
+    var s = 0, d, i;
+    for(i=0;i<4;i++){ d = Math.atan2(Math.sin(th - X_C[i]), Math.cos(th - X_C[i])); s += Math.exp(-Math.pow(d/0.42, 2)) * 0.50 * xEnv; }
+    for(i=0;i<4;i++){ d = Math.atan2(Math.sin(th - P_C[i]), Math.cos(th - P_C[i])); s += Math.exp(-Math.pow(d/0.26, 2)) * 0.95 * pEnv; }
+    return s * aEnv;
+  }
   function poke(){ lava.kick = Math.min(1, lava.kick + 0.7); }
   canvas.parentElement.addEventListener('pointerdown', poke);
   /* the library pokes the circle through here (row clicks, uploads) */
@@ -3449,7 +3465,7 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     ctx.beginPath();
     for(var i=0; i<=96; i++){
       var th = (i/96) * Math.PI * 2;
-      var rr = R * pump * (1 + 0.13*sw) * wobAt(th, lt, sw) * (1 + rimGain(i)*spec[i]*aEnv);
+      var rr = R * pump * (1 + 0.13*sw) * wobAt(th, lt, sw) * (1 + spikeAt(th));
       var x = cx + Math.cos(th)*rr, y = cy + Math.sin(th)*rr;
       if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
@@ -3469,7 +3485,7 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     ctx.beginPath();
     for(var j=0; j<=96; j++){
       var th2 = (j/96) * Math.PI * 2;
-      var rr2 = R * pump * (1 + 0.13*sw) * wobAt(th2, lt, sw) * (1 + rimGain(j)*spec[j]*aEnv);
+      var rr2 = R * pump * (1 + 0.13*sw) * wobAt(th2, lt, sw) * (1 + spikeAt(th2));
       var x2 = cx + Math.cos(th2)*rr2, y2 = cy + Math.sin(th2)*rr2;
       if(j === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
     }
@@ -3492,22 +3508,21 @@ runners['lava-canvas'] = function(canvas, ctx, state){
       highNow += (L.high - highNow) * 0.6;
       if(L.beat) beatNow = Math.max(beatNow, L.beat);
       beatNow *= 0.90;
-      /* the rim now reads the 64 LOG BANDS (build #72): each angle
-         owns a pitch neighborhood — bass down low, voices in the
-         middle streets, sibilance and hats up high — interpolated
-         smooth around the circle, adaptively gained, with a vocal
-         presence lift so loud lines throw the tallest spikes */
-      var bands = L.bands, g = L.gain || 1;
-      for(var i=0;i<=96;i++){
-        var fb = (i/96) * 63, b0 = Math.floor(fb), fr = fb - b0;
-        var bv = bands[b0] * (1-fr) + bands[Math.min(63, b0+1)] * fr;
-        var pres = 1 + 0.45 * Math.exp(-Math.pow((fb-40)/9, 2));
-        var tgt = Math.min(1, bv * g * pres);
-        var cur = spec[i];
-        spec[i] = cur + (tgt - cur) * (tgt > cur ? 0.8 : 0.3);  /* snap out, fall fast = spikes */
-      }
+      /* THE EIGHT SPIKES' FEED (build #73): route the families —
+         X (diagonals) eats bass body + the beat pulse + the low
+         log bands where kicks and loud arps live; + (cardinals)
+         eats the high average + the top bands where claps and
+         sibilance live. Fast attack, slower release, per family. */
+      var bands = L.bands, g = L.gain || 1, bi;
+      var lowE = 0; for(bi=2; bi<14; bi++) lowE = Math.max(lowE, bands[bi]);
+      var hiE = 0; for(bi=44; bi<64; bi++) hiE = Math.max(hiE, bands[bi]);
+      var xTgt = Math.min(1, Math.max(L.bass*1.15, lowE*g) + beatNow*0.55);
+      var pTgt = Math.min(1, Math.max(L.high*1.9, hiE*g*1.15));
+      xEnv += (xTgt - xEnv) * (xTgt > xEnv ? 0.85 : 0.22);
+      pEnv += (pTgt - pEnv) * (pTgt > pEnv ? 0.9 : 0.3);
     } else {
       aEnv *= 0.94; bassNow *= 0.92; highNow *= 0.92; beatNow *= 0.9;
+      xEnv *= 0.92; pEnv *= 0.9;
       for(var j=0;j<=96;j++) spec[j] *= 0.96;
     }
     /* --- lava life cycle: pulse -> stagnant -> random move --- */

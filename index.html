@@ -2388,7 +2388,7 @@ document.getElementById('modal-login-link').addEventListener('click', function(e
   document.getElementById('modal-title').textContent = toLogin ? 'Log In' : 'Sign Up';
   var subPrompt = document.getElementById('modal-sub-prompt');
   if(subPrompt) subPrompt.textContent = toLogin ? 'New here?' : 'Already a member?';
-  e.target.textContent = toLogin ? 'Sign Up' : 'Log In';
+  e.currentTarget.textContent = toLogin ? 'Sign Up' : 'Log In';
   document.getElementById('auth-email-toggle').textContent = toLogin ? 'Log in with email' : 'Sign up with email';
   var submitBtn = emailForm.querySelector('button[type="submit"]');
   if(submitBtn) submitBtn.textContent = toLogin ? 'Log in' : 'Create account';

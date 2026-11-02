@@ -471,6 +471,14 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 .post-media video{max-width:100%; max-height:430px; border-radius:10px; border:1px solid rgba(240,183,63,.3); display:block}
 .reactions button .cnt{font-family:var(--mono); font-size:13px; margin-left:2px}
 .reactions button.mine{background:rgba(240,183,63,.28); border-color:var(--gold); color:var(--yellow)}
+.reactions .img-rx{padding:3px 8px 3px 3px}
+.reactions .img-rx img{width:26px; height:26px; object-fit:cover; border-radius:7px; display:block}
+.reactions .rx-add{width:30px; height:30px; padding:0; border-radius:50%; border-style:dashed; color:var(--gold); font-size:17px; line-height:1}
+.rx-add-form{display:flex; gap:8px; align-items:center; margin:10px 0 4px}
+.rx-add-form input{flex:1; min-width:0; background:var(--bg); border:1px solid rgba(184,166,217,.35); border-radius:9px; color:var(--cream); padding:9px 12px; font-family:var(--mono); font-size:13px}
+.rx-add-form input:focus{outline:none; border-color:var(--gold)}
+.rx-add-form .rx-go{background:rgba(240,183,63,.16); border:1px solid var(--gold); color:var(--yellow); border-radius:9px; padding:9px 14px; font-weight:600}
+.rx-add-form .rx-cancel{background:none; border:1px solid rgba(184,166,217,.35); color:var(--muted); border-radius:9px; padding:9px 11px}
 .save-btn{
   margin-left:auto; font-family:var(--mono); font-size:12px; letter-spacing:.05em; cursor:pointer;
   background:rgba(184,166,217,.08); color:var(--muted); border:1px solid rgba(184,166,217,.3);
@@ -2133,6 +2141,21 @@ function bwToggleRx(post, emoji, mine){
     : BW.sb.from('reactions').insert({ post_id: post.id, user_id: BW.user.id, emoji: emoji });
   q.then(function(r){ if(r.error){ toast('Reaction refused: ' + r.error.message); return; } bwFetchSocial(); });
 }
+function bwRxAddToggle(card, post){
+  if(!BW.user){ toast('Join or log in to react — reading is open to everyone.'); bwOpenModal(); return; }
+  var form = card.querySelector('.rx-add-form');
+  if(!form) return;
+  var show = form.style.display === 'none';
+  form.style.display = show ? 'flex' : 'none';
+  if(show){ var inp = form.querySelector('input'); if(inp) inp.focus(); }
+}
+function bwRxAddSubmit(post, inp, form){
+  var url = (inp.value || '').trim();
+  if(!url){ toast('Paste an image link first.'); return; }
+  if(!/^https?:\/\//i.test(url) || url.length > 500){ toast('That link looks off — needs to start with http and be an image/GIF link.'); return; }
+  inp.value = ''; form.style.display = 'none';
+  bwToggleRx(post, url, false);
+}
 function bwSendComment(post, inp){
   var val = (inp.value || '').trim();
   if(!val) return;
@@ -2193,6 +2216,19 @@ function bwDecorate(){
           if(bodyEl && bodyEl.nextSibling) card.insertBefore(media, bodyEl.nextSibling);
           else card.appendChild(media);
         }
+        /* image-reaction mini form — built once, lives beside the reactions row */
+        if(!card.querySelector('.rx-add-form')){
+          var rform = document.createElement('div'); rform.className = 'rx-add-form'; rform.style.display = 'none';
+          var rinp = document.createElement('input'); rinp.type = 'url'; rinp.placeholder = 'Paste a GIF / PNG / image link…'; rinp.setAttribute('aria-label', 'Image reaction link');
+          var rgo = document.createElement('button'); rgo.type = 'button'; rgo.className = 'rx-go'; rgo.textContent = 'React';
+          var rcancel = document.createElement('button'); rcancel.type = 'button'; rcancel.className = 'rx-cancel'; rcancel.textContent = '✕'; rcancel.title = 'Cancel';
+          rform.appendChild(rinp); rform.appendChild(rgo); rform.appendChild(rcancel);
+          var rxHome = card.querySelector('.reactions');
+          if(rxHome && rxHome.nextSibling) card.insertBefore(rform, rxHome.nextSibling); else card.appendChild(rform);
+          rgo.addEventListener('click', function(){ bwRxAddSubmit(post, rinp, rform); });
+          rinp.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); bwRxAddSubmit(post, rinp, rform); } });
+          rcancel.addEventListener('click', function(){ rform.style.display = 'none'; });
+        }
       }
       /* save button in the head */
       var head = card.querySelector('.post-head');
@@ -2223,6 +2259,28 @@ function bwDecorate(){
           btn.addEventListener('click', function(){ bwToggleRx(post, em, (BW.reactions[post.id] || {})[em] ? (BW.reactions[post.id][em].mine) : false); });
           rxBox.appendChild(btn);
         });
+        /* image/GIF reactions — every other key in the map is an image link */
+        Object.keys(rxMap).forEach(function(key){
+          if(BW_EMOJIS.indexOf(key) >= 0) return;
+          if(!/^https?:\/\//i.test(key)) return;
+          var rxi = rxMap[key];
+          var ib = document.createElement('button');
+          ib.type = 'button'; ib.className = 'img-rx' + (rxi.mine ? ' mine' : '');
+          ib.title = rxi.mine ? 'Your image reaction — tap to remove' : 'Tap to react with this image too';
+          var im = document.createElement('img'); im.src = key; im.alt = 'Image reaction'; im.loading = 'lazy';
+          var icnt = document.createElement('span'); icnt.className = 'cnt';
+          icnt.textContent = rxi.n ? String(rxi.n) : '';
+          im.onerror = function(){ im.style.display = 'none'; ib.insertBefore(document.createTextNode('🖼️'), icnt); };
+          ib.appendChild(im); ib.appendChild(icnt);
+          ib.addEventListener('click', function(){ bwToggleRx(post, key, (BW.reactions[post.id] || {})[key] ? (BW.reactions[post.id][key].mine) : false); });
+          rxBox.appendChild(ib);
+        });
+        /* the little + — react with your own image or GIF */
+        var addBtn = document.createElement('button');
+        addBtn.type = 'button'; addBtn.className = 'rx-add'; addBtn.textContent = '+';
+        addBtn.title = 'React with an image or GIF';
+        addBtn.addEventListener('click', function(){ bwRxAddToggle(card, post); });
+        rxBox.appendChild(addBtn);
       }
       /* counts */
       var counts = card.querySelector('.counts');

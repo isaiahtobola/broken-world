@@ -403,7 +403,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   background:linear-gradient(140deg, var(--violet), var(--plum-mid)); color:var(--cream);
   font-family:var(--mono); font-weight:600; font-size:16px; border:1px solid rgba(240,183,63,.55);
 }
-.post-head .who{line-height:1.25; flex:1 1 auto; min-width:0}
+.post-head .who{line-height:1.25; flex:1 0 auto; min-width:0}
 .post-head .who b{font-size:17px}
 .post-head .who span{display:block; font-family:var(--mono); font-size:11.5px; color:var(--muted); letter-spacing:.06em}
 .post-share{margin-left:auto; color:var(--muted); font-size:18px; background:none; border:none}
@@ -3603,7 +3603,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
      and the whole text cascades alight, fading after 6 seconds.
      Nothing is one-time: touch it again and it comes back. ---------- */
   var LIVING_SEL = '.post-body, .about-card p, .home-note, .join-copy, .big, .hero-line, .modal-sub, .feed-empty';
-  var LIT_SKIP = 'script, style, noscript, textarea, input, select, svg, canvas, [contenteditable], .hl-w';
+  var LIT_SKIP = 'script, style, noscript, textarea, input, select, svg, canvas, [contenteditable], .hl-w, .post-head, .cmt-head';
   function litSkip(node){
     var p = node.parentNode;
     if(!p || typeof p.closest !== 'function') return true;

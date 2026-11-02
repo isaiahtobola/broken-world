@@ -1234,10 +1234,10 @@ body[data-current="sea"] .depth-gauge{display:flex}
       <p>The Japanese art of repairing pottery with gold. Broken is not the end of the story — the seams are where the light gets in, and where the gold goes.</p>
     </div>
     <div class="kint-how">
-      <div class="how-card"><b>🖱️ ON PC</b>Click a shard and drag it toward the glowing outline. When it settles into place, <b style="display:inline;color:var(--yellow);font-family:inherit;letter-spacing:0">keep holding the click</b> — the seam heats up, and when the ring fills, the gold sets. Let go too early and it stays loose.</div>
-      <div class="how-card"><b>📱 ON PHONE</b>Touch a shard and drag it home with your finger. <b style="display:inline;color:var(--yellow);font-family:inherit;letter-spacing:0">Keep your finger pressed down</b> while the seam heats — hold until the ring fills and the gold sets. Mend every shard and the pot stands again.</div>
+      <div class="how-card"><b>🖱️ ON PC</b>Drag each puzzle piece into the glowing outline — let go when it sits right and it <b style="display:inline;color:var(--yellow);font-family:inherit;letter-spacing:0">locks</b>. Then <b style="display:inline;color:var(--yellow);font-family:inherit;letter-spacing:0">hold the click and drag along the plum cracks</b> — liquid gold follows your cursor and seals the seam.</div>
+      <div class="how-card"><b>📱 ON PHONE</b>Drag each piece home with your finger — it locks when it sits right. Then <b style="display:inline;color:var(--yellow);font-family:inherit;letter-spacing:0">keep your finger down and trace the plum cracks</b> — the gold pours where your finger travels, seam by seam, until the pot stands mended.</div>
     </div>
-    <div class="kint-stage"><canvas id="kint-canvas" aria-label="Kintsugi — drag the shards together and hold to glue them with gold"></canvas></div>
+    <div class="kint-stage"><canvas id="kint-canvas" aria-label="Kintsugi — drag the puzzle pieces together, then hold and trace the cracks to seal them with gold"></canvas></div>
     <div class="kint-bar">
       <span class="kint-status" id="kint-status">The pot lies broken on the floor. <b>Mend it.</b></span>
       <button class="kint-reset" id="kint-reset" type="button">↺ Break it again</button>
@@ -3883,11 +3883,16 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
 })();
 </script>
 <script>
-/* ================= KINTSUGI — the mending game (2026-10-31, his spec) =================
-   A pot in 5 shards on the floor. Drag a shard home (mouse or finger),
-   keep HOLDING while the seam heats (~0.9s), and the gold sets.
-   Release early and it stays loose — grab it again. All 5 set → the
-   pot stands, mended, worth more than before it broke. */
+/* ================= KINTSUGI — the mending game =================
+   BUILD #75 REBUILD (his redesign, 2026-11-02 02:49): the pot now
+   breaks into NINE puzzle pieces — a jittered 3x3 break with
+   interlocking tabs, freshly random every visit and every reset.
+   Drag each piece home; it LOCKS when you let go sitting right
+   (no more hold-to-heat). With every piece home the cracks still
+   show as greyed PLUM lines. Then the real kintsugi: HOLD mouse
+   or finger and DRAG along the cracks — liquid gold flows where
+   your hand travels and seals each seam. All seams sealed, the
+   pot stands veined in gold: broken — and worth more. */
 (function(){
   'use strict';
   var canvas = document.getElementById('kint-canvas');
@@ -3895,14 +3900,17 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   var ctx = canvas.getContext('2d');
   var statusEl = document.getElementById('kint-status');
   var resetBtn = document.getElementById('kint-reset');
-  var BANDS = 5, FILLS = ['#24163a','#2e1c4a','#1f1433','#38235c','#291b44'];
-  var W = 0, H = 0, running = false, raf = 0, lastT = 0;
-  var shards = [], sparks = [], drag = null, pointerDown = false;
-  var complete = false, completeT = 0, builtW = 0, builtH = 0;
-  var bounds = [], outline = [];
+  var COLS = 3, ROWS = 3;
+  var FILLS = ['#24163a','#2e1c4a','#1f1433','#38235c','#291b44','#31204e','#271a40','#3a2560','#201335'];
+  var W = 0, H = 0, running = false, raf = 0, lastT = 0, frameCount = 0;
+  var pieces = [], seams = [], sparks = [];
+  var drag = null, tracing = false, lastStamp = null, tracePt = null;
+  var phase = 'build', completeT = 0, builtW = 0, builtH = 0;
+  var outline = [], J = [];
   var vase = {cx:0, baseY:0, h:0, maxHalf:0};
-  var EDGES = [0, .22, .44, .64, .82, 1];
+  var seed = (Math.random() * 1e9) | 0;
 
+  function mulberry(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   function halfW(t){
     var pts = [[0,.30],[.15,.44],[.40,.52],[.65,.44],[.85,.26],[1,.34]];
     for(var i = 0; i < pts.length - 1; i++){
@@ -3912,67 +3920,106 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     return .34;
   }
   function vPoint(t, frac){ return { x: vase.cx + frac * halfW(t) * vase.maxHalf, y: vase.baseY - t * vase.h }; }
-  function buildGeometry(){
+  function buildGeometry(rng){
     vase.cx = W / 2; vase.h = H * 0.60; vase.baseY = H * 0.80; vase.maxHalf = Math.min(W * 0.17, 120);
-    outline = [];
-    var i, t;
-    for(i = 0; i <= 20; i++){ t = i / 20; outline.push(vPoint(t, -1)); }
-    for(i = 20; i >= 0; i--){ t = i / 20; outline.push(vPoint(t, 1)); }
-    bounds = [];
-    var fr = [-1, -.5, 0, .5, 1];
-    for(var b = 0; b <= BANDS; b++){
-      var line = [];
-      for(var k = 0; k < fr.length; k++){
-        var tt = EDGES[b];
-        if(k > 0 && k < fr.length - 1 && b > 0 && b < BANDS) tt += (Math.random() * 0.07 - 0.035);
-        line.push(vPoint(tt, fr[k]));
+    var frBase = [-1, -0.34, 0.34, 1], tsBase = [0, 1/3, 2/3, 1], j, i;
+    var fr = frBase.map(function(f, k){ return (k === 0 || k === 3) ? f : f + (rng() * 0.16 - 0.08); });
+    var ts = tsBase.map(function(t, k){ return (k === 0 || k === 3) ? t : t + (rng() * 0.07 - 0.035); });
+    J = [];
+    for(j = 0; j <= ROWS; j++){
+      var row = [];
+      for(i = 0; i <= COLS; i++){
+        var p = vPoint(ts[j], fr[i]);
+        if(i > 0 && i < COLS && j > 0 && j < ROWS){ p.x += rng() * 18 - 9; p.y += rng() * 14 - 7; }
+        row.push(p);
       }
-      bounds.push(line);
+      J.push(row);
+    }
+    outline = [];
+    for(i = 0; i <= COLS; i++) outline.push(J[0][i]);
+    for(j = 1; j <= ROWS; j++) outline.push(J[j][COLS]);
+    for(i = COLS - 1; i >= 0; i--) outline.push(J[ROWS][i]);
+    for(j = ROWS - 1; j >= 1; j--) outline.push(J[j][0]);
+  }
+  function bumpPt(a, b, s){
+    var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    var dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+    return { x: mx + (dy / len) * s * len * 0.16, y: my + (-dx / len) * s * len * 0.16 };
+  }
+  function buildPieces(rng){
+    var vSign = [], hSign = [], i, j;
+    for(i = 0; i <= COLS; i++){ vSign.push([0,0,0]); hSign.push([0,0,0,0]); }
+    for(j = 0; j < ROWS; j++) for(i = 1; i < COLS; i++) vSign[i][j] = rng() < 0.5 ? 1 : -1;
+    for(j = 1; j < ROWS; j++) for(i = 0; i < COLS; i++) hSign[i][j] = rng() < 0.5 ? 1 : -1;
+    pieces = [];
+    for(var r = 0; r < ROWS; r++) for(var c = 0; c < COLS; c++){
+      var tl = J[r + 1][c], tr = J[r + 1][c + 1], br = J[r][c + 1], bl = J[r][c];
+      var poly = [tl], s;
+      s = (r + 1 < ROWS) ? -hSign[c][r + 1] : 0; if(s) poly.push(bumpPt(tl, tr, s));
+      poly.push(tr);
+      s = (c + 1 < COLS) ? vSign[c + 1][r] : 0; if(s) poly.push(bumpPt(tr, br, s));
+      poly.push(br);
+      s = (r > 0) ? hSign[c][r] : 0; if(s) poly.push(bumpPt(br, bl, s));
+      poly.push(bl);
+      s = (c > 0) ? -vSign[c][r] : 0; if(s) poly.push(bumpPt(bl, tl, s));
+      var pc = { poly: poly, dx: 0, dy: 0, rot: 0, locked: false, idx: r * COLS + c };
+      pc.home = centroid(poly);
+      pc.radius = 0;
+      poly.forEach(function(p){ var d = Math.hypot(p.x - pc.home.x, p.y - pc.home.y); if(d > pc.radius) pc.radius = d; });
+      pieces.push(pc);
     }
   }
-  function shardPoly(b){
-    var bot = bounds[b], top = bounds[b + 1], poly = [], i;
-    for(i = 0; i < bot.length; i++) poly.push(bot[i]);
-    for(i = top.length - 1; i >= 0; i--) poly.push(top[i]);
-    return poly;
+  function buildSeams(){
+    seams = [];
+    var i, j, pts;
+    for(i = 1; i < COLS; i++){ pts = []; for(j = 0; j <= ROWS; j++) pts.push(J[j][i]); seams.push({ pts: pts, blobs: [], done: false }); }
+    for(j = 1; j < ROWS; j++){ pts = []; for(i = 0; i <= COLS; i++) pts.push(J[j][i]); seams.push({ pts: pts, blobs: [], done: false }); }
   }
   function centroid(poly){
     var x = 0, y = 0;
     poly.forEach(function(p){ x += p.x; y += p.y; });
     return { x: x / poly.length, y: y / poly.length };
   }
-  function shardRadius(sh){
-    var r = 0;
-    sh.poly.forEach(function(p){ var d = Math.hypot(p.x - sh.home.x, p.y - sh.home.y); if(d > r) r = d; });
-    return r;
-  }
-  function scatter(sh){
-    sh.dx = (Math.random() * 0.76 + 0.12) * W - sh.home.x;
-    sh.dy = H * (0.86 + Math.random() * 0.08) - sh.home.y;
-    sh.rot = Math.random() * 1.1 - 0.55;
+  function scatter(pc){
+    pc.dx = (Math.random() * 0.76 + 0.12) * W - pc.home.x;
+    pc.dy = H * (0.86 + Math.random() * 0.08) - pc.home.y;
+    pc.rot = Math.random() * 1.1 - 0.55;
   }
   function setStatus(html){ if(statusEl) statusEl.innerHTML = html; }
-  function progressStatus(){
-    var n = shards.filter(function(s){ return s.locked; }).length;
-    if(n === BANDS) setStatus('Mended. <b>Broken — and worth more.</b> 💛');
-    else if(n > 0) setStatus('Seam set — <b>' + n + ' of ' + BANDS + '</b>. The gold holds. Keep going.');
-    else setStatus('The pot lies broken on the floor. <b>Mend it.</b>');
+  function buildStatus(){
+    var n = pieces.filter(function(s){ return s.locked; }).length;
+    if(n === pieces.length) setStatus('Every piece is home — but the cracks are only plum. <b>Hold and drag along them to pour the gold.</b>');
+    else if(n > 0) setStatus('<b>' + n + ' of ' + pieces.length + '</b> pieces home. Keep going.');
+    else setStatus('The pot lies in pieces on the floor. <b>Mend it.</b>');
   }
-  function buildShards(keepLocked){
-    buildGeometry();
-    var wasLocked = shards.map(function(s){ return s.locked; });
-    shards = []; complete = false; completeT = 0; sparks = []; drag = null;
-    for(var b = 0; b < BANDS; b++){
-      var poly = shardPoly(b);
-      var sh = { poly: poly, home: centroid(poly), dx: 0, dy: 0, rot: 0, locked: false, heat: 0, snapped: false, band: b };
-      sh.radius = shardRadius(sh);
-      if(keepLocked && wasLocked[b]){ sh.locked = true; }
-      else scatter(sh);
-      shards.push(sh);
-    }
+  function glueStatus(){
+    var n = seams.filter(function(s){ return s.done; }).length;
+    if(n === seams.length) setStatus('Sealed in gold. <b>Broken — and worth more.</b> 💛');
+    else if(n > 0) setStatus('Sealed <b>' + n + ' of ' + seams.length + '</b> seams. The gold holds. Trace the rest.');
+    else setStatus('Every piece is home — but the cracks are only plum. <b>Hold and drag along them to pour the gold.</b>');
+  }
+  function snapshot(){
+    return { locks: pieces.map(function(p){ return p.locked; }), seamDone: seams.map(function(s){ return s.done; }), phase: phase };
+  }
+  function buildAll(snap){
+    var rng = mulberry(seed);
+    buildGeometry(rng);
+    buildPieces(rng);
+    buildSeams();
+    sparks = []; drag = null; tracing = false; completeT = 0;
+    phase = (snap && snap.phase === 'done') ? 'done' : 'build';
+    pieces.forEach(function(pc, i){
+      if(snap && snap.locks[i]){ pc.locked = true; pc.dx = 0; pc.dy = 0; pc.rot = 0; }
+      else scatter(pc);
+    });
+    if(pieces.every(function(p){ return p.locked; })){
+      if(snap && (snap.phase === 'glue' || snap.phase === 'done')){
+        phase = snap.phase;
+        seams.forEach(function(sm, i){ if(snap.seamDone[i]) sm.done = true; });
+        if(phase === 'done') glueStatus(); else glueStatus();
+      } else buildStatus();
+    } else buildStatus();
     builtW = W; builtH = H;
-    if(shards.every(function(s){ return s.locked; })) complete = true;
-    progressStatus();
   }
   function burst(x, y, n){
     for(var i = 0; i < n; i++){
@@ -3980,52 +4027,100 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       sparks.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, life: 1 });
     }
   }
-  function lockShard(sh){
-    sh.locked = true; sh.dx = 0; sh.dy = 0; sh.rot = 0; sh.heat = 0; sh.snapped = false;
-    drag = null; pointerDown = false;
-    burst(sh.home.x, sh.home.y, 16);
-    var n = shards.filter(function(s){ return s.locked; }).length;
-    if(n === BANDS){
-      complete = true; completeT = 0;
-      burst(vase.cx, vase.baseY - vase.h * 0.5, 42);
-      setStatus('Mended. <b>Broken — and worth more.</b> 💛');
-    } else {
-      setStatus('Seam set — <b>' + n + ' of ' + BANDS + '</b>. The gold holds. Keep going.');
-    }
-  }
   function tracePath(poly, cx, cy){
     ctx.beginPath();
     poly.forEach(function(p, i){ var x = p.x - cx, y = p.y - cy; if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
     ctx.closePath();
   }
+  function distSeg(p, a, b){
+    var dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy || 1;
+    var t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2));
+    return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+  }
+  function stampTrace(p){
+    tracePt = p;
+    seams.forEach(function(sm){
+      if(sm.done) return;
+      for(var i = 0; i < sm.pts.length - 1; i++){
+        if(distSeg(p, sm.pts[i], sm.pts[i + 1]) < 17){
+          if(!lastStamp || Math.hypot(p.x - lastStamp.x, p.y - lastStamp.y) > 5){
+            sm.blobs.push({ x: p.x, y: p.y, r: 4.5 + Math.random() * 2.5 });
+            lastStamp = { x: p.x, y: p.y };
+          }
+          return;
+        }
+      }
+    });
+  }
+  function seamCoverage(sm){
+    var total = 0, hit = 0, i, s, b;
+    for(i = 0; i < sm.pts.length - 1; i++){
+      for(s = 0; s <= 4; s++){
+        total++;
+        var qx = sm.pts[i].x + (sm.pts[i + 1].x - sm.pts[i].x) * s / 4;
+        var qy = sm.pts[i].y + (sm.pts[i + 1].y - sm.pts[i].y) * s / 4;
+        for(b = 0; b < sm.blobs.length; b++){
+          if(Math.hypot(qx - sm.blobs[b].x, qy - sm.blobs[b].y) < 15){ hit++; break; }
+        }
+      }
+    }
+    return total ? hit / total : 0;
+  }
+  function checkSeams(){
+    var changed = false;
+    seams.forEach(function(sm){
+      if(!sm.done && seamCoverage(sm) >= 0.78){
+        sm.done = true; sm.blobs = []; changed = true;
+        var mid = sm.pts[1];
+        burst(mid.x, mid.y, 18);
+      }
+    });
+    if(changed){
+      if(seams.every(function(s){ return s.done; })){
+        phase = 'done'; completeT = 0;
+        burst(vase.cx, vase.baseY - vase.h * 0.5, 42);
+      }
+      glueStatus();
+    }
+  }
   function draw(now){
     ctx.clearRect(0, 0, W, H);
-    /* ambient glow behind the pot's place */
     var g = ctx.createRadialGradient(vase.cx, vase.baseY - vase.h * 0.45, 10, vase.cx, vase.baseY - vase.h * 0.45, vase.h * 0.85);
-    var glowA = complete ? 0.30 + 0.10 * Math.sin(now * 0.002) : 0.14;
+    var glowA = phase === 'done' ? 0.30 + 0.10 * Math.sin(now * 0.002) : 0.14;
     g.addColorStop(0, 'rgba(240,183,63,' + glowA + ')');
     g.addColorStop(1, 'rgba(240,183,63,0)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
-    /* the floor */
     ctx.fillStyle = 'rgba(13,7,22,.55)';
     ctx.beginPath(); ctx.ellipse(vase.cx, H * 0.90, W * 0.44, H * 0.075, 0, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = 'rgba(240,183,63,.16)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.ellipse(vase.cx, H * 0.90, W * 0.44, H * 0.075, 0, 0, Math.PI * 2); ctx.stroke();
-    /* ghost outline — where the pot wants to stand */
-    ctx.save();
-    ctx.setLineDash([6, 7]);
-    ctx.beginPath();
-    outline.forEach(function(p, i){ if(i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
-    ctx.closePath();
-    ctx.fillStyle = complete ? 'rgba(240,183,63,.10)' : 'rgba(240,183,63,.045)';
-    ctx.fill();
-    ctx.strokeStyle = complete ? 'rgba(255,209,102,.85)' : 'rgba(240,183,63,.38)';
-    ctx.lineWidth = complete ? 2 : 1.4;
-    ctx.stroke();
-    ctx.restore();
-    /* completion rise: a gold ring lifts off the mended pot */
-    if(complete && completeT < 1){
+    if(phase === 'build'){
+      ctx.save();
+      ctx.setLineDash([6, 7]);
+      ctx.beginPath();
+      outline.forEach(function(p, i){ if(i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(240,183,63,.045)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(240,183,63,.38)';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.restore();
+      if(drag && !drag.pc.locked){
+        var hs = drag.pc, hd = Math.hypot(hs.dx, hs.dy);
+        ctx.save();
+        ctx.translate(hs.home.x, hs.home.y);
+        tracePath(hs.poly, hs.home.x, hs.home.y);
+        ctx.fillStyle = 'rgba(255,209,102,' + (hd < 130 ? 0.16 : 0.07) + ')';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,209,102,' + (hd < 130 ? 0.75 : 0.4) + ')';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+    if(phase === 'done' && completeT < 1){
       var rt = completeT;
       ctx.save();
       ctx.globalAlpha = (1 - rt) * 0.8;
@@ -4033,52 +4128,56 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       ctx.beginPath(); ctx.ellipse(vase.cx, vase.baseY - rt * vase.h * 0.9, vase.maxHalf * (0.7 + rt * 0.9), vase.maxHalf * (0.24 + rt * 0.3), 0, 0, Math.PI * 2); ctx.stroke();
       ctx.restore();
     }
-    /* the dragged shard's home glows — "your piece goes here" */
-    if(drag && !drag.sh.locked){
-      var hs = drag.sh, hd = Math.hypot(hs.dx, hs.dy);
+    pieces.forEach(function(pc){
+      var cx = pc.home.x + pc.dx, cy = pc.home.y + pc.dy;
       ctx.save();
-      ctx.translate(hs.home.x, hs.home.y);
-      tracePath(hs.poly, hs.home.x, hs.home.y);
-      ctx.fillStyle = 'rgba(255,209,102,' + (hd < 130 ? 0.16 : 0.07) + ')';
+      ctx.translate(cx, cy); ctx.rotate(pc.rot);
+      tracePath(pc.poly, pc.home.x, pc.home.y);
+      ctx.fillStyle = FILLS[pc.idx];
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,209,102,' + (hd < 130 ? 0.75 : 0.4) + ')';
-      ctx.lineWidth = 1.6;
-      ctx.stroke();
-      ctx.restore();
-    }
-    /* shards */
-    shards.forEach(function(sh){
-      var cx = sh.home.x + sh.dx, cy = sh.home.y + sh.dy;
-      ctx.save();
-      ctx.translate(cx, cy); ctx.rotate(sh.rot);
-      tracePath(sh.poly, sh.home.x, sh.home.y);
-      ctx.fillStyle = FILLS[sh.band];
-      ctx.fill();
-      if(sh.heat > 0){
-        ctx.fillStyle = 'rgba(255,132,26,' + (sh.heat * 0.38) + ')';
-        ctx.fill();
-      }
       ctx.lineJoin = 'round';
-      if(sh.locked){
+      if(phase === 'done'){
         ctx.shadowColor = 'rgba(240,183,63,.95)'; ctx.shadowBlur = 13;
         ctx.strokeStyle = '#f0b73f'; ctx.lineWidth = 2.6;
+      } else if(pc.locked){
+        ctx.strokeStyle = 'rgba(141,123,176,.85)'; ctx.lineWidth = 2;
       } else {
         ctx.strokeStyle = 'rgba(247,234,209,.28)'; ctx.lineWidth = 1.6;
       }
       ctx.stroke();
       ctx.restore();
-      /* the heating ring — hold… hold… */
-      if(sh.heat > 0 && !sh.locked){
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(cx, cy, sh.radius + 13, -Math.PI / 2, -Math.PI / 2 + sh.heat * Math.PI * 2);
-        ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 4.5;
-        ctx.shadowColor = 'rgba(255,150,40,.9)'; ctx.shadowBlur = 12;
-        ctx.stroke();
-        ctx.restore();
-      }
     });
-    /* sparks */
+    if(phase !== 'build'){
+      seams.forEach(function(sm){
+        ctx.beginPath();
+        sm.pts.forEach(function(p, i){ if(i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+        ctx.strokeStyle = 'rgba(141,123,176,.55)';
+        ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        ctx.stroke();
+        sm.blobs.forEach(function(b){
+          var bg = ctx.createRadialGradient(b.x, b.y, 0.5, b.x, b.y, b.r + 3);
+          bg.addColorStop(0, '#ffe9b0'); bg.addColorStop(0.6, '#f0b73f'); bg.addColorStop(1, 'rgba(240,183,63,0)');
+          ctx.fillStyle = bg;
+          ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 3, 0, Math.PI * 2); ctx.fill();
+        });
+        if(sm.done){
+          ctx.beginPath();
+          sm.pts.forEach(function(p, i){ if(i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+          ctx.shadowColor = 'rgba(240,183,63,.9)'; ctx.shadowBlur = 10;
+          ctx.strokeStyle = '#f0b73f'; ctx.lineWidth = 3.5;
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = '#ffe9b0'; ctx.lineWidth = 1.3;
+          ctx.stroke();
+        }
+      });
+      if(tracing && tracePt){
+        var pg = ctx.createRadialGradient(tracePt.x, tracePt.y, 1, tracePt.x, tracePt.y, 16);
+        pg.addColorStop(0, 'rgba(255,233,176,.85)'); pg.addColorStop(1, 'rgba(240,183,63,0)');
+        ctx.fillStyle = pg;
+        ctx.beginPath(); ctx.arc(tracePt.x, tracePt.y, 16, 0, Math.PI * 2); ctx.fill();
+      }
+    }
     sparks = sparks.filter(function(s){ return s.life > 0; });
     sparks.forEach(function(s){
       ctx.save();
@@ -4089,31 +4188,17 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       ctx.restore();
     });
   }
-  var frameCount = 0;
   function frame(now){
     if(!running) return;
     var dt = Math.min(50, now - lastT); lastT = now;
-    /* size watchdog: the canvas may have been measured while its view was
-       still hidden (fade-in) — re-measure once it is truly on screen and
-       rebuild in place, keeping any seams already set */
     if(++frameCount % 45 === 0){
       var rr = canvas.getBoundingClientRect();
-      if(Math.abs(rr.width - W) > 40 || Math.abs(rr.height - H) > 40){ sizeCanvas(); buildShards(true); }
+      if(Math.abs(rr.width - W) > 40 || Math.abs(rr.height - H) > 40){ var snap = snapshot(); sizeCanvas(); buildAll(snap); }
     }
-    if(complete && completeT < 1) completeT = Math.min(1, completeT + dt / 1400);
-    if(drag && pointerDown){
-      var sh = drag.sh;
-      var d = Math.hypot(sh.dx, sh.dy);
-      var wasSnapped = sh.snapped;
-      sh.snapped = d < 58;
-      if(sh.snapped && !wasSnapped) setStatus('That\'s its home — <b>keep holding</b> while the seam heats…');
-      if(sh.snapped){
-        sh.dx *= 0.86; sh.dy *= 0.86; sh.rot *= 0.82;
-        sh.heat = Math.min(1, sh.heat + dt / 900);
-        if(sh.heat >= 1) lockShard(sh);
-      } else {
-        sh.heat = Math.max(0, sh.heat - dt / 300);
-      }
+    if(phase === 'done' && completeT < 1) completeT = Math.min(1, completeT + dt / 1400);
+    if(drag){
+      var pc = drag.pc;
+      if(Math.hypot(pc.dx, pc.dy) < 58){ pc.dx *= 0.86; pc.dy *= 0.86; pc.rot *= 0.82; }
     }
     sparks.forEach(function(s){
       s.x += s.vx * dt / 1000; s.y += s.vy * dt / 1000;
@@ -4134,15 +4219,21 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
   canvas.addEventListener('pointerdown', function(e){
-    if(complete) return;
+    if(phase === 'done') return;
     var p = pointerPos(e);
-    for(var i = shards.length - 1; i >= 0; i--){
-      var sh = shards[i];
-      if(sh.locked) continue;
-      var cx = sh.home.x + sh.dx, cy = sh.home.y + sh.dy;
-      if(Math.hypot(p.x - cx, p.y - cy) < sh.radius * 0.95 + 8){
-        drag = { sh: sh, offX: p.x - cx, offY: p.y - cy };
-        pointerDown = true;
+    if(phase === 'glue'){
+      tracing = true; lastStamp = null;
+      stampTrace(p);
+      try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+      e.preventDefault();
+      return;
+    }
+    for(var i = pieces.length - 1; i >= 0; i--){
+      var pc = pieces[i];
+      if(pc.locked) continue;
+      var cx = pc.home.x + pc.dx, cy = pc.home.y + pc.dy;
+      if(Math.hypot(p.x - cx, p.y - cy) < pc.radius * 0.95 + 8){
+        drag = { pc: pc, offX: p.x - cx, offY: p.y - cy };
         try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
         e.preventDefault();
         break;
@@ -4150,28 +4241,38 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     }
   });
   canvas.addEventListener('pointermove', function(e){
-    if(!drag || !pointerDown) return;
-    var p = pointerPos(e), sh = drag.sh;
-    sh.dx = p.x - drag.offX - sh.home.x;
-    sh.dy = p.y - drag.offY - sh.home.y;
+    var p = pointerPos(e);
+    if(tracing){ stampTrace(p); checkSeams(); e.preventDefault(); return; }
+    if(!drag) return;
+    drag.pc.dx = p.x - drag.offX - drag.pc.home.x;
+    drag.pc.dy = p.y - drag.offY - drag.pc.home.y;
     e.preventDefault();
   });
-  function endDrag(){
-    if(drag && !drag.sh.locked){ drag.sh.heat = 0; drag.sh.snapped = false; progressStatus(); }
-    drag = null; pointerDown = false;
+  function endPointer(){
+    if(tracing){ tracing = false; tracePt = null; checkSeams(); return; }
+    if(drag){
+      var pc = drag.pc;
+      if(Math.hypot(pc.dx, pc.dy) < 26 && Math.abs(pc.rot) < 0.2){
+        pc.locked = true; pc.dx = 0; pc.dy = 0; pc.rot = 0;
+        burst(pc.home.x, pc.home.y, 16);
+        if(pieces.every(function(x){ return x.locked; })){ phase = 'glue'; glueStatus(); }
+        else buildStatus();
+      }
+      drag = null;
+    }
   }
-  canvas.addEventListener('pointerup', endDrag);
-  canvas.addEventListener('pointercancel', endDrag);
-  if(resetBtn) resetBtn.addEventListener('click', function(){ buildShards(false); });
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+  if(resetBtn) resetBtn.addEventListener('click', function(){ seed = (Math.random() * 1e9) | 0; buildAll(null); });
   window.__kintStart = function(){
     sizeCanvas();
-    if(!shards.length || Math.abs(builtW - W) > 40 || Math.abs(builtH - H) > 40) buildShards(shards.length > 0);
+    if(!pieces.length || Math.abs(builtW - W) > 40 || Math.abs(builtH - H) > 40) buildAll(pieces.length ? snapshot() : null);
     if(!running){ running = true; lastT = performance.now(); raf = requestAnimationFrame(frame); }
   };
   window.__kintStop = function(){
     running = false;
     if(raf) cancelAnimationFrame(raf);
-    endDrag();
+    drag = null; tracing = false;
   };
 })();
 </script>

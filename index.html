@@ -474,11 +474,16 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 .reactions .img-rx{padding:3px 8px 3px 3px}
 .reactions .img-rx img{width:26px; height:26px; object-fit:cover; border-radius:7px; display:block}
 .reactions .rx-add{width:30px; height:30px; padding:0; border-radius:50%; border-style:dashed; color:var(--gold); font-size:17px; line-height:1}
-.rx-add-form{display:flex; gap:8px; align-items:center; margin:10px 0 4px}
-.rx-add-form input{flex:1; min-width:0; background:var(--bg); border:1px solid rgba(184,166,217,.35); border-radius:9px; color:var(--cream); padding:9px 12px; font-family:var(--mono); font-size:13px}
-.rx-add-form input:focus{outline:none; border-color:var(--gold)}
-.rx-add-form .rx-go{background:rgba(240,183,63,.16); border:1px solid var(--gold); color:var(--yellow); border-radius:9px; padding:9px 14px; font-weight:600}
-.rx-add-form .rx-cancel{background:none; border:1px solid rgba(184,166,217,.35); color:var(--muted); border-radius:9px; padding:9px 11px}
+.rx-bank{margin:10px 0 4px; background:var(--panel2); border:1px solid rgba(240,183,63,.4); border-radius:12px; padding:10px 12px}
+.rx-bank-head{display:flex; justify-content:space-between; align-items:center; font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--gold); margin-bottom:9px}
+.rx-bank-head button{background:none; border:none; color:var(--muted); font-size:15px; cursor:pointer; padding:2px 6px}
+.rx-bank-grid{display:flex; flex-wrap:wrap; gap:8px; align-items:flex-start}
+.rx-bank-item{position:relative; width:52px; height:52px; border-radius:10px; overflow:hidden; border:1px solid rgba(184,166,217,.35); background:var(--bg); cursor:pointer; padding:0}
+.rx-bank-item img{width:100%; height:100%; object-fit:cover; display:block}
+.rx-bank-item.mine{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold)}
+.rx-bank-del{position:absolute; top:0; right:0; width:18px; height:18px; line-height:16px; text-align:center; background:rgba(13,7,22,.88); color:var(--cream); font-size:12px; border-radius:0 0 0 8px; cursor:pointer; z-index:2}
+.rx-bank-add{width:52px; height:52px; border-radius:10px; border:1.5px dashed rgba(240,183,63,.65); background:none; color:var(--gold); font-size:22px; cursor:pointer; line-height:1}
+.rx-bank-empty{font-size:13px; color:var(--muted); padding:6px 0 2px}
 .save-btn{
   margin-left:auto; font-family:var(--mono); font-size:12px; letter-spacing:.05em; cursor:pointer;
   background:rgba(184,166,217,.08); color:var(--muted); border:1px solid rgba(184,166,217,.3);
@@ -2093,6 +2098,7 @@ function bwIsMediaUrl(t){
     (/\.(gif|png|jpe?g|webp|mp4|webm|mov)(\?|#|$)/i.test(t) || /giphy\.com|tenor\.com|imgur\.com/i.test(t));
 }
 function bwFetchSocial(){
+  bwFetchBank();
   if(!BW.sb || !BW.posts){ bwDecorate(); return; }
   if(!BW.posts.length){ BW.comments = {}; BW.reactions = {}; BW.saves = {}; bwDecorate(); return; }
   var ids = BW.posts.map(function(p){ return p.id; });
@@ -2141,20 +2147,93 @@ function bwToggleRx(post, emoji, mine){
     : BW.sb.from('reactions').insert({ post_id: post.id, user_id: BW.user.id, emoji: emoji });
   q.then(function(r){ if(r.error){ toast('Reaction refused: ' + r.error.message); return; } bwFetchSocial(); });
 }
-function bwRxAddToggle(card, post){
-  if(!BW.user){ toast('Join or log in to react — reading is open to everyone.'); bwOpenModal(); return; }
-  var form = card.querySelector('.rx-add-form');
-  if(!form) return;
-  var show = form.style.display === 'none';
-  form.style.display = show ? 'flex' : 'none';
-  if(show){ var inp = form.querySelector('input'); if(inp) inp.focus(); }
+/* THE BANK (his 2026-11-02 design): the + opens YOUR bank — a grid of
+   your own saved reaction pics. The + tile inside opens your PC folders;
+   the pic uploads to the vault and saves on your profile (rx_bank),
+   there for every post, forever. No links anywhere. */
+function bwFetchBank(){
+  if(!BW.sb || !BW.user){ BW.bank = []; return; }
+  BW.sb.from('rx_bank').select('*').order('created_at', { ascending: true }).then(function(r){
+    BW.bank = r.data || [];
+  });
 }
-function bwRxAddSubmit(post, inp, form){
-  var url = (inp.value || '').trim();
-  if(!url){ toast('Paste an image link first.'); return; }
-  if(!/^https?:\/\//i.test(url) || url.length > 500){ toast('That link looks off — needs to start with http and be an image/GIF link.'); return; }
-  inp.value = ''; form.style.display = 'none';
-  bwToggleRx(post, url, false);
+function bwRenderBank(panel, card, post){
+  panel.innerHTML = '';
+  var head = document.createElement('div'); head.className = 'rx-bank-head';
+  var title = document.createElement('span'); title.textContent = 'YOUR BANK';
+  var close = document.createElement('button'); close.type = 'button'; close.textContent = '✕'; close.title = 'Close your bank';
+  close.addEventListener('click', function(){ panel.remove(); });
+  head.appendChild(title); head.appendChild(close); panel.appendChild(head);
+  var grid = document.createElement('div'); grid.className = 'rx-bank-grid'; panel.appendChild(grid);
+  var bank = BW.bank || [];
+  var rxMap = BW.reactions[post.id] || {};
+  bank.forEach(function(row){
+    var item = document.createElement('div'); item.className = 'rx-bank-item' + (rxMap[row.url] && rxMap[row.url].mine ? ' mine' : '');
+    item.title = rxMap[row.url] && rxMap[row.url].mine ? 'Your reaction — tap to take it back' : 'Tap to react with this';
+    var im = document.createElement('img'); im.src = row.url; im.alt = row.name || 'Bank image'; im.loading = 'lazy';
+    var del = document.createElement('span'); del.className = 'rx-bank-del'; del.textContent = '✕'; del.title = 'Remove from your bank';
+    del.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      BW.sb.from('rx_bank').delete().eq('id', row.id).then(function(r){
+        if(r.error){ toast('Could not remove that one: ' + r.error.message); return; }
+        BW.bank = (BW.bank || []).filter(function(x){ return x.id !== row.id; });
+        toast('Removed from your bank.');
+        if(panel.isConnected) bwRenderBank(panel, card, post);
+      });
+    });
+    item.appendChild(im); item.appendChild(del);
+    item.addEventListener('click', function(){
+      var mine = !!((BW.reactions[post.id] || {})[row.url] || {}).mine;
+      panel.remove();
+      bwToggleRx(post, row.url, mine);
+    });
+    grid.appendChild(item);
+  });
+  var fileInp = document.createElement('input'); fileInp.type = 'file'; fileInp.accept = 'image/*,.gif'; fileInp.style.display = 'none';
+  panel.appendChild(fileInp);
+  var addTile = document.createElement('button'); addTile.type = 'button'; addTile.className = 'rx-bank-add'; addTile.textContent = '+';
+  addTile.title = 'Add a pic from your PC — saves to your bank';
+  addTile.addEventListener('click', function(){
+    if((BW.bank || []).length >= 24){ toast('Your bank holds 24 — take one out to add another.'); return; }
+    fileInp.click();
+  });
+  grid.appendChild(addTile);
+  fileInp.addEventListener('change', function(){
+    var f = fileInp.files && fileInp.files[0]; fileInp.value = '';
+    if(!f) return;
+    if(f.size > 25 * 1024 * 1024){ toast('Keep bank pics under 25 MB.'); return; }
+    toast('Adding to your bank…');
+    bwUploadFile(f, null, function(res){
+      if(!res){ toast('That upload got lost — try again.'); return; }
+      if(res.error){ toast(res.error); return; }
+      var url = BW_CONFIG.WORKER_URL + '/f/' + bwKey(res.key);
+      BW.sb.from('rx_bank').insert({ user_id: BW.user.id, url: url, name: res.name || f.name }).select().then(function(r){
+        if(r.error){ toast('The bank refused it: ' + r.error.message); return; }
+        if(r.data && r.data[0]) (BW.bank = BW.bank || []).push(r.data[0]);
+        toast('Saved to your bank — yours on every post now.');
+        if(panel.isConnected) bwRenderBank(panel, card, post);
+      });
+    });
+  });
+  if(!bank.length){
+    var empty = document.createElement('div'); empty.className = 'rx-bank-empty';
+    empty.textContent = 'Your bank is empty — tap + and pick a pic from your PC. It saves to your profile for every post.';
+    panel.appendChild(empty);
+  }
+}
+function bwRxAddToggle(card, post){
+  if(!BW.user){ toast('Join or log in to open your bank.'); bwOpenModal(); return; }
+  var old = card.querySelector('.rx-bank');
+  if(old){ old.remove(); return; }
+  var panel = document.createElement('div'); panel.className = 'rx-bank';
+  var rxBox = card.querySelector('.reactions');
+  if(rxBox && rxBox.parentNode) rxBox.parentNode.insertBefore(panel, rxBox.nextSibling); else card.appendChild(panel);
+  bwRenderBank(panel, card, post);
+  if(BW.sb){
+    BW.sb.from('rx_bank').select('*').order('created_at', { ascending: true }).then(function(r){
+      if(!r.error){ BW.bank = r.data || []; if(panel.isConnected) bwRenderBank(panel, card, post); }
+    });
+  }
 }
 function bwSendComment(post, inp){
   var val = (inp.value || '').trim();
@@ -2216,19 +2295,6 @@ function bwDecorate(){
           if(bodyEl && bodyEl.nextSibling) card.insertBefore(media, bodyEl.nextSibling);
           else card.appendChild(media);
         }
-        /* image-reaction mini form — built once, lives beside the reactions row */
-        if(!card.querySelector('.rx-add-form')){
-          var rform = document.createElement('div'); rform.className = 'rx-add-form'; rform.style.display = 'none';
-          var rinp = document.createElement('input'); rinp.type = 'url'; rinp.placeholder = 'Paste a GIF / PNG / image link…'; rinp.setAttribute('aria-label', 'Image reaction link');
-          var rgo = document.createElement('button'); rgo.type = 'button'; rgo.className = 'rx-go'; rgo.textContent = 'React';
-          var rcancel = document.createElement('button'); rcancel.type = 'button'; rcancel.className = 'rx-cancel'; rcancel.textContent = '✕'; rcancel.title = 'Cancel';
-          rform.appendChild(rinp); rform.appendChild(rgo); rform.appendChild(rcancel);
-          var rxHome = card.querySelector('.reactions');
-          if(rxHome && rxHome.nextSibling) card.insertBefore(rform, rxHome.nextSibling); else card.appendChild(rform);
-          rgo.addEventListener('click', function(){ bwRxAddSubmit(post, rinp, rform); });
-          rinp.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); bwRxAddSubmit(post, rinp, rform); } });
-          rcancel.addEventListener('click', function(){ rform.style.display = 'none'; });
-        }
       }
       /* save button in the head */
       var head = card.querySelector('.post-head');
@@ -2278,7 +2344,7 @@ function bwDecorate(){
         /* the little + — react with your own image or GIF */
         var addBtn = document.createElement('button');
         addBtn.type = 'button'; addBtn.className = 'rx-add'; addBtn.textContent = '+';
-        addBtn.title = 'React with an image or GIF';
+        addBtn.title = 'Open your bank — your saved reaction pics';
         addBtn.addEventListener('click', function(){ bwRxAddToggle(card, post); });
         rxBox.appendChild(addBtn);
       }

@@ -403,7 +403,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   background:linear-gradient(140deg, var(--violet), var(--plum-mid)); color:var(--cream);
   font-family:var(--mono); font-weight:600; font-size:16px; border:1px solid rgba(240,183,63,.55);
 }
-.post-head .who{line-height:1.25}
+.post-head .who{line-height:1.25; flex:1 1 auto; min-width:0}
 .post-head .who b{font-size:17px}
 .post-head .who span{display:block; font-family:var(--mono); font-size:11.5px; color:var(--muted); letter-spacing:.06em}
 .post-share{margin-left:auto; color:var(--muted); font-size:18px; background:none; border:none}
@@ -2390,10 +2390,13 @@ document.getElementById('modal-login-link').addEventListener('click', function(e
   if(subPrompt) subPrompt.textContent = toLogin ? 'New here?' : 'Already a member?';
   e.currentTarget.textContent = toLogin ? 'Sign Up' : 'Log In';
   document.getElementById('auth-email-toggle').textContent = toLogin ? 'Log in with email' : 'Sign up with email';
+  modal.querySelectorAll('[data-auth]').forEach(function(b){ b.textContent = b.textContent.replace(/^(Sign up|Log in) with/, toLogin ? 'Log in with' : 'Sign up with'); });
   var submitBtn = emailForm.querySelector('button[type="submit"]');
   if(submitBtn) submitBtn.textContent = toLogin ? 'Log in' : 'Create account';
   var nameField = emailForm.querySelector('input[name="bw-name"]');
   if(nameField) nameField.style.display = toLogin ? 'none' : '';
+  var pwField = emailForm.querySelector('input[type="password"]');
+  if(pwField){ pwField.placeholder = toLogin ? 'Password' : 'Create a password'; pwField.setAttribute('aria-label', toLogin ? 'Password' : 'Create a password'); }
 });
 modal.querySelectorAll('[data-auth]').forEach(function(b){
   b.addEventListener('click', function(){ toast('Email is the door today — Google/Facebook joining arrives in the November build.'); });

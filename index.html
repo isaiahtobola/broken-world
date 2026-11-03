@@ -3688,11 +3688,15 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
       el.appendChild(w);
       if(wi < arr.length - 1) el.appendChild(document.createTextNode(' '));
     });
-    var i = 0;
+    var i = 0, hold = 0;
     A.tutTimer = setInterval(function(){
       if(i < letters.length){ letters[i].classList.add('on'); i++; }
-      else { clearInterval(A.tutTimer); A.tutTimer = null; }
-    }, 20);
+      else if(hold < 75){ hold++; }
+      else {
+        letters.forEach(function(s){ s.classList.remove('on'); });
+        i = 0; hold = 0;
+      }
+    }, 34);
   }
   function toAnvil(clientX, clientY){
     var r = canvas.getBoundingClientRect();

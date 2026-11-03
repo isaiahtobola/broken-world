@@ -2753,17 +2753,21 @@ runners['car-canvas'] = function(canvas, ctx, state){
     var CKINDS = ['saguaro','saguaro','barrel','octopus','pear'];
     var ARMSETS = ['none','L','R','LR','LR','LLR','LRR'];
     var OSTYLES = ['thin','flush','wretched'];
-    /* Build 89 — his final tweak: BOTH roadside rows are guaranteed his
-       1 / 2 / 3-arm spread: every side of the road gets one 3-arm, one
-       2-arm and one 1-arm saguaro, the order shuffled so it never looks
-       dealt; the remaining slots keep the old creative mix. The 1-arm
+    /* Builds 89+90 — his final tweaks: BOTH roadside rows are guaranteed
+       his full saguaro spread: every side of the road gets one 3-arm, one
+       2-arm, one 1-arm and one NO-arm saguaro, the order shuffled so it
+       never looks dealt; the remaining slots keep the old creative mix.
+       The 2-arm is sometimes a same-side pair (both arms left 'LL' or
+       both right 'RR') instead of the classic split ('LR'). The 1-arm
        saguaros wear a flower on top (drawn inside saguaro()). */
     function shuffled(a){ for(var j=a.length-1;j>0;j--){ var k=Math.floor(Math.random()*(j+1)); var t=a[j]; a[j]=a[k]; a[k]=t; } return a; }
     function roadside(n, sMin, sMax){
+      var twoArm = ['LR','LR','LL','RR'][Math.floor(Math.random()*4)];
       var plan = shuffled([
         {kind:'saguaro', arms:(Math.random()<0.5 ? 'LLR' : 'LRR')},
-        {kind:'saguaro', arms:'LR'},
-        {kind:'saguaro', arms:(Math.random()<0.5 ? 'L' : 'R')}
+        {kind:'saguaro', arms:twoArm},
+        {kind:'saguaro', arms:(Math.random()<0.5 ? 'L' : 'R')},
+        {kind:'saguaro', arms:'none'}
       ]);
       while(plan.length < n){
         plan.push({kind:CKINDS[Math.floor(Math.random()*CKINDS.length)], arms:ARMSETS[Math.floor(Math.random()*ARMSETS.length)]});
@@ -2789,6 +2793,8 @@ runners['car-canvas'] = function(canvas, ctx, state){
       if(arms === 'L'){ L = [{f:0.55, ah:25*u}]; }
       else if(arms === 'R'){ R = [{f:0.60, ah:23*u}]; }
       else if(arms === 'LR'){ L = [{f:0.50, ah:27*u}]; R = [{f:0.66, ah:24*u}]; }
+      else if(arms === 'LL'){ L = [{f:0.40, ah:21*u}, {f:0.64, ah:25*u}]; }
+      else if(arms === 'RR'){ R = [{f:0.44, ah:20*u}, {f:0.68, ah:24*u}]; }
       else if(arms === 'LLR'){ L = [{f:0.38, ah:20*u}, {f:0.62, ah:25*u}]; R = [{f:0.52, ah:22*u}]; }
       else if(arms === 'LRR'){ L = [{f:0.52, ah:24*u}]; R = [{f:0.44, ah:20*u}, {f:0.68, ah:23*u}]; }
       L.sort(function(a, b){ return a.f - b.f; });

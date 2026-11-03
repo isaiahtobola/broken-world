@@ -590,15 +590,26 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 .forge-zone p{color:var(--muted); font-style:italic; font-size:17.5px; margin-bottom:22px}
 #forge-canvas{
   display:block; width:100%; height:420px; border-radius:16px 16px 0 0;
-  border:1px solid rgba(240,183,63,.4); border-bottom:none; background:#0d0716; cursor:crosshair; touch-action:none;
+  border:1px solid rgba(240,183,63,.4); border-bottom:none; background:#0d0716; cursor:crosshair;
 }
 #anvil-canvas{
   display:block; width:100%; height:400px; border-radius:0 0 16px 16px;
-  border:1px solid rgba(240,183,63,.4); border-top:none; background:#0d0716; touch-action:none;
+  border:1px solid rgba(240,183,63,.4); border-top:none; background:#0d0716;
 }
 .smith-note{padding-top:28px; padding-bottom:10px}
 .smith-note h3{color:var(--gold); font-size:22px; margin-bottom:8px}
 .smith-note p{color:var(--muted); font-size:16.5px; line-height:1.65; margin-bottom:10px; max-width:72ch}
+#bw-tutor{position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center; padding:22px;
+  background:rgba(16,8,28,.72); opacity:0; pointer-events:none; transition:opacity .5s ease}
+#bw-tutor.show{opacity:1; pointer-events:auto}
+#bw-tutor .tcard{max-width:520px; width:100%; background:rgba(31,20,51,.97); border:1px solid rgba(240,183,63,.65);
+  border-radius:16px; padding:28px 26px 22px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,.55)}
+#bw-tutor .ttext{font-family:"Newsreader", Georgia, serif; font-style:italic; font-size:20px; line-height:1.55; color:#ffe9b0;
+  text-shadow:0 0 18px rgba(255,190,80,.45); animation:tutHearth 3.2s ease-in-out infinite; margin:0}
+@keyframes tutHearth{0%,100%{opacity:.6}50%{opacity:1}}
+#bw-tutor .tnext{margin-top:20px; background:var(--gold); color:#241536; border:none; border-radius:999px;
+  font-family:"IBM Plex Mono", monospace; font-weight:700; font-size:14px; letter-spacing:.12em; padding:11px 30px; cursor:pointer}
+#bw-tutor .tnext:hover{background:var(--yellow)}
 
 /* ============ FILE SHARE (Spec 9) ============ */
 #view-files{min-height:calc(100vh - 190px); overflow:hidden}
@@ -3566,14 +3577,17 @@ runners['forge-canvas'] = function(canvas, ctx, state){
     var anyFill = F.molds.some(function(m){ return m.fill > 0; });
     var allHot = F.molds.every(function(m){ return m.hot || m.taken; });
     var msg;
-    if(allFull && allHot) msg = 'RED HOT · SCROLL DOWN — THE ANVIL STATION WAITS ↓';
-    else if(allFull) msg = 'FULL SET POURED · NOW TAP EACH BAR TILL IT GLOWS RED';
+    if(allFull && allHot) msg = 'RED HOT · THE ANVIL STATION WAITS BELOW ↓';
+    else if(allFull) msg = 'FULL SET · TAP EACH BAR TILL IT GLOWS RED';
     else if(pouring) msg = 'POURING… HOLD IT THERE';
     else if(F.held) msg = 'NOW SLIDE OVER AN EMPTY MOLD →';
     else if(anyFill) msg = 'GRAB THE POURER · DRAG TO THE NEXT MOLD';
     else msg = 'GRAB THE POURER · HOLD + SLIDE TO A MOLD TO POUR';
     ctx.fillStyle = 'rgba(255,209,102,'+(pouring || F.held ? 0.95 : 0.6 + 0.3*Math.sin(now/400)).toFixed(3)+')';
-    ctx.font = '600 '+(12*DPR)+'px "IBM Plex Mono", monospace';
+    var mfs = 12*DPR;
+    ctx.font = '600 '+mfs+'px "IBM Plex Mono", monospace';
+    var mwid = ctx.measureText(msg).width;
+    if(mwid > W - 28*DPR){ mfs = Math.max(8*DPR, mfs * (W - 28*DPR) / mwid); ctx.font = '600 '+mfs+'px "IBM Plex Mono", monospace'; }
     ctx.fillText(msg, 16*DPR, H - 14*DPR);
     state.raf = requestAnimationFrame(frame);
   }
@@ -3593,7 +3607,8 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
   var A = window.__anvil || (window.__anvil = {
     bars: 0, strikes: 0, quench: 0, hammerLocked: false, doneFlag: false,
     carry: null, barIdx: -1, cx: -9999, cy: -9999, down: false,
-    swingAt: -9999, sparks: [], steam: [], listening: false, geom: null
+    swingAt: -9999, sparks: [], steam: [], listening: false, geom: null,
+    resetStamp: 0, glideTo: null, glideAfterTut: null
   });
   var FC = document.getElementById('forge-canvas');
   function F(){ return window.__forge; }
@@ -3641,6 +3656,20 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
     document.body.appendChild(layer);
   }
   var lctx = layer.getContext('2d');
+  /* the teaching overlay (DOM, so its text wraps and always fits) */
+  var tut = document.getElementById('bw-tutor');
+  if(!tut){
+    tut = document.createElement('div');
+    tut.id = 'bw-tutor';
+    tut.innerHTML = '<div class="tcard"><p class="ttext"></p><button class="tnext" type="button">Next</button></div>';
+    document.body.appendChild(tut);
+    tut.querySelector('.tnext').addEventListener('click', function(){
+      var T2 = window.__tutor;
+      if(T2 && T2.open){ T2.shown[T2.open] = true; T2.open = null; }
+      tut.classList.remove('show');
+      if(A.glideAfterTut != null){ A.glideTo = A.glideAfterTut; A.glideAfterTut = null; }
+    });
+  }
   function toAnvil(clientX, clientY){
     var r = canvas.getBoundingClientRect();
     return { x: (clientX - r.left) * canvas.width / r.width, y: (clientY - r.top) * canvas.height / r.height };
@@ -3668,6 +3697,7 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
     if(f) f.molds.forEach(function(m){ m.fill = 0; m.heat = 0; m.hot = false; m.taken = false; });
     A.bars = 0; A.strikes = 0; A.quench = 0; A.hammerLocked = false;
     A.doneFlag = false; A.carry = null; A.barIdx = -1; A.sparks = []; A.steam = [];
+    A.resetStamp = (A.resetStamp || 0) + 1;
   }
   if(!A.listening){
     A.listening = true;
@@ -3746,35 +3776,57 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
       ctx.font = '600 '+(9.5*DPR)+'px "IBM Plex Mono", monospace';
       ctx.textAlign = 'center'; ctx.fillText(text, x, y); ctx.textAlign = 'left';
     }
-    function prompt(text){
-      var o = 0.45 + 0.55*Math.abs(Math.sin(now/850));
-      ctx.save(); ctx.globalAlpha = o;
-      ctx.fillStyle = '#ffd166'; ctx.shadowColor = 'rgba(255,190,80,.85)'; ctx.shadowBlur = 15*DPR;
-      ctx.font = 'italic 600 '+(16*DPR)+'px "Newsreader", Georgia, serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(text, W/2, 38*DPR);
-      ctx.restore(); ctx.textAlign = 'left';
+    /* ---- the teaching overlay: one card per step (his 2026-11-03
+       design) — plum-dark backdrop, golden hearth text breathing in
+       and out, Next fades it all away and glides you to the work.
+       Canvas prompts are retired: their text ran off small screens. */
+    var T = window.__tutor || (window.__tutor = { shown: {}, open: null, stamp: -1 });
+    if(T.stamp !== (A.resetStamp || 0)){
+      T.stamp = A.resetStamp || 0; T.shown = {}; T.open = null;
+      tut.classList.remove('show');
     }
-    /* ---- prompts: golden, hearthy, breathing ---- */
-    if(st === 'wait') prompt('First — pour your three gold bars in the forge above.');
-    else if(st === 'heat') prompt('Now tap each bar above until it glows red hot.');
-    else if(st === 'tongs') prompt(A.bars === 0 ? 'Take the blacksmith\u2019s tongs — hold them, and carry each hot bar to the anvil.' : 'Bar ' + A.bars + ' of 3 rests on the anvil — fetch the next one.');
-    else if(st === 'hammer') prompt('Now drag the forging hammer onto the bars.');
-    else if(st === 'strike') prompt('Strike! Tap or click, again and again — bend the gold into a blade. (' + A.strikes + ' of 12)');
-    else if(st === 'quench') prompt('Quench it — drag the blade to the bucket and hold it under the water.');
-    else if(st === 'done'){
-      var o2 = 0.5 + 0.5*Math.abs(Math.sin(now/1400));
-      ctx.save(); ctx.globalAlpha = 0.35 + 0.65*o2;
-      ctx.fillStyle = '#ffe9b0'; ctx.shadowColor = 'rgba(255,190,80,.7)'; ctx.shadowBlur = 18*DPR;
-      ctx.font = 'italic 600 '+(17*DPR)+'px "Newsreader", Georgia, serif'; ctx.textAlign = 'center';
-      var lines = ['Nothing here was wasted.',
-                   'What looked broken was only unfinished —',
-                   'heated, held, and hammered with patience,',
-                   'three scattered pieces now stand as one strong, new thing.',
-                   'That is what mending does.'];
-      for(var li=0; li<lines.length; li++) ctx.fillText(lines[li], W/2, 38*DPR + li*24*DPR);
-      ctx.restore(); ctx.textAlign = 'left';
+    var stepKey = null, stepText = null, stepEl = null;
+    if(st === 'wait'){ stepKey = 'pour'; stepEl = FC;
+      stepText = 'Welcome to the forge. Above the molds hangs the pourer — grab it, hold it, and slide it over a mold. Keep it there while the gold pours, and fill all three molds.'; }
+    else if(st === 'heat'){ stepKey = 'heat'; stepEl = FC;
+      stepText = 'A full set, poured. Now tap each bar until it glows red hot — hot gold is ready to travel.'; }
+    else if(st === 'tongs'){ stepKey = 'tongs'; stepEl = canvas;
+      stepText = 'Below waits the anvil station. Take the blacksmith\u2019s tongs, hold them, and carry each red bar down to the anvil. The page glides with you as you travel.'; }
+    else if(st === 'hammer'){ stepKey = 'hammer'; stepEl = canvas;
+      stepText = 'Three bars rest on the anvil, in a line. Drag the forging hammer onto them — it will lock into the golden ring above the anvil, held there for you.'; }
+    else if(st === 'strike'){ stepKey = 'strike'; stepEl = canvas;
+      stepText = 'Strike! Tap or click, again and again — twelve blows to bend the gold into a blade.'; }
+    else if(st === 'quench'){ stepKey = 'quench'; stepEl = canvas;
+      stepText = 'The blade is shaped, and burning hot. Drag it to the quench bucket and hold it under the water until it cools.'; }
+    else if(st === 'done'){ stepKey = 'done'; stepEl = canvas;
+      stepText = 'Nothing here was wasted. What looked broken was only unfinished — heated, held, and hammered with patience, three scattered pieces now stand as one strong, new thing. That is what mending does. Your blade is forged.'; }
+    if(stepKey && !T.shown[stepKey] && !T.open){
+      T.open = stepKey;
+      tut.querySelector('.ttext').textContent = stepText;
+      tut.querySelector('.tnext').textContent = stepKey === 'done' ? 'Done' : 'Next';
+      A.glideAfterTut = stepEl ? (stepEl.getBoundingClientRect().top + window.scrollY - 64) : null;
+      tut.classList.add('show');
     }
+    /* ---- the slow camera: glide to wherever the work is ---- */
+    var glideDest = null;
+    if(A.carry === 'tongs') glideDest = FC;
+    else if(A.carry) glideDest = canvas;
+    if(glideDest) A.glideTo = glideDest.getBoundingClientRect().top + window.scrollY - 64;
+    if(A.glideTo != null){
+      var gdiff = A.glideTo - window.scrollY;
+      if(Math.abs(gdiff) < 3) A.glideTo = null;
+      else {
+        var gstep = gdiff * 0.05;
+        if(gstep > 3.4) gstep = 3.4;
+        if(gstep < -3.4) gstep = -3.4;
+        if(Math.abs(gstep) < 1.1) gstep = gdiff > 0 ? 1.1 : -1.1;
+        window.scrollBy(0, gstep);
+      }
+    }
+    /* canvases scroll freely until a hand is actually holding work */
+    var fNow = F();
+    FC.style.touchAction = (fNow && fNow.held) ? 'none' : 'pan-y';
+    canvas.style.touchAction = A.carry ? 'none' : 'pan-y';
     /* ---- the anvil ---- */
     (function drawAnvil(){
       var ax = anvilX, top = anvilTop, fh = floorY - top;
@@ -3963,12 +4015,6 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.29); ctx.fill();
     });
     canvas.style.cursor = A.carry ? 'grabbing' : ((st === 'tongs' || st === 'hammer' || st === 'quench') ? 'grab' : 'default');
-    /* while carrying, pushing the hand to a screen edge glides the
-       page along — the only scrolling an interaction allows */
-    if(A.carry){
-      if(A.cy < 84) window.scrollBy(0, -11);
-      else if(A.cy > window.innerHeight - 84) window.scrollBy(0, 11);
-    }
     /* ---- the drag layer: whatever the hand is holding ---- */
     var lw = window.innerWidth, lh = window.innerHeight;
     var ldpr = Math.min(2, window.devicePixelRatio || 1);

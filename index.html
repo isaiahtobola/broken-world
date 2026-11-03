@@ -2753,8 +2753,25 @@ runners['car-canvas'] = function(canvas, ctx, state){
     var CKINDS = ['saguaro','saguaro','barrel','octopus','pear'];
     var ARMSETS = ['none','L','R','LR','LR','LLR','LRR'];
     var OSTYLES = ['thin','flush','wretched'];
-    for(i=0;i<5;i++) cactiFar.push({x:Math.random(), s:rand(0.95,1.3), kind:CKINDS[Math.floor(Math.random()*CKINDS.length)], arms:ARMSETS[Math.floor(Math.random()*ARMSETS.length)], ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]});
-    for(i=0;i<4;i++) cactiNear.push({x:Math.random(), s:rand(1.35,1.8), kind:CKINDS[Math.floor(Math.random()*CKINDS.length)], arms:ARMSETS[Math.floor(Math.random()*ARMSETS.length)], ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]});
+    /* Build 89 — his final tweak: BOTH roadside rows are guaranteed his
+       1 / 2 / 3-arm spread: every side of the road gets one 3-arm, one
+       2-arm and one 1-arm saguaro, the order shuffled so it never looks
+       dealt; the remaining slots keep the old creative mix. The 1-arm
+       saguaros wear a flower on top (drawn inside saguaro()). */
+    function shuffled(a){ for(var j=a.length-1;j>0;j--){ var k=Math.floor(Math.random()*(j+1)); var t=a[j]; a[j]=a[k]; a[k]=t; } return a; }
+    function roadside(n, sMin, sMax){
+      var plan = shuffled([
+        {kind:'saguaro', arms:(Math.random()<0.5 ? 'LLR' : 'LRR')},
+        {kind:'saguaro', arms:'LR'},
+        {kind:'saguaro', arms:(Math.random()<0.5 ? 'L' : 'R')}
+      ]);
+      while(plan.length < n){
+        plan.push({kind:CKINDS[Math.floor(Math.random()*CKINDS.length)], arms:ARMSETS[Math.floor(Math.random()*ARMSETS.length)]});
+      }
+      return plan.map(function(p){ return {x:Math.random(), s:rand(sMin, sMax), kind:p.kind, arms:p.arms, ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]}; });
+    }
+    cactiFar = roadside(5, 0.95, 1.3);
+    cactiNear = roadside(4, 1.35, 1.8);
     for(i=0;i<4;i++) birds.push({x:Math.random(), y:rand(0.10,0.30), ph:Math.random()*6.28, sp:rand(0.6,1.0), g:0});
   }
   build();
@@ -2804,6 +2821,19 @@ runners['car-canvas'] = function(canvas, ctx, state){
         ctx.lineTo(x1, yA);
       });
       ctx.lineTo(x1, base);
+      /* Build 89: a 1-arm saguaro wears a flower on top of its trunk.
+         Petals are subpaths of this same single path, so the flower
+         takes the exact same paint as the body — his "same colors
+         tho" — including the headlight mix toward gold. */
+      if(arms === 'L' || arms === 'R'){
+        var fy = base - h, pr = 3.1*u;
+        for(var k=0;k<5;k++){
+          var pa = -Math.PI/2 + k*(Math.PI*2/5);
+          var px2 = x + Math.cos(pa)*4.6*u, py2 = fy - 3.4*u + Math.sin(pa)*3.4*u;
+          ctx.moveTo(px2 + pr, py2); ctx.arc(px2, py2, pr, 0, 6.29);
+        }
+        ctx.moveTo(x + 1.9*u, fy - 3.4*u); ctx.arc(x, fy - 3.4*u, 1.9*u, 0, 6.29);
+      }
       ctx.closePath(); ctx.fill();
     }
     function barrel(){

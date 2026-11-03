@@ -863,7 +863,7 @@ body[data-theme="xmas"][data-current="home"] .deco-xmas{display:block}
 
 /* ---- Sea depth gauge (set function: deeper as the Sea grows) ---- */
 .depth-gauge{
-  position:fixed; right:2px; top:50%; transform:translateY(-50%);
+  position:fixed; right:7px; top:50%; transform:translateY(-50%);
   z-index:25; display:none; flex-direction:column; align-items:flex-end; gap:8px;
   font-family:var(--mono); color:var(--muted); user-select:none;
 }
@@ -884,8 +884,7 @@ body[data-current="sea"] .depth-gauge{display:flex}
   box-shadow:0 0 12px 2px rgba(255,209,102,.75);
 }
 .depth-gauge .dg-now{font-size:13px; color:var(--cream); font-weight:700; white-space:nowrap}
-.depth-gauge .dg-max{font-size:10px; white-space:nowrap}
-@media (max-width:760px){ .depth-gauge{right:0px} .depth-gauge .dg-track{height:26vh} }
+@media (max-width:760px){ .depth-gauge{right:5px} .depth-gauge .dg-track{height:26vh} }
 
 /* ---- Kintsugi page ---- */
 .kint-how{
@@ -1085,7 +1084,6 @@ body[data-current="sea"] .depth-gauge{display:flex}
     <span class="dg-label">THE SEA</span>
     <div class="dg-track"><div class="dg-fill" id="dg-fill"></div><div class="dg-dot" id="dg-dot"></div></div>
     <span class="dg-now" id="dg-now">0 m</span>
-    <span class="dg-max" id="dg-max">floor 40 m</span>
   </div>
   <div class="sea-inner wrap">
     <div class="page-head">
@@ -4300,7 +4298,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
      The floor is COMPUTED from the Sea's own content height, so every new
      post literally makes the Sea deeper. Depth = scroll fraction × floor. */
   var dgFill = document.getElementById('dg-fill'), dgDot = document.getElementById('dg-dot'),
-      dgNow = document.getElementById('dg-now'), dgMax = document.getElementById('dg-max'),
+      dgNow = document.getElementById('dg-now'),
       seaInner = document.querySelector('.sea-inner'), seaFeed = document.getElementById('sea-feed'),
       dgTick = false;
   function seaDepths(){
@@ -4312,7 +4310,6 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     var frac = Math.min(1, Math.max(0, window.scrollY / maxScroll));
     var depth = Math.round(frac * floorM);
     dgNow.textContent = depth + ' m';
-    dgMax.textContent = 'floor ' + floorM + ' m';
     if(dgFill) dgFill.style.height = (frac * 100).toFixed(1) + '%';
     if(dgDot) dgDot.style.top = (frac * 100).toFixed(1) + '%';
   }

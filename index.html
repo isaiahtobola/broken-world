@@ -604,9 +604,10 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 #bw-tutor.show{opacity:1; pointer-events:auto}
 #bw-tutor .tcard{max-width:520px; width:100%; background:rgba(31,20,51,.97); border:1px solid rgba(240,183,63,.65);
   border-radius:16px; padding:28px 26px 22px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,.55)}
-#bw-tutor .ttext{font-family:"Newsreader", Georgia, serif; font-style:italic; font-size:20px; line-height:1.55; color:#ffe9b0;
-  text-shadow:0 0 18px rgba(255,190,80,.45); animation:tutHearth 3.2s ease-in-out infinite; margin:0}
-@keyframes tutHearth{0%,100%{opacity:.6}50%{opacity:1}}
+#bw-tutor .ttext{font-family:"Newsreader", Georgia, serif; font-style:italic; font-size:20px; line-height:1.55; color:#ffe9b0; margin:0}
+#bw-tutor .tw{display:inline-block; white-space:nowrap}
+#bw-tutor .tl{display:inline-block; color:#a68fd0; transition:color .45s ease, text-shadow .45s ease}
+#bw-tutor .tl.on{color:#ffe9b0; text-shadow:0 0 13px rgba(255,190,80,.95)}
 #bw-tutor .tnext{margin-top:20px; background:var(--gold); color:#241536; border:none; border-radius:999px;
   font-family:"IBM Plex Mono", monospace; font-weight:700; font-size:14px; letter-spacing:.12em; padding:11px 30px; cursor:pointer}
 #bw-tutor .tnext:hover{background:var(--yellow)}
@@ -3608,7 +3609,7 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
     bars: 0, strikes: 0, quench: 0, hammerLocked: false, doneFlag: false,
     carry: null, barIdx: -1, cx: -9999, cy: -9999, down: false,
     swingAt: -9999, sparks: [], steam: [], listening: false, geom: null,
-    resetStamp: 0, glideTo: null, glideAfterTut: null
+    resetStamp: 0, glideTo: null, glideAfterTut: null, tutTimer: null
   });
   var FC = document.getElementById('forge-canvas');
   function F(){ return window.__forge; }
@@ -3666,9 +3667,32 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
     tut.querySelector('.tnext').addEventListener('click', function(){
       var T2 = window.__tutor;
       if(T2 && T2.open){ T2.shown[T2.open] = true; T2.open = null; }
+      if(A.tutTimer){ clearInterval(A.tutTimer); A.tutTimer = null; }
       tut.classList.remove('show');
       if(A.glideAfterTut != null){ A.glideTo = A.glideAfterTut; A.glideAfterTut = null; }
     });
+  }
+  /* this page ONLY: the letters teach by themselves — each one
+     ignites gold in sequence, no tap or drag (his 2026-11-03 call) */
+  function tutIgnite(text){
+    var el = tut.querySelector('.ttext');
+    if(A.tutTimer){ clearInterval(A.tutTimer); A.tutTimer = null; }
+    el.innerHTML = '';
+    var letters = [];
+    text.split(' ').forEach(function(word, wi, arr){
+      var w = document.createElement('span'); w.className = 'tw';
+      word.split('').forEach(function(ch){
+        var s = document.createElement('span'); s.className = 'tl'; s.textContent = ch;
+        w.appendChild(s); letters.push(s);
+      });
+      el.appendChild(w);
+      if(wi < arr.length - 1) el.appendChild(document.createTextNode(' '));
+    });
+    var i = 0;
+    A.tutTimer = setInterval(function(){
+      if(i < letters.length){ letters[i].classList.add('on'); i++; }
+      else { clearInterval(A.tutTimer); A.tutTimer = null; }
+    }, 20);
   }
   function toAnvil(clientX, clientY){
     var r = canvas.getBoundingClientRect();
@@ -3802,7 +3826,7 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
       stepText = 'Nothing here was wasted. What looked broken was only unfinished — heated, held, and hammered with patience, three scattered pieces now stand as one strong, new thing. That is what mending does. Your blade is forged.'; }
     if(stepKey && !T.shown[stepKey] && !T.open){
       T.open = stepKey;
-      tut.querySelector('.ttext').textContent = stepText;
+      tutIgnite(stepText);
       tut.querySelector('.tnext').textContent = stepKey === 'done' ? 'Done' : 'Next';
       A.glideAfterTut = stepEl ? (stepEl.getBoundingClientRect().top + window.scrollY - 64) : null;
       tut.classList.add('show');
@@ -4375,7 +4399,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
      and the whole text cascades alight, fading after 6 seconds.
      Nothing is one-time: touch it again and it comes back. ---------- */
   var LIVING_SEL = '.post-body, .about-card p, .home-note, .join-copy, .big, .hero-line, .modal-sub, .feed-empty';
-  var LIT_SKIP = 'script, style, noscript, textarea, input, select, svg, canvas, [contenteditable], .hl-w, .post-head, .cmt-head';
+  var LIT_SKIP = 'script, style, noscript, textarea, input, select, svg, canvas, [contenteditable], .hl-w, .post-head, .cmt-head, #bw-tutor';
   function litSkip(node){
     var p = node.parentNode;
     if(!p || typeof p.closest !== 'function') return true;

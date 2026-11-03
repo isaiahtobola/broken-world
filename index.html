@@ -590,7 +590,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 .forge-zone p{color:var(--muted); font-style:italic; font-size:17.5px; margin-bottom:22px}
 #forge-canvas{
   display:block; width:100%; height:420px; border-radius:16px 16px 0 0;
-  border:1px solid rgba(240,183,63,.4); border-bottom:none; background:#0d0716; cursor:crosshair;
+  border:1px solid rgba(240,183,63,.4); border-bottom:none; background:#0d0716; cursor:crosshair; touch-action:none;
 }
 #anvil-canvas{
   display:block; width:100%; height:400px; border-radius:0 0 16px 16px;
@@ -2726,71 +2726,142 @@ runners['car-canvas'] = function(canvas, ctx, state){
       houses.push({x:Math.random(), w:hw, h:hh, tower:hh > 0.2, wins:wins});
     }
     var CKINDS = ['saguaro','saguaro','barrel','octopus','pear'];
-    for(i=0;i<5;i++) cactiFar.push({x:Math.random(), s:rand(0.95,1.3), kind:CKINDS[Math.floor(Math.random()*CKINDS.length)]});
-    for(i=0;i<4;i++) cactiNear.push({x:Math.random(), s:rand(1.35,1.8), kind:CKINDS[Math.floor(Math.random()*CKINDS.length)]});
+    var ARMSETS = ['none','L','R','LR','LR','LLR','LRR'];
+    var OSTYLES = ['thin','flush','wretched'];
+    for(i=0;i<5;i++) cactiFar.push({x:Math.random(), s:rand(0.95,1.3), kind:CKINDS[Math.floor(Math.random()*CKINDS.length)], arms:ARMSETS[Math.floor(Math.random()*ARMSETS.length)], ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]});
+    for(i=0;i<4;i++) cactiNear.push({x:Math.random(), s:rand(1.35,1.8), kind:CKINDS[Math.floor(Math.random()*CKINDS.length)], arms:ARMSETS[Math.floor(Math.random()*ARMSETS.length)], ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]});
     for(i=0;i<4;i++) birds.push({x:Math.random(), y:rand(0.10,0.30), ph:Math.random()*6.28, sp:rand(0.6,1.0), g:0});
   }
   build();
-  function cactus(x, base, sc, color, glow, kind){
-    /* Real desert shapes (his 2026-11-03 call): curved saguaro with
-       arms that reach UP, round ribbed barrel, many-armed octopus,
-       flat-pad prickly pear — fewer of them, bigger, and they still
-       catch the headlights and glow gold as the car passes */
+  function cactus(x, base, sc, color, glow, kind, arms, ostyle){
+    /* ONE single silhouette per cactus (his 2026-11-03 fix): one
+       path, one opaque fill — no layered strokes, no see-through
+       overlap. Saguaros get 0, 1, 2 or 3 arms; octopus cacti come
+       thin-and-pokey, flush-and-plump, or wretched-and-branchy.
+       The headlight glow now mixes the paint itself toward gold
+       instead of laying a transparent coat on top. */
     var u = sc*DPR;
-    function col(x0, w0, h0){ /* a rounded-top column */
+    function saguaro(){
+      var w = 13*u, h = 78*u, x0 = x - w/2, x1 = x + w/2, out = 13*u, th = 7*u;
+      var L = [], R = [];
+      if(arms === 'L'){ L = [{f:0.55, ah:25*u}]; }
+      else if(arms === 'R'){ R = [{f:0.60, ah:23*u}]; }
+      else if(arms === 'LR'){ L = [{f:0.50, ah:27*u}]; R = [{f:0.66, ah:24*u}]; }
+      else if(arms === 'LLR'){ L = [{f:0.38, ah:20*u}, {f:0.62, ah:25*u}]; R = [{f:0.52, ah:22*u}]; }
+      else if(arms === 'LRR'){ L = [{f:0.52, ah:24*u}]; R = [{f:0.44, ah:20*u}, {f:0.68, ah:23*u}]; }
+      L.sort(function(a, b){ return a.f - b.f; });
+      R.sort(function(a, b){ return b.f - a.f; });
       ctx.beginPath();
       ctx.moveTo(x0, base);
-      ctx.lineTo(x0, base-h0+w0/2);
-      ctx.quadraticCurveTo(x0, base-h0, x0+w0/2, base-h0);
-      ctx.quadraticCurveTo(x0+w0, base-h0, x0+w0, base-h0+w0/2);
-      ctx.lineTo(x0+w0, base);
+      L.forEach(function(a){
+        var yA = base - a.f*h;
+        ctx.lineTo(x0, yA);
+        ctx.lineTo(x0 - out + th/2, yA);
+        ctx.quadraticCurveTo(x0 - out, yA, x0 - out, yA - th/2);
+        ctx.lineTo(x0 - out, yA - a.ah + th/2);
+        ctx.quadraticCurveTo(x0 - out, yA - a.ah, x0 - out + th/2, yA - a.ah);
+        ctx.quadraticCurveTo(x0 - out + th, yA - a.ah, x0 - out + th, yA - a.ah + th/2);
+        ctx.lineTo(x0 - out + th, yA - th);
+        ctx.lineTo(x0, yA - th);
+      });
+      ctx.lineTo(x0, base - h + w/2);
+      ctx.quadraticCurveTo(x0, base - h, x, base - h);
+      ctx.quadraticCurveTo(x1, base - h, x1, base - h + w/2);
+      R.forEach(function(a){
+        var yA = base - a.f*h;
+        ctx.lineTo(x1, yA - th);
+        ctx.lineTo(x1 + out - th, yA - th);
+        ctx.lineTo(x1 + out - th, yA - a.ah + th/2);
+        ctx.quadraticCurveTo(x1 + out - th, yA - a.ah, x1 + out - th/2, yA - a.ah);
+        ctx.quadraticCurveTo(x1 + out, yA - a.ah, x1 + out, yA - a.ah + th/2);
+        ctx.lineTo(x1 + out, yA - th/2);
+        ctx.quadraticCurveTo(x1 + out, yA, x1 + out - th/2, yA);
+        ctx.lineTo(x1, yA);
+      });
+      ctx.lineTo(x1, base);
       ctx.closePath(); ctx.fill();
     }
-    function arm(x0, y0, cx, cy, x1, y1){
-      ctx.beginPath(); ctx.moveTo(x0, y0);
-      ctx.quadraticCurveTo(cx, cy, x1, y1); ctx.stroke();
+    function barrel(){
+      var bw2 = 30*u, bh2 = 30*u, bx0 = x - bw2/2;
+      ctx.beginPath();
+      ctx.moveTo(bx0, base);
+      ctx.lineTo(bx0, base - bh2 + bw2/2);
+      ctx.quadraticCurveTo(bx0, base - bh2, x, base - bh2);
+      ctx.quadraticCurveTo(bx0 + bw2, base - bh2, bx0 + bw2, base - bh2 + bw2/2);
+      ctx.lineTo(bx0 + bw2, base);
+      ctx.closePath();
+      ctx.moveTo(x - 3.5*u, base - bh2 + 1*u);
+      ctx.lineTo(x, base - bh2 - 4.5*u);
+      ctx.lineTo(x + 3.5*u, base - bh2 + 1*u);
+      ctx.closePath(); ctx.fill();
     }
-    function body(){
-      ctx.strokeStyle = ctx.fillStyle; ctx.lineCap = 'round';
-      if(kind === 'barrel'){
-        col(x-15*u, 30*u, 30*u);
-        ctx.save(); ctx.globalAlpha = 0.22; ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.lineWidth = 1.6*u;
-        for(var rb=-1; rb<=1; rb++){ ctx.beginPath(); ctx.moveTo(x+rb*9*u, base-3*u); ctx.quadraticCurveTo(x+rb*11*u, base-15*u, x+rb*8*u, base-27*u); ctx.stroke(); }
-        ctx.restore();
-        ctx.beginPath(); ctx.arc(x, base-31*u, 3.4*u, 0, 6.29); ctx.fill();
-      } else if(kind === 'octopus'){
-        ctx.beginPath(); ctx.ellipse(x, base, 13*u, 5*u, 0, 3.15, 6.28); ctx.fill();
-        ctx.lineWidth = 5.5*u;
-        arm(x-4*u, base-2*u, x-16*u, base-10*u, x-20*u, base-30*u);
-        arm(x+4*u, base-2*u, x+15*u, base-12*u, x+21*u, base-24*u);
-        arm(x-1*u, base-3*u, x-8*u, base-22*u, x-9*u, base-38*u);
-        arm(x+2*u, base-3*u, x+9*u, base-20*u, x+7*u, base-33*u);
-        arm(x, base-3*u, x+1*u, base-24*u, x-2*u, base-44*u);
-      } else if(kind === 'pear'){
-        function pad(px, py, rx, ry, rot){
-          ctx.save(); ctx.translate(px, py); ctx.rotate(rot);
-          ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, 6.29); ctx.fill(); ctx.restore();
-        }
-        pad(x, base-13*u, 10*u, 14*u, 0);
-        pad(x-13*u, base-9*u, 8*u, 11*u, -0.45);
-        pad(x+13*u, base-10*u, 8*u, 11*u, 0.4);
-        pad(x-4*u, base-27*u, 7.5*u, 10.5*u, -0.2);
-        pad(x+8*u, base-25*u, 7*u, 10*u, 0.3);
-      } else { /* saguaro — arms reach UP, like they're supposed to */
-        var w = 13*u, h = 78*u;
-        col(x-w/2, w, h);
-        ctx.lineWidth = 7*u;
-        arm(x-w/2+2*u, base-h*0.55, x-w/2-13*u, base-h*0.55, x-w/2-13*u, base-h*0.84);
-        arm(x+w/2-2*u, base-h*0.68, x+w/2+12*u, base-h*0.68, x+w/2+12*u, base-h*0.97);
+    function oArm(x0, y0, len, tilt, thick, kink){
+      var tx = x0 + tilt, ty = y0 - len;
+      var mx = x0 + tilt*0.45 + (kink || 0), my = y0 - len*0.55;
+      ctx.moveTo(x0 - thick, y0);
+      ctx.quadraticCurveTo(mx - thick*0.8, my, tx - thick*0.4, ty + thick);
+      ctx.quadraticCurveTo(tx, ty - thick*0.7, tx + thick*0.4, ty + thick);
+      ctx.quadraticCurveTo(mx + thick*0.8, my, x0 + thick, y0);
+      ctx.closePath();
+    }
+    function octopus(){
+      ctx.beginPath();
+      ctx.moveTo(x + (ostyle === 'flush' ? 16 : 13)*u, base);
+      ctx.ellipse(x, base, (ostyle === 'flush' ? 16 : 13)*u, 5*u, 0, 3.15, 6.28);
+      if(ostyle === 'thin'){ /* thin and pokey */
+        oArm(x, base, 50*u, -3*u, 2.0*u, 0);
+        oArm(x, base, 44*u, -13*u, 1.9*u, 0);
+        oArm(x, base, 46*u, 12*u, 2.1*u, 0);
+        oArm(x, base, 36*u, -21*u, 1.8*u, 0);
+        oArm(x, base, 34*u, 20*u, 1.8*u, 0);
+        oArm(x, base, 27*u, 26*u, 1.7*u, 0);
+      } else if(ostyle === 'flush'){ /* flush and plump */
+        oArm(x, base, 28*u, -4*u, 6.0*u, 0);
+        oArm(x, base, 25*u, -14*u, 5.6*u, 0);
+        oArm(x, base, 26*u, 11*u, 5.8*u, 0);
+        oArm(x, base, 20*u, 20*u, 5.2*u, 0);
+        oArm(x, base, 19*u, -21*u, 5.0*u, 0);
+      } else { /* wretched and branchy */
+        oArm(x, base, 40*u, -6*u, 3.4*u, -7*u);
+        oArm(x, base, 30*u, -18*u, 3.2*u, 6*u);
+        oArm(x, base, 24*u, 15*u, 3.6*u, -6*u);
+        oArm(x, base, 13*u, 25*u, 3.0*u, 0);
+        oArm(x, base, 34*u, 6*u, 3.3*u, 8*u);
+        oArm(x - 8*u, base - 24*u, 13*u, -9*u, 1.7*u, 0); /* a branch off the tall arm */
       }
+      ctx.fill();
     }
-    ctx.fillStyle = color; body();
+    function pear(){
+      function padSub(px, py, rx, ry, rot){
+        ctx.save(); ctx.translate(px, py); ctx.rotate(rot);
+        ctx.moveTo(rx, 0); ctx.ellipse(0, 0, rx, ry, 0, 0, 6.29);
+        ctx.restore();
+      }
+      ctx.beginPath();
+      padSub(x, base - 13*u, 10*u, 14*u, 0);
+      padSub(x - 13*u, base - 9*u, 8*u, 11*u, -0.45);
+      padSub(x + 13*u, base - 10*u, 8*u, 11*u, 0.4);
+      padSub(x - 4*u, base - 27*u, 7.5*u, 10.5*u, -0.2);
+      padSub(x + 8*u, base - 25*u, 7*u, 10*u, 0.3);
+      ctx.fill();
+    }
+    function shape(){
+      if(kind === 'barrel') barrel();
+      else if(kind === 'octopus') octopus();
+      else if(kind === 'pear') pear();
+      else saguaro();
+    }
     if(glow > 0.03){
+      var r0 = parseInt(color.slice(1, 3), 16), g0 = parseInt(color.slice(3, 5), 16), b0 = parseInt(color.slice(5, 7), 16);
+      var f = Math.min(1, glow*0.92);
       ctx.save();
-      ctx.shadowColor = 'rgba(255,209,102,.95)'; ctx.shadowBlur = 28*glow*DPR;
-      ctx.fillStyle = 'rgba(255,209,102,'+(0.5*glow).toFixed(3)+')';
-      body();
+      ctx.shadowColor = 'rgba(255,209,102,.95)'; ctx.shadowBlur = 26*glow*DPR;
+      ctx.fillStyle = 'rgb(' + Math.round(r0 + (255 - r0)*f) + ',' + Math.round(g0 + (209 - g0)*f) + ',' + Math.round(b0 + (102 - b0)*f) + ')';
+      shape();
       ctx.restore();
+    } else {
+      ctx.fillStyle = color;
+      shape();
     }
   }
   function drawHouse(x, base, hs, now){
@@ -3081,7 +3152,7 @@ runners['car-canvas'] = function(canvas, ctx, state){
       var x = (((c.x - carState.dist*0.004) % 1.2) + 1.2) % 1.2 - 0.1;
       var prox = Math.max(0, 1 - Math.abs(x*W2 - carX)/(180*DPR));
       c.g = Math.min(1, (c.g||0) + (prox - (c.g||0)) * (prox > (c.g||0) ? 0.22 : 0.012));
-      cactus(x*W2, groundY, c.s*1.2, '#3a2560', c.g, c.kind);
+      cactus(x*W2, groundY, c.s*1.2, '#3a2560', c.g, c.kind, c.arms, c.ostyle);
     });
     /* ground + road */
     ctx.fillStyle = '#170d28'; ctx.fillRect(0, groundY, W2, H2-groundY);
@@ -3099,7 +3170,7 @@ runners['car-canvas'] = function(canvas, ctx, state){
       var x = (((c.x - carState.dist*0.01) % 1.2) + 1.2) % 1.2 - 0.1;
       var prox = Math.max(0, 1 - Math.abs(x*W2 - carX)/(190*DPR));
       c.g = Math.min(1, (c.g||0) + (prox - (c.g||0)) * (prox > (c.g||0) ? 0.22 : 0.012));
-      cactus(x*W2, roadY+44*DPR, c.s*1.3, '#251747', c.g, c.kind);
+      cactus(x*W2, roadY+44*DPR, c.s*1.3, '#251747', c.g, c.kind, c.arms, c.ostyle);
     });
     /* the car */
     drawCar(carState.pos*W2, roadY+16*DPR, now);
@@ -3497,7 +3568,7 @@ runners['forge-canvas'] = function(canvas, ctx, state){
     var anyFill = F.molds.some(function(m){ return m.fill > 0; });
     var allHot = F.molds.every(function(m){ return m.hot || m.taken; });
     var msg;
-    if(allFull && allHot) msg = 'RED HOT · THE ANVIL STATION BELOW IS READY ↓';
+    if(allFull && allHot) msg = 'RED HOT · SCROLL DOWN — THE ANVIL STATION WAITS ↓';
     else if(allFull) msg = 'FULL SET POURED · NOW TAP EACH BAR TILL IT GLOWS RED';
     else if(pouring) msg = 'POURING… HOLD IT THERE';
     else if(F.held) msg = 'NOW SLIDE OVER AN EMPTY MOLD →';
@@ -3703,7 +3774,7 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
                    'heated, held, and hammered with patience,',
                    'three scattered pieces now stand as one strong, new thing.',
                    'That is what mending does.'];
-      for(var li=0; li<lines.length; li++) ctx.fillText(lines[li], W/2, 42*DPR + li*24*DPR);
+      for(var li=0; li<lines.length; li++) ctx.fillText(lines[li], W/2, 38*DPR + li*24*DPR);
       ctx.restore(); ctx.textAlign = 'left';
     }
     /* ---- the anvil ---- */
@@ -3894,6 +3965,12 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.29); ctx.fill();
     });
     canvas.style.cursor = A.carry ? 'grabbing' : ((st === 'tongs' || st === 'hammer' || st === 'quench') ? 'grab' : 'default');
+    /* while carrying, pushing the hand to a screen edge glides the
+       page along — the only scrolling an interaction allows */
+    if(A.carry){
+      if(A.cy < 84) window.scrollBy(0, -11);
+      else if(A.cy > window.innerHeight - 84) window.scrollBy(0, 11);
+    }
     /* ---- the drag layer: whatever the hand is holding ---- */
     var lw = window.innerWidth, lh = window.innerHeight;
     var ldpr = Math.min(2, window.devicePixelRatio || 1);

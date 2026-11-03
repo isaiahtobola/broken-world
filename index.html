@@ -592,6 +592,13 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   display:block; width:100%; height:420px; border-radius:16px 16px 0 0;
   border:1px solid rgba(240,183,63,.4); border-bottom:none; background:#0d0716; cursor:crosshair;
 }
+#anvil-canvas{
+  display:block; width:100%; height:400px; border-radius:0 0 16px 16px;
+  border:1px solid rgba(240,183,63,.4); border-top:none; background:#0d0716; touch-action:none;
+}
+.smith-note{padding-top:28px; padding-bottom:10px}
+.smith-note h3{color:var(--gold); font-size:22px; margin-bottom:8px}
+.smith-note p{color:var(--muted); font-size:16.5px; line-height:1.65; margin-bottom:10px; max-width:72ch}
 
 /* ============ FILE SHARE (Spec 9) ============ */
 #view-files{min-height:calc(100vh - 190px); overflow:hidden}
@@ -856,7 +863,7 @@ body[data-theme="xmas"][data-current="home"] .deco-xmas{display:block}
 
 /* ---- Sea depth gauge (set function: deeper as the Sea grows) ---- */
 .depth-gauge{
-  position:fixed; right:14px; top:50%; transform:translateY(-50%);
+  position:fixed; right:10px; top:50%; transform:translateY(-50%);
   z-index:25; display:none; flex-direction:column; align-items:center; gap:8px;
   font-family:var(--mono); color:var(--muted); user-select:none;
 }
@@ -878,7 +885,7 @@ body[data-current="sea"] .depth-gauge{display:flex}
 }
 .depth-gauge .dg-now{font-size:13px; color:var(--cream); font-weight:700; white-space:nowrap}
 .depth-gauge .dg-max{font-size:10px; white-space:nowrap}
-@media (max-width:760px){ .depth-gauge{right:7px} .depth-gauge .dg-track{height:26vh} }
+@media (max-width:760px){ .depth-gauge{right:3px} .depth-gauge .dg-track{height:26vh} }
 
 /* ---- Kintsugi page ---- */
 .kint-how{
@@ -1202,6 +1209,14 @@ body[data-current="sea"] .depth-gauge{display:flex}
   <div class="wrap" style="padding-bottom:0">
     <canvas id="forge-canvas" aria-label="A forge pouring liquid gold into bar molds"></canvas>
   </div>
+  <div class="wrap" style="padding-bottom:0">
+    <canvas id="anvil-canvas" aria-label="The anvil station: carry the hot bars here with the blacksmith's tongs, hammer them into a sword, and quench the blade in the bucket"></canvas>
+  </div>
+  <div class="wrap smith-note">
+    <h3>What is blacksmithing?</h3>
+    <p>Blacksmithing is one of the oldest crafts on Earth — older than cars, older than books, older than almost every country. A blacksmith takes metal, which is cold and hard and refuses to bend, and heats it in a fire called a forge until it glows red and orange. Hot metal goes soft, almost like clay. Then, with a hammer and a heavy iron block called an anvil, the smith shapes it — bending it, stretching it, joining pieces together — into tools, gates, horseshoes, and swords. When the shape is right, the piece is plunged into water. That sudden cooling is called quenching, and it locks the metal hard again.</p>
+    <p>It is unique because nothing about it is instant, and nothing about it is wasted. Every piece carries the marks of every hammer strike, so no two hand-forged things are ever exactly alike. And broken metal is not thrown away: a good smith can heat a broken piece, weld it back together, and send it out stronger than it was before it broke. Around here, we believe that is true of more than metal.</p>
+  </div>
 </section>
 
 <!-- ================= FILE SHARE (Spec 9) ================= -->
@@ -1351,6 +1366,7 @@ function afterShow(id){
   if(id==='login') startRunner('car-canvas');
   if(id==='sea')   startRunner('sea-canvas');
   if(id==='join')  startRunner('forge-canvas');
+  if(id==='join')  startRunner('anvil-canvas');
   if(id==='files') startRunner('lava-canvas');
 }
 function beforeHide(id){
@@ -1358,6 +1374,7 @@ function beforeHide(id){
   if(id==='login') stopRunner('car-canvas');
   if(id==='sea')   stopRunner('sea-canvas');
   if(id==='join')  stopRunner('forge-canvas');
+  if(id==='join')  stopRunner('anvil-canvas');
   if(id==='files') stopRunner('lava-canvas');
 }
 function switchView(name){
@@ -2688,12 +2705,12 @@ window.addEventListener('keydown', function(e){ if(e.key==='ArrowUp') arrowHeld 
 window.addEventListener('keyup',   function(e){ if(e.key==='ArrowUp') arrowHeld = false; });
 
 runners['car-canvas'] = function(canvas, ctx, state){
-  var stars = [], cactiFar = [], cactiNear = [], mesas = [], houses = [];
+  var stars = [], cactiFar = [], cactiNear = [], mesas = [], houses = [], birds = [];
   var W=0, H=0, DPR=1;
   function rand(a,b){ return a + Math.random()*(b-a); }
   function build(){
     var s = fitCanvas(canvas); W=s.w; H=s.h; DPR=s.dpr;
-    stars = []; cactiFar = []; cactiNear = []; mesas = []; houses = [];
+    stars = []; cactiFar = []; cactiNear = []; mesas = []; houses = []; birds = [];
     var i;
     var KINDS = ['tri','star4','starfish','snow','ngon','stargon','dot','dot'];
     for(i=0;i<110;i++) stars.push({x:Math.random(), y:Math.random()*0.52, r:rand(0.8,2.1), ph:Math.random()*6.28,
@@ -2708,20 +2725,64 @@ runners['car-canvas'] = function(canvas, ctx, state){
         if(Math.random() < 0.42) wins.push({x:(wx+0.5)/cols, y:(wy+0.5)/rows, ph:Math.random()*6.28});
       houses.push({x:Math.random(), w:hw, h:hh, tower:hh > 0.2, wins:wins});
     }
-    for(i=0;i<9;i++) cactiFar.push({x:Math.random(), s:rand(0.7,1.05)});
-    for(i=0;i<6;i++) cactiNear.push({x:Math.random(), s:rand(1.1,1.5)});
+    var CKINDS = ['saguaro','saguaro','barrel','octopus','pear'];
+    for(i=0;i<5;i++) cactiFar.push({x:Math.random(), s:rand(0.95,1.3), kind:CKINDS[Math.floor(Math.random()*CKINDS.length)]});
+    for(i=0;i<4;i++) cactiNear.push({x:Math.random(), s:rand(1.35,1.8), kind:CKINDS[Math.floor(Math.random()*CKINDS.length)]});
+    for(i=0;i<4;i++) birds.push({x:Math.random(), y:rand(0.10,0.30), ph:Math.random()*6.28, sp:rand(0.6,1.0), g:0});
   }
   build();
-  function cactus(x, base, sc, color, glow){
-    /* THICKER now (his 04:15 call), and when the car rides past a
-       cactus it catches the headlights — glows yellow */
-    var w = 12*sc*DPR, h = 72*sc*DPR;
+  function cactus(x, base, sc, color, glow, kind){
+    /* Real desert shapes (his 2026-11-03 call): curved saguaro with
+       arms that reach UP, round ribbed barrel, many-armed octopus,
+       flat-pad prickly pear — fewer of them, bigger, and they still
+       catch the headlights and glow gold as the car passes */
+    var u = sc*DPR;
+    function col(x0, w0, h0){ /* a rounded-top column */
+      ctx.beginPath();
+      ctx.moveTo(x0, base);
+      ctx.lineTo(x0, base-h0+w0/2);
+      ctx.quadraticCurveTo(x0, base-h0, x0+w0/2, base-h0);
+      ctx.quadraticCurveTo(x0+w0, base-h0, x0+w0, base-h0+w0/2);
+      ctx.lineTo(x0+w0, base);
+      ctx.closePath(); ctx.fill();
+    }
+    function arm(x0, y0, cx, cy, x1, y1){
+      ctx.beginPath(); ctx.moveTo(x0, y0);
+      ctx.quadraticCurveTo(cx, cy, x1, y1); ctx.stroke();
+    }
     function body(){
-      ctx.fillRect(x-w/2, base-h, w, h);
-      ctx.fillRect(x-w/2-13*sc*DPR, base-h*0.72, 7*sc*DPR, h*0.3);
-      ctx.fillRect(x-w/2-13*sc*DPR, base-h*0.72, 13*sc*DPR, 7*sc*DPR);
-      ctx.fillRect(x+w/2+6*sc*DPR, base-h*0.8, 7*sc*DPR, h*0.36);
-      ctx.fillRect(x+w/2, base-h*0.8, 13*sc*DPR, 7*sc*DPR);
+      ctx.strokeStyle = ctx.fillStyle; ctx.lineCap = 'round';
+      if(kind === 'barrel'){
+        col(x-15*u, 30*u, 30*u);
+        ctx.save(); ctx.globalAlpha = 0.22; ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.lineWidth = 1.6*u;
+        for(var rb=-1; rb<=1; rb++){ ctx.beginPath(); ctx.moveTo(x+rb*9*u, base-3*u); ctx.quadraticCurveTo(x+rb*11*u, base-15*u, x+rb*8*u, base-27*u); ctx.stroke(); }
+        ctx.restore();
+        ctx.beginPath(); ctx.arc(x, base-31*u, 3.4*u, 0, 6.29); ctx.fill();
+      } else if(kind === 'octopus'){
+        ctx.beginPath(); ctx.ellipse(x, base, 13*u, 5*u, 0, 3.15, 6.28); ctx.fill();
+        ctx.lineWidth = 5.5*u;
+        arm(x-4*u, base-2*u, x-16*u, base-10*u, x-20*u, base-30*u);
+        arm(x+4*u, base-2*u, x+15*u, base-12*u, x+21*u, base-24*u);
+        arm(x-1*u, base-3*u, x-8*u, base-22*u, x-9*u, base-38*u);
+        arm(x+2*u, base-3*u, x+9*u, base-20*u, x+7*u, base-33*u);
+        arm(x, base-3*u, x+1*u, base-24*u, x-2*u, base-44*u);
+      } else if(kind === 'pear'){
+        function pad(px, py, rx, ry, rot){
+          ctx.save(); ctx.translate(px, py); ctx.rotate(rot);
+          ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, 6.29); ctx.fill(); ctx.restore();
+        }
+        pad(x, base-13*u, 10*u, 14*u, 0);
+        pad(x-13*u, base-9*u, 8*u, 11*u, -0.45);
+        pad(x+13*u, base-10*u, 8*u, 11*u, 0.4);
+        pad(x-4*u, base-27*u, 7.5*u, 10.5*u, -0.2);
+        pad(x+8*u, base-25*u, 7*u, 10*u, 0.3);
+      } else { /* saguaro — arms reach UP, like they're supposed to */
+        var w = 13*u, h = 78*u;
+        col(x-w/2, w, h);
+        ctx.lineWidth = 7*u;
+        arm(x-w/2+2*u, base-h*0.55, x-w/2-13*u, base-h*0.55, x-w/2-13*u, base-h*0.84);
+        arm(x+w/2-2*u, base-h*0.68, x+w/2+12*u, base-h*0.68, x+w/2+12*u, base-h*0.97);
+      }
     }
     ctx.fillStyle = color; body();
     if(glow > 0.03){
@@ -2993,12 +3054,34 @@ runners['car-canvas'] = function(canvas, ctx, state){
       ctx.fillStyle = 'rgba(255,190,80,'+(0.045*townGlow).toFixed(3)+')';
       ctx.fillRect(0, 0, W2, H2);
     }
+    /* desert birds — dark plum-black silhouettes drifting slow ahead
+       of the car; crossing the headlights they flare golden and
+       hearthy, then fade back to dark as they pass (his 2026-11-03 call) */
+    birds.forEach(function(b){
+      var bx = (((b.x - carState.dist*0.0022 - now*0.0000035*b.sp) % 1.25) + 1.25) % 1.25 - 0.12;
+      var px = bx*W2, py = b.y*H2 + Math.sin(now/900 + b.ph)*5*DPR;
+      var prox = Math.max(0, 1 - Math.abs(px - carX)/(200*DPR));
+      b.g = Math.min(1, (b.g||0) + (prox - (b.g||0)) * (prox > (b.g||0) ? 0.18 : 0.008));
+      var flap = Math.sin(now/240 + b.ph);
+      var bu = DPR*(0.75 + b.sp*0.35);
+      ctx.save();
+      if(b.g > 0.03){ ctx.shadowColor = 'rgba(255,209,102,.9)'; ctx.shadowBlur = 22*b.g*DPR; }
+      var bcr = Math.round(23 + (255-23)*b.g), bcg = Math.round(16 + (209-16)*b.g), bcb = Math.round(42 + (102-42)*b.g);
+      ctx.strokeStyle = 'rgb('+bcr+','+bcg+','+bcb+')'; ctx.fillStyle = ctx.strokeStyle;
+      ctx.lineWidth = 2.4*bu; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.ellipse(px, py, 5.5*bu, 3.2*bu, 0, 0, 6.29); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(px-3*bu, py-1*bu);
+      ctx.quadraticCurveTo(px-11*bu, py-7*bu-flap*5*bu, px-19*bu, py-3*bu-flap*9*bu); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(px+3*bu, py-1*bu);
+      ctx.quadraticCurveTo(px+11*bu, py-7*bu-flap*5*bu, px+19*bu, py-3*bu-flap*9*bu); ctx.stroke();
+      ctx.restore();
+    });
     /* far cacti */
     cactiFar.forEach(function(c){
       var x = (((c.x - carState.dist*0.004) % 1.2) + 1.2) % 1.2 - 0.1;
       var prox = Math.max(0, 1 - Math.abs(x*W2 - carX)/(180*DPR));
       c.g = Math.min(1, (c.g||0) + (prox - (c.g||0)) * (prox > (c.g||0) ? 0.22 : 0.012));
-      cactus(x*W2, groundY, c.s*1.2, '#3a2560', c.g);
+      cactus(x*W2, groundY, c.s*1.2, '#3a2560', c.g, c.kind);
     });
     /* ground + road */
     ctx.fillStyle = '#170d28'; ctx.fillRect(0, groundY, W2, H2-groundY);
@@ -3016,7 +3099,7 @@ runners['car-canvas'] = function(canvas, ctx, state){
       var x = (((c.x - carState.dist*0.01) % 1.2) + 1.2) % 1.2 - 0.1;
       var prox = Math.max(0, 1 - Math.abs(x*W2 - carX)/(190*DPR));
       c.g = Math.min(1, (c.g||0) + (prox - (c.g||0)) * (prox > (c.g||0) ? 0.22 : 0.012));
-      cactus(x*W2, roadY+44*DPR, c.s*1.3, '#251747', c.g);
+      cactus(x*W2, roadY+44*DPR, c.s*1.3, '#251747', c.g, c.kind);
     });
     /* the car */
     drawCar(carState.pos*W2, roadY+16*DPR, now);
@@ -3197,7 +3280,7 @@ runners['forge-canvas'] = function(canvas, ctx, state){
      THICKER now. Filled bars cool slowly; hovering one reheats it.
      ============================================================ */
   var F = window.__forge || (window.__forge = {
-    molds: [{fill:0, heat:0}, {fill:0, heat:0}, {fill:0, heat:0}],
+    molds: [{fill:0, heat:0, hot:false, taken:false}, {fill:0, heat:0, hot:false, taken:false}, {fill:0, heat:0, hot:false, taken:false}],
     px: 0.5, held: false, ptrX: -9999, ptrY: -9999,
     sparks: [], splashes: [], drips: [], geom: null, listening: false
   });
@@ -3226,6 +3309,16 @@ runners['forge-canvas'] = function(canvas, ctx, state){
       if(F.geom && Math.hypot(p.x - F.geom.cruX, p.y - F.geom.cruY) < 100 * F.geom.DPR){
         F.held = true;
         if(canvas.setPointerCapture) { try{ canvas.setPointerCapture(e.pointerId); }catch(err){} }
+      }
+      else if(F.geom){
+        /* tap a poured bar to heat it red for the anvil station */
+        for(var mi=0; mi<3; mi++){
+          var mr = F.geom.rects[mi];
+          if(p.x >= mr.x && p.x <= mr.x + mr.w && p.y >= F.geom.tableY - F.geom.moldH - 10*F.geom.DPR && p.y <= F.geom.tableY + 6*F.geom.DPR){
+            if(F.molds[mi].fill >= 1 && !F.molds[mi].taken) F.molds[mi].hot = true;
+            break;
+          }
+        }
       }
     });
     window.addEventListener('pointermove', function(e){
@@ -3266,6 +3359,7 @@ runners['forge-canvas'] = function(canvas, ctx, state){
     }
     F.molds.forEach(function(m, i){
       if(i === target) return;
+      if(m.hot && !m.taken){ m.heat = Math.min(1, m.heat + 0.02); return; }
       var rest = m.fill >= 1 ? 0.14 : (m.fill > 0 ? 0.08 : 0);
       m.heat += (rest - m.heat) * 0.006;
       if(i === hoverMold && m.fill > 0) m.heat = Math.min(1, m.heat + 0.014);
@@ -3295,7 +3389,7 @@ runners['forge-canvas'] = function(canvas, ctx, state){
       ctx.fillRect(m.x-6*DPR, tableY-moldH-6*DPR, m.w+12*DPR, moldH+9*DPR);
       ctx.strokeStyle = 'rgba(184,166,217,.45)'; ctx.lineWidth = 1.6*DPR;
       ctx.strokeRect(m.x-6*DPR, tableY-moldH-6*DPR, m.w+12*DPR, moldH+9*DPR);
-      if(F.molds[i].fill > 0){
+      if(F.molds[i].fill > 0 && !F.molds[i].taken){
         var gt = goldTop(i);
         ctx.fillStyle = heatColor(F.molds[i].heat);
         if(F.molds[i].heat > 0.3){ ctx.shadowColor = 'rgba(255,150,50,'+(F.molds[i].heat*0.8)+')'; ctx.shadowBlur = F.molds[i].heat*26*DPR; }
@@ -3401,8 +3495,10 @@ runners['forge-canvas'] = function(canvas, ctx, state){
     /* the indicator — it tells you what to do */
     var allFull = F.molds.every(function(m){ return m.fill >= 1; });
     var anyFill = F.molds.some(function(m){ return m.fill > 0; });
+    var allHot = F.molds.every(function(m){ return m.hot || m.taken; });
     var msg;
-    if(allFull) msg = 'FULL SET POURED · BW · FINE GOLD · EST. MMXXVI';
+    if(allFull && allHot) msg = 'RED HOT · THE ANVIL STATION BELOW IS READY ↓';
+    else if(allFull) msg = 'FULL SET POURED · NOW TAP EACH BAR TILL IT GLOWS RED';
     else if(pouring) msg = 'POURING… HOLD IT THERE';
     else if(F.held) msg = 'NOW SLIDE OVER AN EMPTY MOLD →';
     else if(anyFill) msg = 'GRAB THE POURER · DRAG TO THE NEXT MOLD';
@@ -3410,6 +3506,428 @@ runners['forge-canvas'] = function(canvas, ctx, state){
     ctx.fillStyle = 'rgba(255,209,102,'+(pouring || F.held ? 0.95 : 0.6 + 0.3*Math.sin(now/400)).toFixed(3)+')';
     ctx.font = '600 '+(12*DPR)+'px "IBM Plex Mono", monospace';
     ctx.fillText(msg, 16*DPR, H - 14*DPR);
+    state.raf = requestAnimationFrame(frame);
+  }
+  if(REDUCED){ frame(900); cancelAnimationFrame(state.raf); return; }
+  state.raf = requestAnimationFrame(frame);
+};
+
+/* ============================================================
+   JOIN — THE ANVIL STATION (his 2026-11-03 build): box 2 under
+   the forge. Pour 3 bars above, tap them red hot, then take the
+   BLACKSMITH'S TONGS, carry each bar down to the anvil, drag the
+   FORGING HAMMER onto them, strike 12 times to bend the gold
+   into a sword, and quench the blade in the bucket. Tutorial
+   prompts breathe gold (fade in/out, hearth style) — join only.
+   ============================================================ */
+runners['anvil-canvas'] = function(canvas, ctx, state){
+  var A = window.__anvil || (window.__anvil = {
+    bars: 0, strikes: 0, quench: 0, hammerLocked: false, doneFlag: false,
+    carry: null, barIdx: -1, cx: -9999, cy: -9999, down: false,
+    swingAt: -9999, sparks: [], steam: [], listening: false, geom: null
+  });
+  var FC = document.getElementById('forge-canvas');
+  function F(){ return window.__forge; }
+  function allFull(){ var f = F(); return !!f && f.molds.every(function(m){ return m.fill >= 1; }); }
+  function allHot(){ var f = F(); return !!f && f.molds.every(function(m){ return m.hot || m.taken; }); }
+  function stage(){
+    if(A.doneFlag) return 'done';
+    if(A.bars >= 3 && A.strikes >= 12) return 'quench';
+    if(A.bars >= 3 && A.hammerLocked) return 'strike';
+    if(A.bars >= 3) return 'hammer';
+    if(allHot()) return 'tongs';
+    if(allFull()) return 'heat';
+    return 'wait';
+  }
+  function heatColor(k){
+    var stops = [
+      [0.00, [52,36,84]], [0.35, [240,183,63]], [0.62, [255,209,102]],
+      [0.82, [255,138,42]], [1.00, [232,64,44]]
+    ];
+    k = Math.max(0, Math.min(1, k));
+    for(var i=1;i<stops.length;i++){
+      if(k <= stops[i][0]){
+        var a = stops[i-1], b = stops[i], f = (k-a[0])/(b[0]-a[0]);
+        return 'rgb('+Math.round(a[1][0]+(b[1][0]-a[1][0])*f)+','+Math.round(a[1][1]+(b[1][1]-a[1][1])*f)+','+Math.round(a[1][2]+(b[1][2]-a[1][2])*f)+')';
+      }
+    }
+    return 'rgb(232,64,44)';
+  }
+  function rr(c, x, y, w, h, r){
+    c.beginPath();
+    c.moveTo(x+r, y);
+    c.lineTo(x+w-r, y); c.quadraticCurveTo(x+w, y, x+w, y+r);
+    c.lineTo(x+w, y+h-r); c.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    c.lineTo(x+r, y+h); c.quadraticCurveTo(x, y+h, x, y+h-r);
+    c.lineTo(x, y+r); c.quadraticCurveTo(x, y, x+r, y);
+    c.closePath();
+  }
+  /* the drag layer: one fixed overlay, so a carried tool can
+     travel between the forge box and this one */
+  var layer = document.getElementById('bw-drag-layer');
+  if(!layer){
+    layer = document.createElement('canvas');
+    layer.id = 'bw-drag-layer';
+    layer.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60;';
+    document.body.appendChild(layer);
+  }
+  var lctx = layer.getContext('2d');
+  function toAnvil(clientX, clientY){
+    var r = canvas.getBoundingClientRect();
+    return { x: (clientX - r.left) * canvas.width / r.width, y: (clientY - r.top) * canvas.height / r.height };
+  }
+  function toForge(clientX, clientY){
+    var r = FC.getBoundingClientRect();
+    return { x: (clientX - r.left) * FC.width / r.width, y: (clientY - r.top) * FC.height / r.height };
+  }
+  function overAnvilZone(clientX, clientY){
+    var g = A.geom; if(!g) return false;
+    var p = toAnvil(clientX, clientY);
+    return Math.abs(p.x - g.anvilX) < 135*g.DPR && p.y > g.anvilTop - 80*g.DPR && p.y < g.floorY + 12*g.DPR;
+  }
+  function overBucket(clientX, clientY){
+    var g = A.geom; if(!g) return false;
+    var p = toAnvil(clientX, clientY);
+    return Math.abs(p.x - g.bucketX) < 64*g.DPR && p.y > g.floorY - 96*g.DPR && p.y < g.floorY + 18*g.DPR;
+  }
+  function putBarBack(){
+    var f = F();
+    if(f && A.barIdx >= 0) f.molds[A.barIdx].taken = false;
+  }
+  function resetAll(){
+    var f = F();
+    if(f) f.molds.forEach(function(m){ m.fill = 0; m.heat = 0; m.hot = false; m.taken = false; });
+    A.bars = 0; A.strikes = 0; A.quench = 0; A.hammerLocked = false;
+    A.doneFlag = false; A.carry = null; A.barIdx = -1; A.sparks = []; A.steam = [];
+  }
+  if(!A.listening){
+    A.listening = true;
+    canvas.addEventListener('pointerdown', function(e){
+      var g = A.geom; if(!g) return;
+      var p = toAnvil(e.clientX, e.clientY), st = stage();
+      A.cx = e.clientX; A.cy = e.clientY; A.down = true;
+      if(st === 'tongs' && Math.hypot(p.x - g.tongsX, p.y - (g.floorY - 52*g.DPR)) < 64*g.DPR){
+        A.carry = 'tongs';
+        if(canvas.setPointerCapture){ try{ canvas.setPointerCapture(e.pointerId); }catch(err){} }
+      } else if(st === 'hammer' && Math.hypot(p.x - g.hammerX, p.y - (g.floorY - 34*g.DPR)) < 64*g.DPR){
+        A.carry = 'hammer';
+        if(canvas.setPointerCapture){ try{ canvas.setPointerCapture(e.pointerId); }catch(err){} }
+      } else if(st === 'strike'){
+        A.strikes = Math.min(12, A.strikes + 1);
+        A.swingAt = performance.now();
+        for(var s2=0; s2<10; s2++) A.sparks.push({x: g.anvilX + (Math.random()-0.5)*130*g.DPR, y: g.anvilTop - 12*g.DPR, vx: (Math.random()-0.5)*3.6*g.DPR, vy: -(1+Math.random()*2.8)*g.DPR, life: 1});
+      } else if(st === 'quench' && Math.abs(p.x - g.anvilX) < 135*g.DPR && Math.abs(p.y - (g.anvilTop - 12*g.DPR)) < 46*g.DPR){
+        A.carry = 'sword';
+        if(canvas.setPointerCapture){ try{ canvas.setPointerCapture(e.pointerId); }catch(err){} }
+      } else if(st === 'done' && p.x > g.W - 160*g.DPR && p.y > g.H - 40*g.DPR){
+        resetAll();
+      }
+    });
+    window.addEventListener('pointermove', function(e){
+      A.cx = e.clientX; A.cy = e.clientY;
+      if(!A.carry) return;
+      if(A.carry === 'tongs'){
+        var f = F();
+        if(f && f.geom){
+          var p = toForge(e.clientX, e.clientY);
+          for(var i=0;i<3;i++){
+            var m = f.molds[i], mr = f.geom.rects[i];
+            if(!m.taken && m.hot && p.x >= mr.x - 8 && p.x <= mr.x + mr.w + 8 && p.y >= f.geom.tableY - f.geom.moldH - 16 && p.y <= f.geom.tableY + 12){
+              m.taken = true; A.carry = 'tongsbar'; A.barIdx = i; break;
+            }
+          }
+        }
+      } else if(A.carry === 'tongsbar'){
+        if(overAnvilZone(e.clientX, e.clientY)){ A.bars++; A.carry = null; A.barIdx = -1; }
+      } else if(A.carry === 'hammer'){
+        if(overAnvilZone(e.clientX, e.clientY)){ A.hammerLocked = true; A.carry = null; }
+      }
+    });
+    window.addEventListener('pointerup', function(){
+      A.down = false;
+      if(A.carry === 'tongsbar') putBarBack();
+      A.carry = null; A.barIdx = -1;
+    });
+    window.addEventListener('pointercancel', function(){
+      A.down = false;
+      if(A.carry === 'tongsbar') putBarBack();
+      A.carry = null; A.barIdx = -1;
+    });
+  }
+  function frame(now){
+    if(!running['anvil-canvas']) return;
+    var s = fitCanvas(canvas), W = s.w, H = s.h, DPR = s.dpr;
+    var floorY = H*0.86;
+    var anvilX = W*0.46, anvilTop = floorY - 96*DPR;
+    var bucketX = W*0.86, hammerX = W*0.12, tongsX = W*0.285;
+    A.geom = {W:W, H:H, DPR:DPR, floorY:floorY, anvilX:anvilX, anvilTop:anvilTop, bucketX:bucketX, hammerX:hammerX, tongsX:tongsX};
+    var st = stage();
+    var span = 176*DPR, barH = 15*DPR, prog = A.strikes/12;
+    /* room */
+    var bg = ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#0d0716'); bg.addColorStop(0.7,'#170d28'); bg.addColorStop(1,'#0d0716');
+    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+    var roomGlow = ctx.createRadialGradient(anvilX, floorY, 10, anvilX, floorY, W*0.5);
+    roomGlow.addColorStop(0,'rgba(255,170,60,.10)'); roomGlow.addColorStop(1,'rgba(255,140,40,0)');
+    ctx.fillStyle = roomGlow; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#120a20'; ctx.fillRect(0, floorY, W, H-floorY);
+    ctx.fillStyle = 'rgba(240,183,63,.28)'; ctx.fillRect(0, floorY, W, 2*DPR);
+    function label(text, x, y){
+      ctx.fillStyle = 'rgba(184,166,217,.75)';
+      ctx.font = '600 '+(9.5*DPR)+'px "IBM Plex Mono", monospace';
+      ctx.textAlign = 'center'; ctx.fillText(text, x, y); ctx.textAlign = 'left';
+    }
+    function prompt(text){
+      var o = 0.45 + 0.55*Math.abs(Math.sin(now/850));
+      ctx.save(); ctx.globalAlpha = o;
+      ctx.fillStyle = '#ffd166'; ctx.shadowColor = 'rgba(255,190,80,.85)'; ctx.shadowBlur = 15*DPR;
+      ctx.font = 'italic 600 '+(16*DPR)+'px "Newsreader", Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(text, W/2, 38*DPR);
+      ctx.restore(); ctx.textAlign = 'left';
+    }
+    /* ---- prompts: golden, hearthy, breathing ---- */
+    if(st === 'wait') prompt('First — pour your three gold bars in the forge above.');
+    else if(st === 'heat') prompt('Now tap each bar above until it glows red hot.');
+    else if(st === 'tongs') prompt(A.bars === 0 ? 'Take the blacksmith\u2019s tongs — hold them, and carry each hot bar to the anvil.' : 'Bar ' + A.bars + ' of 3 rests on the anvil — fetch the next one.');
+    else if(st === 'hammer') prompt('Now drag the forging hammer onto the bars.');
+    else if(st === 'strike') prompt('Strike! Tap or click, again and again — bend the gold into a blade. (' + A.strikes + ' of 12)');
+    else if(st === 'quench') prompt('Quench it — drag the blade to the bucket and hold it under the water.');
+    else if(st === 'done'){
+      var o2 = 0.5 + 0.5*Math.abs(Math.sin(now/1400));
+      ctx.save(); ctx.globalAlpha = 0.35 + 0.65*o2;
+      ctx.fillStyle = '#ffe9b0'; ctx.shadowColor = 'rgba(255,190,80,.7)'; ctx.shadowBlur = 18*DPR;
+      ctx.font = 'italic 600 '+(17*DPR)+'px "Newsreader", Georgia, serif'; ctx.textAlign = 'center';
+      var lines = ['Nothing here was wasted.',
+                   'What looked broken was only unfinished —',
+                   'heated, held, and hammered with patience,',
+                   'three scattered pieces now stand as one strong, new thing.',
+                   'That is what mending does.'];
+      for(var li=0; li<lines.length; li++) ctx.fillText(lines[li], W/2, 42*DPR + li*24*DPR);
+      ctx.restore(); ctx.textAlign = 'left';
+    }
+    /* ---- the anvil ---- */
+    (function drawAnvil(){
+      var ax = anvilX, top = anvilTop, fh = floorY - top;
+      ctx.fillStyle = '#2a1a44';
+      ctx.strokeStyle = 'rgba(184,166,217,.5)'; ctx.lineWidth = 1.6*DPR;
+      ctx.beginPath();
+      ctx.moveTo(ax-118*DPR, top+12*DPR);
+      ctx.quadraticCurveTo(ax-98*DPR, top+2*DPR, ax-64*DPR, top);
+      ctx.lineTo(ax+92*DPR, top);
+      ctx.lineTo(ax+92*DPR, top+16*DPR);
+      ctx.lineTo(ax+30*DPR, top+26*DPR);
+      ctx.lineTo(ax+24*DPR, top+58*DPR);
+      ctx.lineTo(ax+44*DPR, floorY);
+      ctx.lineTo(ax-44*DPR, floorY);
+      ctx.lineTo(ax-24*DPR, top+58*DPR);
+      ctx.lineTo(ax-30*DPR, top+26*DPR);
+      ctx.lineTo(ax-64*DPR, top+16*DPR);
+      ctx.quadraticCurveTo(ax-100*DPR, top+20*DPR, ax-118*DPR, top+12*DPR);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(247,234,209,.16)';
+      ctx.fillRect(ax-64*DPR, top, 156*DPR, 4*DPR);
+      label('ANVIL', ax, floorY + 20*DPR);
+    })();
+    /* ---- the work: bars becoming a blade ---- */
+    function drawSword(){
+      var x0 = anvilX - span/2, y = anvilTop - 10*DPR;
+      var coolK = A.doneFlag ? 1 : Math.min(1, A.quench/3);
+      var blade = coolK > 0.6 ? '#cfd6e6' : (coolK > 0.25 ? '#e8a34c' : '#ff7847');
+      ctx.fillStyle = '#3a2410'; ctx.fillRect(x0 - 26*DPR, y - 4*DPR, 24*DPR, 8*DPR);
+      ctx.fillStyle = '#f0b73f'; ctx.fillRect(x0 - 4*DPR, y - 11*DPR, 5*DPR, 22*DPR);
+      ctx.fillStyle = blade;
+      if(A.doneFlag){ ctx.shadowColor = 'rgba(255,209,102,.7)'; ctx.shadowBlur = 16*DPR; }
+      ctx.beginPath();
+      ctx.moveTo(x0, y - 6*DPR);
+      ctx.lineTo(x0 + span + 30*DPR, y);
+      ctx.lineTo(x0, y + 6*DPR);
+      ctx.closePath(); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(20,10,30,.45)'; ctx.lineWidth = 1.4*DPR;
+      ctx.beginPath(); ctx.moveTo(x0 + 6*DPR, y); ctx.lineTo(x0 + span + 18*DPR, y); ctx.stroke();
+    }
+    if(A.bars > 0){
+      if(st === 'quench' || st === 'done'){ if(A.carry !== 'sword') drawSword(); }
+      else {
+        var x0 = anvilX - span/2, y0 = anvilTop - barH;
+        var gap = 10*DPR * (1 - prog*0.9);
+        var bw = (span - gap*2)/3;
+        for(var bi=0; bi<A.bars; bi++){
+          var bx = x0 + bi*(bw+gap);
+          ctx.fillStyle = heatColor(Math.max(0.4, 0.97 - prog*0.45));
+          ctx.shadowColor = 'rgba(255,120,40,.8)'; ctx.shadowBlur = 14*DPR;
+          rr(ctx, bx, y0 + prog*3*DPR, bw * (1 + prog*0.12), barH * (1 - prog*0.25), 3*DPR); ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+        if(prog > 0.55){
+          var grow = (prog - 0.55)/0.45;
+          ctx.fillStyle = heatColor(0.85);
+          ctx.shadowColor = 'rgba(255,120,40,.8)'; ctx.shadowBlur = 12*DPR;
+          ctx.beginPath();
+          var tipBase = x0 + span + 2*DPR, midY = y0 + barH/2;
+          ctx.moveTo(tipBase, y0 + 2*DPR);
+          ctx.lineTo(tipBase + 34*DPR*grow, midY);
+          ctx.lineTo(tipBase, y0 + barH - 2*DPR);
+          ctx.closePath(); ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+        if(prog > 0.75){
+          ctx.fillStyle = heatColor(0.7);
+          ctx.fillRect(x0 - 4*DPR, y0 - 5*DPR, 5*DPR, barH + 10*DPR);
+        }
+      }
+    }
+    if(st === 'done'){
+      ctx.fillStyle = 'rgba(255,209,102,.9)';
+      ctx.font = '600 '+(11*DPR)+'px "IBM Plex Mono", monospace'; ctx.textAlign = 'center';
+      ctx.fillText('YOUR BLADE · BW · FINE GOLD', anvilX, anvilTop - 64*DPR);
+      ctx.fillStyle = 'rgba(184,166,217,.85)';
+      ctx.fillText('\u21BB FORGE ANOTHER', W - 78*DPR, H - 16*DPR);
+      ctx.textAlign = 'left';
+    }
+    /* ---- the quench bucket ---- */
+    (function drawBucket(){
+      var bx = bucketX, top = floorY - 62*DPR, w = 96*DPR;
+      ctx.fillStyle = '#241536';
+      ctx.beginPath();
+      ctx.moveTo(bx - w/2, top); ctx.lineTo(bx + w/2, top);
+      ctx.lineTo(bx + w/2 - 10*DPR, floorY); ctx.lineTo(bx - w/2 + 10*DPR, floorY);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(184,166,217,.5)'; ctx.lineWidth = 1.6*DPR; ctx.stroke();
+      ctx.strokeStyle = 'rgba(184,166,217,.4)';
+      ctx.beginPath(); ctx.arc(bx, top - 2*DPR, w/2 - 6*DPR, 3.3, 6.12); ctx.stroke();
+      var shimmer = 0.5 + 0.5*Math.sin(now/500);
+      ctx.fillStyle = 'rgba(70,120,190,'+(0.55 + 0.2*shimmer).toFixed(3)+')';
+      ctx.beginPath(); ctx.ellipse(bx, top, w/2 - 3*DPR, 7*DPR, 0, 0, 6.29); ctx.fill();
+      label('QUENCH BUCKET', bx, floorY + 20*DPR);
+      if(st === 'quench' && A.quench > 0 && !A.doneFlag){
+        ctx.fillStyle = 'rgba(255,209,102,.9)';
+        rr(ctx, bx - 40*DPR, top - 26*DPR, 80*DPR * (A.quench/3), 5*DPR, 2.5*DPR); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,209,102,.4)'; ctx.lineWidth = 1*DPR;
+        rr(ctx, bx - 40*DPR, top - 26*DPR, 80*DPR, 5*DPR, 2.5*DPR); ctx.stroke();
+      }
+    })();
+    /* ---- the tongs (resting) ---- */
+    function drawTongs(x, y, ang){
+      ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+      ctx.strokeStyle = '#8f86a8'; ctx.lineWidth = 4*DPR; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-26*DPR, -48*DPR); ctx.lineTo(0, 4*DPR); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(26*DPR, -48*DPR); ctx.lineTo(0, 4*DPR); ctx.stroke();
+      ctx.strokeStyle = '#c9c2da'; ctx.lineWidth = 3*DPR;
+      ctx.beginPath(); ctx.moveTo(0, 4*DPR); ctx.lineTo(-5*DPR, 32*DPR); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, 4*DPR); ctx.lineTo(5*DPR, 32*DPR); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, 4*DPR, 0, 6.29); ctx.fillStyle = '#f0b73f'; ctx.fill();
+      ctx.restore();
+    }
+    if(A.carry !== 'tongs' && A.carry !== 'tongsbar'){
+      drawTongs(tongsX, floorY - 34*DPR, -0.16);
+      label('BLACKSMITH\u2019S TONGS', tongsX, floorY + 20*DPR);
+      if(st === 'tongs'){
+        ctx.strokeStyle = 'rgba(255,209,102,'+(0.35 + 0.3*Math.sin(now/300)).toFixed(3)+')';
+        ctx.lineWidth = 2*DPR;
+        ctx.beginPath(); ctx.arc(tongsX, floorY - 52*DPR, (52 + 6*Math.sin(now/300))*DPR, 0, 6.29); ctx.stroke();
+      }
+    }
+    /* ---- the forging hammer (resting, or locked in its bubble) ---- */
+    function drawHammer(x, y, ang){
+      ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+      ctx.strokeStyle = '#7a4a22'; ctx.lineWidth = 6*DPR; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(0, 30*DPR); ctx.lineTo(0, -22*DPR); ctx.stroke();
+      ctx.fillStyle = '#4a3a63';
+      rr(ctx, -20*DPR, -38*DPR, 40*DPR, 17*DPR, 3*DPR); ctx.fill();
+      ctx.fillStyle = 'rgba(247,234,209,.25)'; ctx.fillRect(-20*DPR, -38*DPR, 40*DPR, 3*DPR);
+      ctx.restore();
+    }
+    if(A.hammerLocked){
+      var bobY = anvilTop - 92*DPR + Math.sin(now/700)*3*DPR;
+      var sdt = now - A.swingAt;
+      var swing = sdt < 260 ? Math.sin(sdt/260 * Math.PI) * 0.9 : 0;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,209,102,.75)'; ctx.lineWidth = 1.8*DPR;
+      ctx.setLineDash([6*DPR, 5*DPR]);
+      ctx.beginPath(); ctx.arc(anvilX, bobY, 34*DPR, 0, 6.29); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.translate(anvilX, bobY); ctx.rotate(-0.7 + swing);
+      ctx.strokeStyle = '#7a4a22'; ctx.lineWidth = 5*DPR; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(0, -14*DPR); ctx.lineTo(0, 20*DPR); ctx.stroke();
+      ctx.fillStyle = '#4a3a63'; rr(ctx, -16*DPR, -27*DPR, 32*DPR, 13*DPR, 3*DPR); ctx.fill();
+      ctx.restore();
+      if(sdt < 150 && A.strikes > 0){
+        ctx.fillStyle = 'rgba(255,220,130,'+(0.35*(1 - sdt/150)).toFixed(3)+')';
+        ctx.beginPath(); ctx.ellipse(anvilX, anvilTop - 8*DPR, 90*DPR, 12*DPR, 0, 0, 6.29); ctx.fill();
+      }
+    } else if(A.carry !== 'hammer'){
+      drawHammer(hammerX, floorY - 30*DPR, 0.5);
+      label('FORGING HAMMER', hammerX, floorY + 20*DPR);
+      if(st === 'hammer'){
+        ctx.strokeStyle = 'rgba(255,209,102,'+(0.35 + 0.3*Math.sin(now/300)).toFixed(3)+')';
+        ctx.lineWidth = 2*DPR;
+        ctx.beginPath(); ctx.arc(hammerX, floorY - 34*DPR, (48 + 6*Math.sin(now/300))*DPR, 0, 6.29); ctx.stroke();
+      }
+    }
+    if(st === 'quench' && A.carry !== 'sword'){
+      ctx.strokeStyle = 'rgba(255,209,102,'+(0.3 + 0.25*Math.sin(now/300)).toFixed(3)+')';
+      ctx.lineWidth = 2*DPR;
+      ctx.beginPath(); ctx.arc(anvilX, anvilTop - 12*DPR, (120 + 6*Math.sin(now/300))*DPR, 0, 6.29); ctx.stroke();
+    }
+    /* ---- quench: steam + progress while the blade is held under ---- */
+    if(st === 'quench' && A.carry === 'sword' && A.down && overBucket(A.cx, A.cy) && !A.doneFlag){
+      A.quench = Math.min(3, A.quench + 1/60);
+      if(Math.random() < 0.55) A.steam.push({x: bucketX + (Math.random()-0.5)*60*DPR, y: floorY - 66*DPR, vy: -(0.6+Math.random())*DPR, r: (4+Math.random()*7)*DPR, life: 1});
+      if(A.quench >= 3){
+        A.doneFlag = true; A.carry = null;
+        for(var q=0; q<16; q++) A.steam.push({x: bucketX + (Math.random()-0.5)*70*DPR, y: floorY - 66*DPR, vy: -(0.8+Math.random()*1.4)*DPR, r: (5+Math.random()*8)*DPR, life: 1});
+      }
+    }
+    /* ---- sparks & steam ---- */
+    A.sparks = A.sparks.filter(function(p){ return p.life > 0; });
+    A.sparks.forEach(function(p){
+      p.x += p.vx; p.y += p.vy; p.vy += 0.09*DPR; p.life -= 0.03;
+      ctx.fillStyle = 'rgba(255,'+Math.round(170+60*p.life)+',60,'+Math.max(0, p.life).toFixed(3)+')';
+      ctx.beginPath(); ctx.arc(p.x, p.y, 2.2*DPR*p.life + 0.5, 0, 6.29); ctx.fill();
+    });
+    A.steam = A.steam.filter(function(p){ return p.life > 0; });
+    A.steam.forEach(function(p){
+      p.y += p.vy; p.x += Math.sin(now/300 + p.r)*0.3*DPR; p.r += 0.12*DPR; p.life -= 0.012;
+      ctx.fillStyle = 'rgba(230,225,245,'+(0.16*Math.max(0, p.life)).toFixed(3)+')';
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.29); ctx.fill();
+    });
+    canvas.style.cursor = A.carry ? 'grabbing' : ((st === 'tongs' || st === 'hammer' || st === 'quench') ? 'grab' : 'default');
+    /* ---- the drag layer: whatever the hand is holding ---- */
+    var lw = window.innerWidth, lh = window.innerHeight;
+    var ldpr = Math.min(2, window.devicePixelRatio || 1);
+    if(layer.width !== Math.round(lw*ldpr) || layer.height !== Math.round(lh*ldpr)){ layer.width = Math.round(lw*ldpr); layer.height = Math.round(lh*ldpr); }
+    lctx.setTransform(ldpr, 0, 0, ldpr, 0, 0);
+    lctx.clearRect(0, 0, lw, lh);
+    if(A.carry){
+      var x = A.cx, y = A.cy;
+      lctx.save();
+      if(A.carry === 'tongs' || A.carry === 'tongsbar'){
+        lctx.strokeStyle = '#a49cc0'; lctx.lineWidth = 4; lctx.lineCap = 'round';
+        lctx.beginPath(); lctx.moveTo(x-16, y-58); lctx.lineTo(x, y-8); lctx.stroke();
+        lctx.beginPath(); lctx.moveTo(x+16, y-58); lctx.lineTo(x, y-8); lctx.stroke();
+        lctx.beginPath(); lctx.arc(x, y-10, 3.5, 0, 6.29); lctx.fillStyle = '#f0b73f'; lctx.fill();
+        if(A.carry === 'tongsbar'){
+          lctx.fillStyle = '#e8402c'; lctx.shadowColor = 'rgba(255,110,40,.9)'; lctx.shadowBlur = 16;
+          rr(lctx, x-26, y-2, 52, 13, 3); lctx.fill();
+        } else {
+          lctx.lineWidth = 3; lctx.strokeStyle = '#c9c2da';
+          lctx.beginPath(); lctx.moveTo(x, y-8); lctx.lineTo(x-4, y+14); lctx.stroke();
+          lctx.beginPath(); lctx.moveTo(x, y-8); lctx.lineTo(x+4, y+14); lctx.stroke();
+        }
+      } else if(A.carry === 'hammer'){
+        lctx.strokeStyle = '#7a4a22'; lctx.lineWidth = 6; lctx.lineCap = 'round';
+        lctx.beginPath(); lctx.moveTo(x, y+26); lctx.lineTo(x, y-20); lctx.stroke();
+        lctx.fillStyle = '#4a3a63'; rr(lctx, x-19, y-34, 38, 16, 3); lctx.fill();
+      } else if(A.carry === 'sword'){
+        lctx.fillStyle = '#3a2410'; lctx.fillRect(x-52, y-3, 22, 7);
+        lctx.fillStyle = '#f0b73f'; lctx.fillRect(x-30, y-9, 5, 19);
+        lctx.fillStyle = '#ff7847'; lctx.shadowColor = 'rgba(255,110,40,.8)'; lctx.shadowBlur = 12;
+        lctx.beginPath(); lctx.moveTo(x-25, y-5); lctx.lineTo(x+52, y); lctx.lineTo(x-25, y+5); lctx.closePath(); lctx.fill();
+      }
+      lctx.restore();
+    }
     state.raf = requestAnimationFrame(frame);
   }
   if(REDUCED){ frame(900); cancelAnimationFrame(state.raf); return; }

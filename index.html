@@ -3411,6 +3411,11 @@ runners['forge-canvas'] = function(canvas, ctx, state){
   }
   function frame(now){
     if(!running['forge-canvas']) return;
+    /* build #85 hardening: schedule the next frame FIRST and guard
+       the drawing, so one bad call on one phone can never freeze
+       the station — it retries on the very next frame instead */
+    state.raf = requestAnimationFrame(frame);
+    try{
     var s = fitCanvas(canvas), W = s.w, H = s.h, DPR = s.dpr;
     var tableY = H*0.82;
     var moldW = Math.min(200*DPR, W*0.21), moldH = 54*DPR, gap = moldW*0.42;
@@ -3590,7 +3595,7 @@ runners['forge-canvas'] = function(canvas, ctx, state){
     var mwid = ctx.measureText(msg).width;
     if(mwid > W - 28*DPR){ mfs = Math.max(8*DPR, mfs * (W - 28*DPR) / mwid); ctx.font = '600 '+mfs+'px "IBM Plex Mono", monospace'; }
     ctx.fillText(msg, 16*DPR, H - 14*DPR);
-    state.raf = requestAnimationFrame(frame);
+    }catch(e){}
   }
   if(REDUCED){ frame(900); cancelAnimationFrame(state.raf); return; }
   state.raf = requestAnimationFrame(frame);
@@ -3609,7 +3614,7 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
     bars: 0, strikes: 0, quench: 0, hammerLocked: false, doneFlag: false,
     carry: null, barIdx: -1, cx: -9999, cy: -9999, down: false,
     swingAt: -9999, sparks: [], steam: [], listening: false, geom: null,
-    resetStamp: 0, glideTo: null, glideAfterTut: null, tutTimer: null
+    resetStamp: 0, glideTo: null, glideAfterTut: null, tutTimer: null, glideEl: null
   });
   var FC = document.getElementById('forge-canvas');
   function F(){ return window.__forge; }
@@ -3669,7 +3674,18 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
       if(T2 && T2.open){ T2.shown[T2.open] = true; T2.open = null; }
       if(A.tutTimer){ clearInterval(A.tutTimer); A.tutTimer = null; }
       tut.classList.remove('show');
-      if(A.glideAfterTut != null){ A.glideTo = A.glideAfterTut; A.glideAfterTut = null; }
+      if(A.glideEl){
+        /* measure the target FRESH at click time (build #85: the
+           card-open measurement could go stale while the page was
+           still settling), and if the gentle glide still hasn't
+           arrived shortly after, land there directly */
+        A.glideTo = A.glideEl.getBoundingClientRect().top + window.scrollY - 64;
+        var gel = A.glideEl;
+        setTimeout(function(){
+          var t = gel.getBoundingClientRect().top + window.scrollY - 64;
+          if(Math.abs(t - window.scrollY) > 140) window.scrollTo(0, t);
+        }, 900);
+      }
     });
   }
   /* this page ONLY: the letters teach by themselves — each one
@@ -3783,6 +3799,11 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
   }
   function frame(now){
     if(!running['anvil-canvas']) return;
+    /* build #85 hardening, same as the forge: next frame is
+       scheduled FIRST and the drawing is guarded, so the tutorial,
+       the camera and the station can never freeze each other */
+    state.raf = requestAnimationFrame(frame);
+    try{
     var s = fitCanvas(canvas), W = s.w, H = s.h, DPR = s.dpr;
     var floorY = H*0.86;
     var anvilX = W*0.46, anvilTop = floorY - 96*DPR;
@@ -3832,17 +3853,18 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
       T.open = stepKey;
       tutIgnite(stepText);
       tut.querySelector('.tnext').textContent = stepKey === 'done' ? 'Done' : 'Next';
-      A.glideAfterTut = stepEl ? (stepEl.getBoundingClientRect().top + window.scrollY - 64) : null;
+      A.glideEl = stepEl || null;
       tut.classList.add('show');
     }
     /* ---- the slow camera: glide to wherever the work is ---- */
     var glideDest = null;
     if(A.carry === 'tongs') glideDest = FC;
     else if(A.carry) glideDest = canvas;
+    else if(A.glideEl) glideDest = A.glideEl;
     if(glideDest) A.glideTo = glideDest.getBoundingClientRect().top + window.scrollY - 64;
     if(A.glideTo != null){
       var gdiff = A.glideTo - window.scrollY;
-      if(Math.abs(gdiff) < 3) A.glideTo = null;
+      if(Math.abs(gdiff) < 3){ A.glideTo = null; A.glideEl = null; }
       else {
         var gstep = gdiff * 0.05;
         if(gstep > 3.4) gstep = 3.4;
@@ -4077,7 +4099,7 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
       }
       lctx.restore();
     }
-    state.raf = requestAnimationFrame(frame);
+    }catch(e){}
   }
   if(REDUCED){ frame(900); cancelAnimationFrame(state.raf); return; }
   state.raf = requestAnimationFrame(frame);

@@ -3828,7 +3828,12 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
     var s = fitCanvas(canvas), W = s.w, H = s.h, DPR = s.dpr;
     var floorY = H*0.86;
     var anvilX = W*0.46, anvilTop = floorY - 96*DPR;
-    var bucketX = W*0.86, hammerX = W*0.12, tongsX = W*0.285;
+    /* build #88 (overnight polish): on a narrow canvas the tool labels
+       collided into one unreadable row (TONGSANVIL on a phone) — spread
+       the tools apart and shrink the labels there only; desktop
+       geometry is byte-identical */
+    var narrowAnvil = (W/DPR < 620);
+    var bucketX = W*0.86, hammerX = narrowAnvil ? W*0.08 : W*0.12, tongsX = narrowAnvil ? W*0.32 : W*0.285;
     A.geom = {W:W, H:H, DPR:DPR, floorY:floorY, anvilX:anvilX, anvilTop:anvilTop, bucketX:bucketX, hammerX:hammerX, tongsX:tongsX};
     var st = stage();
     var span = 176*DPR, barH = 15*DPR, prog = A.strikes/12;
@@ -3843,7 +3848,7 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
     ctx.fillStyle = 'rgba(240,183,63,.28)'; ctx.fillRect(0, floorY, W, 2*DPR);
     function label(text, x, y){
       ctx.fillStyle = 'rgba(184,166,217,.75)';
-      ctx.font = '600 '+(9.5*DPR)+'px "IBM Plex Mono", monospace';
+      ctx.font = '600 '+((narrowAnvil ? 7 : 9.5)*DPR)+'px "IBM Plex Mono", monospace';
       ctx.textAlign = 'center'; ctx.fillText(text, x, y); ctx.textAlign = 'left';
     }
     /* ---- the teaching overlay: one card per step (his 2026-11-03
@@ -3950,7 +3955,7 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
       ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.fillStyle = 'rgba(247,234,209,.16)';
       ctx.fillRect(ax-64*DPR, top, 156*DPR, 4*DPR);
-      label('ANVIL', ax, floorY + 20*DPR);
+      label('ANVIL', ax, narrowAnvil ? floorY + 38*DPR : floorY + 20*DPR);
     })();
     /* ---- the work: bars becoming a blade ---- */
     function drawSword(){
@@ -4008,7 +4013,10 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
     if(st === 'done'){
       ctx.fillStyle = 'rgba(255,209,102,.9)';
       ctx.font = '600 '+(11*DPR)+'px "IBM Plex Mono", monospace'; ctx.textAlign = 'center';
-      ctx.fillText('YOUR BLADE · BW · FINE GOLD', anvilX, anvilTop - 64*DPR);
+      /* build #88: the locked hammer's dashed ring (center anvilTop-92,
+         radius 34) struck straight through this line at -64 — lift the
+         line clear above the ring on both sizes */
+      ctx.fillText('YOUR BLADE · BW · FINE GOLD', anvilX, anvilTop - 140*DPR);
       ctx.fillStyle = 'rgba(184,166,217,.85)';
       ctx.fillText('\u21BB FORGE ANOTHER', W - 78*DPR, H - 16*DPR);
       ctx.textAlign = 'left';

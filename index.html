@@ -3910,6 +3910,10 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
       if(gStuck || gOld){ A.glideTo = null; if(!A.carry) A.glideEl = null; A.glideKey = null; }
       else A.glideTo = gTarget;
     } else { A.glideKey = null; A.glideTo = null; }
+    /* while the camera is driving, step crisply 1:1 — the page's
+       smooth-scroll CSS would otherwise smear every step (worst in
+       WebKit, where each step becomes its own little animation) */
+    document.documentElement.style.scrollBehavior = (A.glideTo != null || A.carry) ? 'auto' : '';
     if(A.glideTo != null){
       var gdiff = A.glideTo - window.scrollY;
       if(Math.abs(gdiff) < 3){ A.glideTo = null; A.glideEl = null; A.glideKey = null; }
@@ -3957,14 +3961,18 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
       ctx.fillStyle = '#f0b73f'; ctx.fillRect(x0 - 4*DPR, y - 11*DPR, 5*DPR, 22*DPR);
       ctx.fillStyle = blade;
       if(A.doneFlag){ ctx.shadowColor = 'rgba(255,209,102,.7)'; ctx.shadowBlur = 16*DPR; }
+      /* build #87 (his call): a blade, not a needle — a straight
+         rectangle of a body with a short pyramid tip */
       ctx.beginPath();
       ctx.moveTo(x0, y - 6*DPR);
+      ctx.lineTo(x0 + span, y - 6*DPR);
       ctx.lineTo(x0 + span + 30*DPR, y);
+      ctx.lineTo(x0 + span, y + 6*DPR);
       ctx.lineTo(x0, y + 6*DPR);
       ctx.closePath(); ctx.fill();
       ctx.shadowBlur = 0;
       ctx.strokeStyle = 'rgba(20,10,30,.45)'; ctx.lineWidth = 1.4*DPR;
-      ctx.beginPath(); ctx.moveTo(x0 + 6*DPR, y); ctx.lineTo(x0 + span + 18*DPR, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x0 + 6*DPR, y); ctx.lineTo(x0 + span + 20*DPR, y); ctx.stroke();
     }
     if(A.bars > 0){
       if(st === 'quench' || st === 'done'){ if(A.carry !== 'sword') drawSword(); }
@@ -4143,7 +4151,8 @@ runners['anvil-canvas'] = function(canvas, ctx, state){
         lctx.fillStyle = '#3a2410'; lctx.fillRect(x-52, y-3, 22, 7);
         lctx.fillStyle = '#f0b73f'; lctx.fillRect(x-30, y-9, 5, 19);
         lctx.fillStyle = '#ff7847'; lctx.shadowColor = 'rgba(255,110,40,.8)'; lctx.shadowBlur = 12;
-        lctx.beginPath(); lctx.moveTo(x-25, y-5); lctx.lineTo(x+52, y); lctx.lineTo(x-25, y+5); lctx.closePath(); lctx.fill();
+        /* build #87: same blade as on the anvil — rectangle body, pyramid tip */
+        lctx.beginPath(); lctx.moveTo(x-25, y-5); lctx.lineTo(x+30, y-5); lctx.lineTo(x+52, y); lctx.lineTo(x+30, y+5); lctx.lineTo(x-25, y+5); lctx.closePath(); lctx.fill();
       }
       lctx.restore();
     }

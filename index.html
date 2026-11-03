@@ -2753,29 +2753,43 @@ runners['car-canvas'] = function(canvas, ctx, state){
     var CKINDS = ['saguaro','saguaro','barrel','octopus','pear'];
     var ARMSETS = ['none','L','R','LR','LR','LLR','LRR'];
     var OSTYLES = ['thin','flush','wretched'];
-    /* Builds 89+90 — his final tweaks: BOTH roadside rows are guaranteed
-       his full saguaro spread: every side of the road gets one 3-arm, one
-       2-arm, one 1-arm and one NO-arm saguaro, the order shuffled so it
-       never looks dealt; the remaining slots keep the old creative mix.
-       The 2-arm is sometimes a same-side pair (both arms left 'LL' or
-       both right 'RR') instead of the classic split ('LR'). The 1-arm
-       saguaros wear a flower on top (drawn inside saguaro()). */
+    /* Builds 89+90 dealt a guaranteed saguaro spread into both rows —
+       but at random x, and on his phone the nine of them bunched into a
+       crowd around the car. Build 91 is his uncrowding call (his words,
+       with a screenshot): "make one cactus thats just a pole, some that
+       have 1 arm left, some 1 arm right, and some 2 arms and the pole
+       and make them spread out far and not as many." So: FIVE saguaros
+       total — two poles, a 1-arm left, a 1-arm right (flowers kept from
+       build 89), one 2-arm (split or same-side) — dealt shuffled into
+       FIVE FIXED wide slots, three far and two near, interleaved like a
+       ladder. The slots never move, so the spacing survives the scroll:
+       they stream past the car one at a time with desert between them.
+       Barrels, octopus and pears retire from the roadside — his list
+       named saguaros only. */
     function shuffled(a){ for(var j=a.length-1;j>0;j--){ var k=Math.floor(Math.random()*(j+1)); var t=a[j]; a[j]=a[k]; a[k]=t; } return a; }
-    function roadside(n, sMin, sMax){
-      var twoArm = ['LR','LR','LL','RR'][Math.floor(Math.random()*4)];
-      var plan = shuffled([
-        {kind:'saguaro', arms:(Math.random()<0.5 ? 'LLR' : 'LRR')},
-        {kind:'saguaro', arms:twoArm},
-        {kind:'saguaro', arms:(Math.random()<0.5 ? 'L' : 'R')},
+    function roadside(){
+      var cast = shuffled([
+        {kind:'saguaro', arms:'none'},
+        {kind:'saguaro', arms:'L'},
+        {kind:'saguaro', arms:'R'},
+        {kind:'saguaro', arms:['LR','LL','RR'][Math.floor(Math.random()*3)]},
         {kind:'saguaro', arms:'none'}
       ]);
-      while(plan.length < n){
-        plan.push({kind:CKINDS[Math.floor(Math.random()*CKINDS.length)], arms:ARMSETS[Math.floor(Math.random()*ARMSETS.length)]});
-      }
-      return plan.map(function(p){ return {x:Math.random(), s:rand(sMin, sMax), kind:p.kind, arms:p.arms, ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]}; });
+      var spots = [
+        {x:0.05, far:true,  sMin:0.95, sMax:1.3},
+        {x:0.45, far:true,  sMin:0.95, sMax:1.3},
+        {x:0.85, far:true,  sMin:0.95, sMax:1.3},
+        {x:0.25, far:false, sMin:1.35, sMax:1.8},
+        {x:0.65, far:false, sMin:1.35, sMax:1.8}
+      ];
+      cactiFar = []; cactiNear = [];
+      spots.forEach(function(sp, i){
+        var p = cast[i];
+        var c = {x:sp.x + (Math.random()-0.5)*0.05, s:rand(sp.sMin, sp.sMax), kind:p.kind, arms:p.arms, ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]};
+        (sp.far ? cactiFar : cactiNear).push(c);
+      });
     }
-    cactiFar = roadside(5, 0.95, 1.3);
-    cactiNear = roadside(4, 1.35, 1.8);
+    roadside();
     for(i=0;i<4;i++) birds.push({x:Math.random(), y:rand(0.10,0.30), ph:Math.random()*6.28, sp:rand(0.6,1.0), g:0});
   }
   build();

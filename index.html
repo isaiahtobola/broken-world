@@ -3063,14 +3063,19 @@ runners['car-canvas'] = function(canvas, ctx, state){
          The slots stay FIXED and wide (the build-91 uncrowding law
          stands): seven stations now, spread down the track so they
          still pass the car one at a time with desert between. */
+      /* His lineup, clarified Nov 6: the tall ones come in exactly
+         three shapes — a bare pole, a 1-arm (THREE of them, the arm
+         changing sides as they go), and a 2-arm in the classic
+         cactus-emoji form — plus the barrel and the octopus. */
+      var flip95 = Math.random() < 0.5;
       var cast = shuffled([
         {kind:'saguaro', arms:'none'},
-        {kind:'saguaro', arms:'L'},
-        {kind:'saguaro', arms:'R'},
+        {kind:'saguaro', arms: flip95 ? 'L' : 'R'},
+        {kind:'saguaro', arms: flip95 ? 'R' : 'L'},
+        {kind:'saguaro', arms: flip95 ? 'L' : 'R'},
         {kind:'saguaro', arms:'LR'},
         {kind:'barrel', arms:'', ostyle:['crown','cluster','tall'][Math.floor(Math.random()*3)]},
-        {kind:'octopus', arms:'', ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]},
-        {kind:'saguaro', arms:'none'}
+        {kind:'octopus', arms:'', ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]}
       ]);
       var spots = [
         {x:0.04, far:true,  sMin:0.95, sMax:1.3},
@@ -3106,7 +3111,7 @@ runners['car-canvas'] = function(canvas, ctx, state){
       var L = [], R = [];
       if(arms === 'L'){ L = [{f:0.55, ah:25*u}]; }
       else if(arms === 'R'){ R = [{f:0.60, ah:23*u}]; }
-      else if(arms === 'LR'){ L = [{f:0.50, ah:27*u}]; R = [{f:0.66, ah:24*u}]; }
+      else if(arms === 'LR'){ L = [{f:0.55, ah:25*u}]; R = [{f:0.58, ah:25*u}]; } /* the classic two-arm form — both arms up, near-mirror, like the emoji */
       else if(arms === 'LL'){ L = [{f:0.40, ah:21*u}, {f:0.64, ah:25*u}]; }
       else if(arms === 'RR'){ R = [{f:0.44, ah:20*u}, {f:0.68, ah:24*u}]; }
       else if(arms === 'LLR'){ L = [{f:0.38, ah:20*u}, {f:0.62, ah:25*u}]; R = [{f:0.52, ah:22*u}]; }

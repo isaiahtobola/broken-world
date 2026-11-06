@@ -915,6 +915,8 @@ body[data-current="sea"] .depth-gauge{display:flex}
   border:1px solid rgba(240,183,63,.3); border-radius:18px; overflow:hidden;
 }
 #kint-canvas{display:block; width:100%; height:520px; touch-action:none; cursor:grab}
+.kint-stage{touch-action:none; overscroll-behavior:none}
+html.kint-lock{overflow:hidden !important}
 #kint-canvas:active{cursor:grabbing}
 @media (max-width:760px){ #kint-canvas{height:440px} }
 .kint-bar{display:flex; align-items:center; gap:14px; margin-top:12px; flex-wrap:wrap}
@@ -5447,6 +5449,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       tracing = true; lastStamp = null;
       stampTrace(p);
       try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+      document.documentElement.classList.add('kint-lock');
       e.preventDefault();
       return;
     }
@@ -5457,6 +5460,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       if(Math.hypot(p.x - cx, p.y - cy) < pc.radius * 0.95 + 8){
         drag = { pc: pc, offX: p.x - cx, offY: p.y - cy };
         try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+        document.documentElement.classList.add('kint-lock');
         e.preventDefault();
         break;
       }
@@ -5471,6 +5475,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     e.preventDefault();
   });
   function endPointer(){
+    document.documentElement.classList.remove('kint-lock');
     if(tracing){ tracing = false; tracePt = null; checkSeams(); return; }
     if(drag){
       var pc = drag.pc;
@@ -5485,6 +5490,15 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   }
   canvas.addEventListener('pointerup', endPointer);
   canvas.addEventListener('pointercancel', endPointer);
+  /* While a piece is in hand (or the gold is flowing), the page
+     itself is sworn to stillness — blocked at the document level
+     for exactly the length of the gesture, nothing longer. */
+  document.addEventListener('touchmove', function(e){
+    if(drag || tracing) e.preventDefault();
+  }, { passive: false });
+  window.addEventListener('pointerup', function(){
+    document.documentElement.classList.remove('kint-lock');
+  });
   if(resetBtn) resetBtn.addEventListener('click', function(){ seed = (Math.random() * 1e9) | 0; buildAll(null); });
   window.__kintStart = function(){
     sizeCanvas();

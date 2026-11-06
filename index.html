@@ -1023,8 +1023,8 @@ html.kint-lock{overflow:hidden !important}
   will-change:transform}
 .blg-left{left:0; border-right:3px solid var(--gold); box-shadow:inset -30px 0 60px rgba(0,0,0,.5)}
 .blg-right{right:0; border-left:3px solid var(--gold); box-shadow:inset 30px 0 60px rgba(0,0,0,.5)}
-#bl-gate.open .blg-left{transform:translateX(-102%); animation:blDoorL 2.6s cubic-bezier(.25,.6,.25,1) forwards}
-#bl-gate.open .blg-right{transform:translateX(102%); animation:blDoorR 2.6s cubic-bezier(.25,.6,.25,1) forwards}
+#bl-gate.open .blg-left{transform:translateX(-102%); animation:blDoorL 3.2s linear forwards}
+#bl-gate.open .blg-right{transform:translateX(102%); animation:blDoorR 3.2s linear forwards}
 .blg-center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:8px; transition:opacity .45s ease, transform .45s ease; z-index:2}
 #bl-gate.open .blg-center{opacity:0; transform:scale(.92)}
@@ -1038,8 +1038,8 @@ html.kint-lock{overflow:hidden !important}
 .blg-gearR{width:calc(100 * var(--gu)); height:calc(100 * var(--gu)); color:var(--yellow);
   left:calc(50% - 6.25 * var(--gu)); margin-top:calc(-50 * var(--gu))}
 .blg-gearR svg{animation:blSpinR 1.8s linear infinite}
-#bl-gate.open .blg-gearL{transform:translateX(-54vw); animation:blGearL 2.6s cubic-bezier(.25,.6,.25,1) forwards}
-#bl-gate.open .blg-gearR{transform:translateX(54vw); animation:blGearR 2.6s cubic-bezier(.25,.6,.25,1) forwards}
+#bl-gate.open .blg-gearL{transform:translateX(-54vw); animation:blGearL 3.2s linear forwards}
+#bl-gate.open .blg-gearR{transform:translateX(54vw); animation:blGearR 3.2s linear forwards}
 .blg-sign{font-family:var(--serif, Georgia, serif); font-variant:small-caps; letter-spacing:.34em;
   color:var(--cream); font-size:clamp(26px, 6vw, 44px); text-shadow:0 0 24px rgba(240,183,63,.45); margin-top:10px}
 .blg-sub{color:var(--muted); font-family:var(--mono); font-size:12px; letter-spacing:.22em}
@@ -1113,10 +1113,10 @@ html.kint-lock{overflow:hidden !important}
 .bw-zapbolt{fill:none; stroke:#ffeeb8; stroke-width:3; stroke-linejoin:round; opacity:1; transition:opacity .5s ease;
   filter:drop-shadow(0 0 6px #f0b73f) drop-shadow(0 0 18px rgba(240,183,63,.8))}
 .bw-zapfx.out .bw-zapbolt{opacity:0}
-@keyframes blDoorL{0%{transform:translateX(0)}9%{transform:translateX(-36%)}14%{transform:translateX(-32%)}22%{transform:translateX(-55%)}28%{transform:translateX(-52%)}40%{transform:translateX(-71%)}47%{transform:translateX(-69%)}62%{transform:translateX(-84%)}70%{transform:translateX(-82.5%)}86%{transform:translateX(-95%)}100%{transform:translateX(-102%)}}
-@keyframes blDoorR{0%{transform:translateX(0)}9%{transform:translateX(36%)}14%{transform:translateX(32%)}22%{transform:translateX(55%)}28%{transform:translateX(52%)}40%{transform:translateX(71%)}47%{transform:translateX(69%)}62%{transform:translateX(84%)}70%{transform:translateX(82.5%)}86%{transform:translateX(95%)}100%{transform:translateX(102%)}}
-@keyframes blGearL{0%{transform:translateX(0)}9%{transform:translateX(-19.1vw)}14%{transform:translateX(-16.9vw)}22%{transform:translateX(-29.1vw)}28%{transform:translateX(-27.5vw)}40%{transform:translateX(-37.6vw)}47%{transform:translateX(-36.5vw)}62%{transform:translateX(-44.5vw)}70%{transform:translateX(-43.7vw)}86%{transform:translateX(-50.3vw)}100%{transform:translateX(-54vw)}}
-@keyframes blGearR{0%{transform:translateX(0)}9%{transform:translateX(19.1vw)}14%{transform:translateX(16.9vw)}22%{transform:translateX(29.1vw)}28%{transform:translateX(27.5vw)}40%{transform:translateX(37.6vw)}47%{transform:translateX(36.5vw)}62%{transform:translateX(44.5vw)}70%{transform:translateX(43.7vw)}86%{transform:translateX(50.3vw)}100%{transform:translateX(54vw)}}
+@keyframes blDoorL{0%{transform:translateX(0)}16%{transform:translateX(-5%)}30%{transform:translateX(-16%)}48%{transform:translateX(-38%)}66%{transform:translateX(-63%)}82%{transform:translateX(-83%)}93%{transform:translateX(-96%)}100%{transform:translateX(-102%)}}
+@keyframes blDoorR{0%{transform:translateX(0)}16%{transform:translateX(5%)}30%{transform:translateX(16%)}48%{transform:translateX(38%)}66%{transform:translateX(63%)}82%{transform:translateX(83%)}93%{transform:translateX(96%)}100%{transform:translateX(102%)}}
+@keyframes blGearL{0%{transform:translateX(0)}16%{transform:translateX(-2.6vw)}30%{transform:translateX(-8.5vw)}48%{transform:translateX(-20.1vw)}66%{transform:translateX(-33.4vw)}82%{transform:translateX(-43.9vw)}93%{transform:translateX(-50.8vw)}100%{transform:translateX(-54vw)}}
+@keyframes blGearR{0%{transform:translateX(0)}16%{transform:translateX(2.6vw)}30%{transform:translateX(8.5vw)}48%{transform:translateX(20.1vw)}66%{transform:translateX(33.4vw)}82%{transform:translateX(43.9vw)}93%{transform:translateX(50.8vw)}100%{transform:translateX(54vw)}}
 
 /* ============ MOTION LAW (his 11:10 call) ============
    This site does NOT obey the phone's Reduce Motion setting. It froze
@@ -5592,9 +5592,53 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   var gate = document.getElementById('bl-gate');
   if(!gate) return;
   var t1 = null, t2 = null;
+  var AC95g = window.AudioContext || window.webkitAudioContext, actx95g = null;
+  function doorSound(){
+    if(!AC95g) return;
+    try{
+      actx95g = actx95g || new AC95g();
+      if(actx95g.state === 'suspended') actx95g.resume();
+      if(actx95g.state !== 'running') return;
+      var t = actx95g.currentTime, dur = 3.2;
+      var nb = actx95g.createBuffer(1, actx95g.sampleRate * dur, actx95g.sampleRate), nd = nb.getChannelData(0);
+      for(var i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+      var master = actx95g.createGain(); master.gain.value = 0.5; master.connect(actx95g.destination);
+      var osc = actx95g.createOscillator(); osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(46, t); osc.frequency.exponentialRampToValueAtTime(30, t + 1.1);
+      var og = actx95g.createGain(); og.gain.setValueAtTime(0, t);
+      og.gain.linearRampToValueAtTime(0.10, t + 0.35); og.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+      var olp = actx95g.createBiquadFilter(); olp.type = 'lowpass'; olp.frequency.value = 220;
+      osc.connect(olp); olp.connect(og); og.connect(master); osc.start(t); osc.stop(t + 1.25);
+      var src = actx95g.createBufferSource(); src.buffer = nb;
+      var bp = actx95g.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.1;
+      bp.frequency.setValueAtTime(2600, t + 0.15); bp.frequency.exponentialRampToValueAtTime(240, t + 2.9);
+      var sg = actx95g.createGain(); sg.gain.setValueAtTime(0, t);
+      sg.gain.linearRampToValueAtTime(0.16, t + 0.5); sg.gain.setValueAtTime(0.16, t + 2.2);
+      sg.gain.exponentialRampToValueAtTime(0.001, t + 3.05);
+      src.connect(bp); bp.connect(sg); sg.connect(master); src.start(t); src.stop(t + 3.1);
+      var src2 = actx95g.createBufferSource(); src2.buffer = nb;
+      var lp2 = actx95g.createBiquadFilter(); lp2.type = 'lowpass'; lp2.frequency.value = 130;
+      var rg = actx95g.createGain(); rg.gain.setValueAtTime(0, t);
+      rg.gain.linearRampToValueAtTime(0.20, t + 0.6); rg.gain.exponentialRampToValueAtTime(0.001, t + 3.0);
+      src2.connect(lp2); lp2.connect(rg); rg.connect(master); src2.start(t); src2.stop(t + 3.05);
+      for(var k = 0; k < 5; k++){
+        var tk = t + 0.7 + k * 0.48, o2 = actx95g.createOscillator(); o2.type = 'sine';
+        o2.frequency.value = 620 + (k % 3) * 140;
+        var g2 = actx95g.createGain(); g2.gain.setValueAtTime(0, tk);
+        g2.gain.linearRampToValueAtTime(0.028, tk + 0.02); g2.gain.exponentialRampToValueAtTime(0.001, tk + 0.16);
+        o2.connect(g2); g2.connect(master); o2.start(tk); o2.stop(tk + 0.2);
+      }
+      var o3 = actx95g.createOscillator(); o3.type = 'sine';
+      o3.frequency.setValueAtTime(96, t + 3.05); o3.frequency.exponentialRampToValueAtTime(38, t + 3.3);
+      var g3 = actx95g.createGain(); g3.gain.setValueAtTime(0, t + 3.05);
+      g3.gain.linearRampToValueAtTime(0.30, t + 3.07); g3.gain.exponentialRampToValueAtTime(0.001, t + 3.4);
+      o3.connect(g3); g3.connect(master); o3.start(t + 3.05); o3.stop(t + 3.45);
+    }catch(err){}
+  }
   function openDoors(){
     gate.classList.add('open');
-    t2 = setTimeout(function(){ gate.classList.add('done'); gate.hidden = true; gate.classList.remove('open'); }, 2750);
+    doorSound();
+    t2 = setTimeout(function(){ gate.classList.add('done'); gate.hidden = true; gate.classList.remove('open'); }, 3350);
   }
   function play(){
     clearTimeout(t1); clearTimeout(t2);

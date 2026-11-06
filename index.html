@@ -5705,10 +5705,33 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     setTimeout(function(){ if(hvUrl) hvUrl.focus(); }, 40);
   }
   function hvClose(){ if(hvModal) hvModal.hidden = true; }
+  /* Curator gate (his word, Nov 6): attach/detach is his alone. The
+     whole video section renders only when the site is logged in as
+     bwyoungbo (his member name / his email account). Everyone else
+     simply never sees the box. */
+  function hvIsCurator(){
+    var lb = document.getElementById('login-btn');
+    if(!lb) return false;
+    var t = lb.textContent || '';
+    if(!/Log out/.test(t)) return false;
+    var nm = t.replace(/\s*·\s*Log out.*$/, '').trim().toLowerCase();
+    return nm === 'bwyoungbo' || nm === 'isaiahtobola@gmail.com';
+  }
+  function hvGate(){
+    var sec = document.getElementById('home-video');
+    if(!sec) return;
+    if(!hvIsCurator()){ sec.style.display = 'none'; return; }
+    sec.style.display = '';
+  }
+  window.__bwHomeVideoGate = hvGate;
   if(hvBox){
     var savedV = null;
     try{ savedV = localStorage.getItem('bw-home-video'); }catch(e){}
     if(savedV && /^[A-Za-z0-9_-]{11}$/.test(savedV)) hvShow(savedV);
+    hvGate();
+    setTimeout(hvGate, 2500); setTimeout(hvGate, 6000);
+    var lbGate = document.getElementById('login-btn');
+    if(lbGate) lbGate.addEventListener('click', function(){ setTimeout(hvGate, 900); setTimeout(hvGate, 2200); });
     hvBox.addEventListener('click', hvOpen);
     hvBox.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); hvOpen(); } });
     var sw = document.getElementById('hv-swap'), rm = document.getElementById('hv-remove'),

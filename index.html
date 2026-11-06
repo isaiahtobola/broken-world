@@ -5682,33 +5682,15 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   var hvBox = document.getElementById('hv-box'), hvLive = document.getElementById('hv-live'),
       hvFrame = document.getElementById('hv-iframe'), hvModal = document.getElementById('hv-modal'),
       hvUrl = document.getElementById('hv-url'), hvErr = document.getElementById('hv-err');
+  var SB_URL = 'https://zkkspubneerstbznuevj.supabase.co';
+  var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpra3NwdWJuZWVyc3Riem51ZXZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNjk5MDksImV4cCI6MjEwODk0NTkwOX0.efbYEnmtaQ757MEfJpFk-UWuwWggvzEcKUVZoNWsO-M';
+  if(window.BW_CONFIG && BW_CONFIG.SUPABASE_URL){ SB_URL = BW_CONFIG.SUPABASE_URL; SB_ANON = BW_CONFIG.SUPABASE_ANON_KEY; }
+  var hvShared; /* undefined = loading, null = no video set, string = the site's video id */
   function ytId(u){
     if(!u) return null;
     var m = String(u).match(/(?:youtube\.com\/(?:watch\?[^#]*v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
     return m ? m[1] : null;
   }
-  function hvShow(id){
-    if(hvFrame) hvFrame.src = 'https://www.youtube-nocookie.com/embed/' + id + '?rel=0';
-    if(hvBox) hvBox.hidden = true;
-    if(hvLive) hvLive.hidden = false;
-  }
-  function hvClear(){
-    try{ localStorage.removeItem('bw-home-video'); }catch(e){}
-    if(hvFrame) hvFrame.removeAttribute('src');
-    if(hvLive) hvLive.hidden = true;
-    if(hvBox) hvBox.hidden = false;
-  }
-  function hvOpen(){
-    if(hvErr) hvErr.hidden = true;
-    if(hvUrl) hvUrl.value = '';
-    if(hvModal) hvModal.hidden = false;
-    setTimeout(function(){ if(hvUrl) hvUrl.focus(); }, 40);
-  }
-  function hvClose(){ if(hvModal) hvModal.hidden = true; }
-  /* Curator gate (his word, Nov 6): attach/detach is his alone. The
-     whole video section renders only when the site is logged in as
-     bwyoungbo (his member name / his email account). Everyone else
-     simply never sees the box. */
   function hvIsCurator(){
     var lb = document.getElementById('login-btn');
     if(!lb) return false;
@@ -5717,36 +5699,97 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     var nm = t.replace(/\s*·\s*Log out.*$/, '').trim().toLowerCase();
     return nm === 'bwyoungbo' || nm === 'isaiahtobola@gmail.com';
   }
-  function hvGate(){
+  function hvToken(){
+    try{
+      var raw = localStorage.getItem('sb-zkkspubneerstbznuevj-auth-token');
+      if(!raw) return null;
+      var j = JSON.parse(raw);
+      return (j && (j.access_token || (j.currentSession && j.currentSession.access_token))) || null;
+    }catch(e){ return null; }
+  }
+  function hvRender(){
     var sec = document.getElementById('home-video');
     if(!sec) return;
-    if(!hvIsCurator()){ sec.style.display = 'none'; return; }
-    sec.style.display = '';
+    var cur = hvIsCurator();
+    var bar = hvLive ? hvLive.querySelector('.hv-bar') : null;
+    if(hvShared){
+      if(hvFrame && hvFrame.getAttribute('data-vid') !== hvShared){
+        hvFrame.src = 'https://www.youtube-nocookie.com/embed/' + hvShared + '?rel=0';
+        hvFrame.setAttribute('data-vid', hvShared);
+      }
+      if(hvBox) hvBox.hidden = true;
+      if(hvLive) hvLive.hidden = false;
+      if(bar) bar.style.display = cur ? '' : 'none';
+      sec.style.display = '';
+    } else if(hvShared === null){
+      if(hvFrame){ hvFrame.removeAttribute('src'); hvFrame.removeAttribute('data-vid'); }
+      if(hvLive) hvLive.hidden = true;
+      if(cur){ if(hvBox) hvBox.hidden = false; sec.style.display = ''; }
+      else sec.style.display = 'none';
+    } else {
+      sec.style.display = cur ? '' : 'none';
+    }
   }
-  window.__bwHomeVideoGate = hvGate;
+  window.__bwHomeVideoGate = hvRender;
+  function hvFetch(){
+    fetch(SB_URL + '/rest/v1/site_settings?key=eq.home_video&select=value', {
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON }
+    }).then(function(r){ return r.ok ? r.json() : []; }).then(function(rows){
+      var v = (rows && rows[0] && rows[0].value) || null;
+      hvShared = (v && /^[A-Za-z0-9_-]{11}$/.test(v)) ? v : null;
+      hvRender();
+    }).catch(function(){ if(hvShared === undefined){ hvShared = null; hvRender(); } });
+  }
+  function hvSave(id){
+    var tok = hvToken(); if(!tok) return;
+    var headers = { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' };
+    if(id){
+      var h2 = { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' };
+      fetch(SB_URL + '/rest/v1/site_settings', { method: 'POST', headers: h2,
+        body: JSON.stringify({ key: 'home_video', value: id, updated_at: new Date().toISOString() })
+      }).catch(function(){});
+    } else {
+      fetch(SB_URL + '/rest/v1/site_settings?key=eq.home_video', { method: 'DELETE', headers: headers }).catch(function(){});
+    }
+  }
+  function hvOpen(){
+    if(hvErr) hvErr.hidden = true;
+    if(hvUrl) hvUrl.value = '';
+    if(hvModal) hvModal.hidden = false;
+    setTimeout(function(){ if(hvUrl) hvUrl.focus(); }, 40);
+  }
+  function hvClose(){ if(hvModal) hvModal.hidden = true; }
   if(hvBox){
-    var savedV = null;
-    try{ savedV = localStorage.getItem('bw-home-video'); }catch(e){}
-    if(savedV && /^[A-Za-z0-9_-]{11}$/.test(savedV)) hvShow(savedV);
-    hvGate();
-    setTimeout(hvGate, 2500); setTimeout(hvGate, 6000);
-    var lbGate = document.getElementById('login-btn');
-    if(lbGate) lbGate.addEventListener('click', function(){ setTimeout(hvGate, 900); setTimeout(hvGate, 2200); });
-    hvBox.addEventListener('click', hvOpen);
-    hvBox.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); hvOpen(); } });
+    hvBox.addEventListener('click', function(){ if(hvIsCurator()) hvOpen(); });
+    hvBox.addEventListener('keydown', function(e){ if((e.key === 'Enter' || e.key === ' ') && hvIsCurator()){ e.preventDefault(); hvOpen(); } });
     var sw = document.getElementById('hv-swap'), rm = document.getElementById('hv-remove'),
         at = document.getElementById('hv-attach'), cn = document.getElementById('hv-cancel');
-    if(sw) sw.addEventListener('click', hvOpen);
-    if(rm) rm.addEventListener('click', hvClear);
+    if(sw) sw.addEventListener('click', function(){ if(hvIsCurator()) hvOpen(); });
+    if(rm) rm.addEventListener('click', function(){
+      if(!hvIsCurator()) return;
+      hvShared = null; hvSave(null);
+      try{ localStorage.removeItem('bw-home-video'); }catch(e){}
+      hvRender();
+    });
     if(cn) cn.addEventListener('click', hvClose);
     if(hvModal) hvModal.addEventListener('click', function(e){ if(e.target === hvModal) hvClose(); });
     if(at) at.addEventListener('click', function(){
+      if(!hvIsCurator()) return;
       var id = ytId(hvUrl ? hvUrl.value : '');
       if(!id){ if(hvErr) hvErr.hidden = false; return; }
+      hvShared = id; hvSave(id);
       try{ localStorage.setItem('bw-home-video', id); }catch(e){}
-      hvShow(id); hvClose();
+      hvRender(); hvClose();
     });
     if(hvUrl) hvUrl.addEventListener('keydown', function(e){ if(e.key === 'Enter' && at) at.click(); });
+    hvRender(); hvFetch();
+    setTimeout(function(){ hvFetch(); }, 2500);
+    setTimeout(hvRender, 6000);
+    var lbGate = document.getElementById('login-btn');
+    if(lbGate) lbGate.addEventListener('click', function(){
+      setTimeout(function(){ hvRender(); hvFetch(); }, 900);
+      setTimeout(hvRender, 2200);
+    });
   }
   /* ---------- hub members wall ---------- */
   var wall = document.getElementById('members-wall'), stripNote = document.getElementById('members-strip-note');

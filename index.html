@@ -1380,13 +1380,13 @@ html.kint-lock{overflow:hidden !important}
   <div class="join-inner wrap">
     <div class="page-head">
       <h1>Join Our Community</h1>
-      <p class="join-copy">Stay informed with the latest updates and posts. Subscribe now for notifications.</p>
+      <p class="join-copy">Put in your email and you are in — we send you a sign-in link, and your name goes up on the wall in the BW Hub.</p>
     </div>
     <form class="join-form" id="join-form">
       <label for="join-email">Enter your email here *</label>
       <div class="form-row">
         <input type="email" id="join-email" placeholder="you@somewhere.com" required>
-        <button type="submit" class="updates-btn">Get Updates</button>
+        <button type="submit" class="updates-btn">Become a Member</button>
       </div>
     </form>
     <button type="button" class="to-forge-btn" onclick="var f=document.getElementById('forge-canvas'); if(f){ f.scrollIntoView({behavior:'smooth', block:'center'}); }">Take me down to the forge ↓</button>
@@ -2045,7 +2045,18 @@ document.querySelectorAll('.files-table-head .sortable').forEach(function(h){
 renderFiles();
 document.getElementById('join-form').addEventListener('submit', function(e){
   e.preventDefault();
-  toast('The updates list joins in November — site membership above works today.');
+  var em = (document.getElementById('join-email').value || '').trim();
+  if(!em) return;
+  var B = window.BW;
+  if(B && B.sb){
+    toast('Sending your door key...');
+    B.sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.origin + location.pathname } }).then(function(r){
+      if(r.error){ toast('That email hit a snag: ' + r.error.message); return; }
+      toast('Check your inbox — tap the link and you are a member of Broken World, up on the Hub wall.');
+    });
+  } else {
+    toast('The notebook is still waking up — one second, then try again.');
+  }
 });
 document.querySelectorAll('.comment-row input').forEach(function(inp){
   inp.addEventListener('keydown', function(e){
@@ -2313,6 +2324,7 @@ function bwApplyAuth(){
   if(BW.user){
     BW.name = (BW.user.user_metadata && BW.user.user_metadata.display_name) || (BW.user.email || '').split('@')[0] || 'member';
     if(btn) btn.textContent = BW.name + ' · Log out';
+    try{ BW.sb.from('members').upsert({ id: BW.user.id, name: BW.name }).then(function(){}, function(){}); }catch(e){}
     window.__bwSignOut = function(){ BW.sb.auth.signOut(); };
   } else {
     BW.name = '';
@@ -5863,6 +5875,9 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       var nm = (b.textContent || '').trim();
       if(nm && !seen[nm]){ seen[nm] = 1; names.push(nm); }
     });
+    if(memberRoster) memberRoster.forEach(function(nm){
+      if(nm && !seen[nm]){ seen[nm] = 1; names.push(nm); }
+    });
     var loginBtn = document.getElementById('login-btn'), me = '';
     if(loginBtn && /Log out/.test(loginBtn.textContent || '')){
       me = loginBtn.textContent.replace(/\s*·\s*Log out.*$/, '').trim();
@@ -5878,11 +5893,21 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     });
     if(stripNote) stripNote.textContent = '\u2726 ' + names.length + (names.length === 1 ? ' member' : ' members') + ' on the wall';
   }
-  renderMembers();
+  var memberRoster = null;
+  function fetchMemberRoster(){
+    var cfg = hvCfg(); if(!cfg) return;
+    fetch(cfg.url + '/rest/v1/members?select=name', { headers: { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key } })
+      .then(function(r){ return r.ok ? r.json() : []; })
+      .then(function(rows){
+        memberRoster = rows.map(function(x){ return (x.name || '').trim(); }).filter(Boolean);
+        renderMembers();
+      }).catch(function(){});
+  }
+  renderMembers(); fetchMemberRoster();
   setTimeout(renderMembers, 2500); setTimeout(renderMembers, 6000);
   document.addEventListener('click', function(e){
     var t = e.target && e.target.closest ? e.target.closest('[data-view="hub"]') : null;
-    if(t) setTimeout(renderMembers, 350);
+    if(t){ fetchMemberRoster(); setTimeout(renderMembers, 350); }
   });
 })();
 </script>

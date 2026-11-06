@@ -2047,16 +2047,22 @@ document.getElementById('join-form').addEventListener('submit', function(e){
   e.preventDefault();
   var em = (document.getElementById('join-email').value || '').trim();
   if(!em) return;
-  var B = window.BW;
-  if(B && B.sb){
-    toast('Sending your door key...');
-    B.sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.origin + location.pathname } }).then(function(r){
-      if(r.error){ toast('That email hit a snag: ' + r.error.message); return; }
-      toast('Check your inbox — tap the link and you are a member of Broken World, up on the Hub wall.');
-    });
-  } else {
-    toast('The notebook is still waking up — one second, then try again.');
-  }
+  var tries95h = 0;
+  (function send95h(){
+    var B = window.BW;
+    if(B && B.sb){
+      toast('Sending your door key...');
+      B.sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.origin + location.pathname } }).then(function(r){
+        if(r.error){ toast('That email hit a snag: ' + r.error.message); return; }
+        toast('Check your inbox — tap the link and you are a member of Broken World, up on the Hub wall.');
+      });
+      return;
+    }
+    tries95h++;
+    if(tries95h === 1) toast('Waking the notebook — one moment...');
+    if(tries95h < 25) setTimeout(send95h, 400);
+    else toast('The notebook will not wake on this connection — try again in a bit.');
+  })();
 });
 document.querySelectorAll('.comment-row input').forEach(function(inp){
   inp.addEventListener('keydown', function(e){
@@ -2791,7 +2797,13 @@ document.querySelectorAll('.media-file').forEach(function(f){
 
 /* Auth entry point for the modal form (script 2 hands us the form). */
 window.__bwAuth = function(form){
-  if(!BW.sb){ toast('The notebook is still waking up — one second.'); return; }
+  if(!BW.sb){
+    var n95i = (form.__bwWait95 = (form.__bwWait95 || 0) + 1);
+    if(n95i <= 25){ if(n95i === 1) toast('Waking the notebook — one moment...'); setTimeout(function(){ window.__bwAuth(form); }, 400); }
+    else toast('The notebook will not wake on this connection — try again in a bit.');
+    return;
+  }
+  form.__bwWait95 = 0;
   var email = (form.querySelector('input[type="email"]').value || '').trim();
   var pw = form.querySelector('input[type="password"]').value || '';
   var nameEl = form.querySelector('input[name="bw-name"]');
@@ -2816,11 +2828,26 @@ window.__bwAuth = function(form){
 };
 
 (function bwInit(){
+  /* BUILD 95i: if the backend library is slow or blocked on the
+     first pass, never give up silently — retry, re-ask for the
+     library from a second source, and wire up the moment it lands. */
+  if(BW.__booted95) return;
   try{
-    if(!window.supabase) return;
+    if(!window.supabase){
+      BW.__tries95 = (BW.__tries95 || 0) + 1;
+      if(BW.__tries95 === 3 || BW.__tries95 === 10){
+        var sc95 = document.createElement('script');
+        sc95.src = (BW.__tries95 === 3) ? 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2' : 'https://unpkg.com/@supabase/supabase-js@2';
+        sc95.onload = function(){ bwInit(); };
+        document.head.appendChild(sc95);
+      }
+      if(BW.__tries95 < 60) setTimeout(bwInit, 400);
+      return;
+    }
     if(BW_CONFIG.SUPABASE_ANON_KEY.indexOf('__BW_') === 0) return; /* key lands at publish time */
-    BW.sb = window.supabase.createClient(BW_CONFIG.SUPABASE_URL, BW_CONFIG.SUPABASE_ANON_KEY);
+    if(!BW.sb) BW.sb = window.supabase.createClient(BW_CONFIG.SUPABASE_URL, BW_CONFIG.SUPABASE_ANON_KEY);
   }catch(e){ return; }
+  BW.__booted95 = true;
 
   /* a display-name field joins the modal form (sign-up uses it) */
   var form = document.getElementById('auth-email-form');
@@ -5895,8 +5922,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   }
   var memberRoster = null;
   function fetchMemberRoster(){
-    var cfg = hvCfg(); if(!cfg) return;
-    fetch(cfg.url + '/rest/v1/members?select=name', { headers: { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key } })
+    fetch(SB_URL + '/rest/v1/members?select=name', { headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON } })
       .then(function(r){ return r.ok ? r.json() : []; })
       .then(function(rows){
         memberRoster = rows.map(function(x){ return (x.name || '').trim(); }).filter(Boolean);

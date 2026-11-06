@@ -1380,13 +1380,14 @@ html.kint-lock{overflow:hidden !important}
   <div class="join-inner wrap">
     <div class="page-head">
       <h1>Join Our Community</h1>
-      <p class="join-copy">Put in your email and you are in — we send you a sign-in link, and your name goes up on the wall in the BW Hub.</p>
+      <p class="join-copy">Type your email, make a password, click Join — you are a member on the spot, and your name goes up on the wall in the BW Hub.</p>
     </div>
     <form class="join-form" id="join-form">
-      <label for="join-email">Enter your email here *</label>
+      <label for="join-email">Your email + a password — that's the whole door *</label>
       <div class="form-row">
         <input type="email" id="join-email" placeholder="you@somewhere.com" required>
-        <button type="submit" class="updates-btn">Become a Member</button>
+        <input type="password" id="join-password" placeholder="Make a password" required minlength="6">
+        <button type="submit" class="updates-btn">Join Broken World</button>
       </div>
     </form>
     <button type="button" class="to-forge-btn" onclick="var f=document.getElementById('forge-canvas'); if(f){ f.scrollIntoView({behavior:'smooth', block:'center'}); }">Take me down to the forge ↓</button>
@@ -2066,21 +2067,34 @@ renderFiles();
 document.getElementById('join-form').addEventListener('submit', function(e){
   e.preventDefault();
   var em = (document.getElementById('join-email').value || '').trim();
-  if(!em) return;
-  var tries95h = 0;
-  (function send95h(){
-    var B = BW; /* same room, not the window — BW lives in this IIFE */
-    if(B && B.sb){
-      toast('Sending your door key...');
-      B.sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.origin + location.pathname } }).then(function(r){
-        if(r.error){ toast('That email hit a snag: ' + r.error.message); return; }
-        toast('Check your inbox — tap the link and you are a member of Broken World, up on the Hub wall.');
+  var pw = document.getElementById('join-password').value || '';
+  if(!em || !pw) return;
+  var tries95m = 0;
+  (function send95m(){
+    if(BW && BW.sb){
+      BW.sb.auth.signUp({
+        email: em, password: pw,
+        options: { data: { display_name: em.split('@')[0] } }
+      }).then(function(r){
+        if(r.error){
+          if(/already registered|already been registered/i.test(r.error.message || '')){
+            toast('That email already holds a key — hit Log In up top instead.');
+          } else {
+            toast('That signup hit a snag: ' + r.error.message);
+          }
+          return;
+        }
+        if(r.data && r.data.session){
+          toast('You are a member of Broken World — welcome in. Your name is on the Hub wall.');
+        } else {
+          toast('Account made — now hit Log In up top with the same email and password.');
+        }
       });
       return;
     }
-    tries95h++;
-    if(tries95h === 1) toast('Waking the notebook — one moment...');
-    if(tries95h < 25) setTimeout(send95h, 400);
+    tries95m++;
+    if(tries95m === 1) toast('Waking the notebook — one moment...');
+    if(tries95m < 25) setTimeout(send95m, 400);
     else toast('The notebook will not wake on this connection — try again in a bit.');
   })();
 });

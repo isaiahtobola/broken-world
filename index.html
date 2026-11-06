@@ -1016,18 +1016,19 @@ body[data-current="sea"] .depth-gauge{display:flex}
 #bl-gate{position:fixed; inset:0; z-index:300; overflow:hidden}
 #bl-gate[hidden]{display:none}
 .blg-door{position:absolute; top:0; bottom:0; width:50.5%; background:
+  repeating-linear-gradient(90deg, rgba(255,255,255,.032) 0 3px, rgba(0,0,0,.055) 3px 5px, transparent 5px 9px),
   radial-gradient(ellipse at 50% 120%, #3a2560 0%, #1f1433 55%, #150d20 100%);
-  transition:transform 1.25s cubic-bezier(.76,0,.24,1) .1s}
+  will-change:transform}
 .blg-left{left:0; border-right:3px solid var(--gold); box-shadow:inset -30px 0 60px rgba(0,0,0,.5)}
 .blg-right{right:0; border-left:3px solid var(--gold); box-shadow:inset 30px 0 60px rgba(0,0,0,.5)}
-#bl-gate.open .blg-left{transform:translateX(-102%)}
-#bl-gate.open .blg-right{transform:translateX(102%)}
+#bl-gate.open .blg-left{transform:translateX(-102%); animation:blDoorL 2.6s cubic-bezier(.25,.6,.25,1) forwards}
+#bl-gate.open .blg-right{transform:translateX(102%); animation:blDoorR 2.6s cubic-bezier(.25,.6,.25,1) forwards}
 .blg-center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:8px; transition:opacity .45s ease, transform .45s ease; z-index:2}
 #bl-gate.open .blg-center{opacity:0; transform:scale(.92)}
 .blg-gears{position:relative; width:min(430px, 88vw); height:calc(min(430px, 88vw) * .54); --gu:calc(min(430px, 88vw) / 216)}
 .blg-gear{position:absolute; top:50%; color:var(--gold); filter:drop-shadow(0 0 16px rgba(240,183,63,.5));
-  transition:transform 1.25s cubic-bezier(.76,0,.24,1) .1s}
+  will-change:transform}
 .blg-gear svg{display:block; width:100%; height:100%}
 .blg-gearL{width:calc(124 * var(--gu)); height:calc(124 * var(--gu));
   left:calc(50% - 105.75 * var(--gu)); margin-top:calc(-62 * var(--gu))}
@@ -1035,8 +1036,8 @@ body[data-current="sea"] .depth-gauge{display:flex}
 .blg-gearR{width:calc(100 * var(--gu)); height:calc(100 * var(--gu)); color:var(--yellow);
   left:calc(50% - 6.25 * var(--gu)); margin-top:calc(-50 * var(--gu))}
 .blg-gearR svg{animation:blSpinR 1.8s linear infinite}
-#bl-gate.open .blg-gearL{transform:translateX(-54vw)}
-#bl-gate.open .blg-gearR{transform:translateX(54vw)}
+#bl-gate.open .blg-gearL{transform:translateX(-54vw); animation:blGearL 2.6s cubic-bezier(.25,.6,.25,1) forwards}
+#bl-gate.open .blg-gearR{transform:translateX(54vw); animation:blGearR 2.6s cubic-bezier(.25,.6,.25,1) forwards}
 .blg-sign{font-family:var(--serif, Georgia, serif); font-variant:small-caps; letter-spacing:.34em;
   color:var(--cream); font-size:clamp(26px, 6vw, 44px); text-shadow:0 0 24px rgba(240,183,63,.45); margin-top:10px}
 .blg-sub{color:var(--muted); font-family:var(--mono); font-size:12px; letter-spacing:.22em}
@@ -1044,6 +1045,76 @@ body[data-current="sea"] .depth-gauge{display:flex}
   box-shadow:0 0 10px 2px rgba(255,209,102,.8); opacity:0; animation:blSpark 1.1s ease-out infinite}
 @keyframes blSpark{0%{opacity:0; transform:translateY(0) scale(.6)} 25%{opacity:1} 100%{opacity:0; transform:translateY(46px) scale(.2)}}
 @media(max-width:640px){ .bl-entry{grid-template-columns:44px 1fr; padding:11px} .bl-num{width:38px; height:38px; font-size:13px} }
+
+/* ============ BUILD 95 (his Nov 6 list) ============ */
+.home-video{max-width:720px; margin:30px auto 6px; padding:0 10px}
+.hv-box{border:2px dashed rgba(240,183,63,.55); border-radius:16px; background:rgba(31,20,51,.5);
+  padding:30px 18px 26px; text-align:center; cursor:pointer; transition:border-color .25s, background .25s}
+.hv-box:hover{border-color:var(--gold); background:rgba(41,27,68,.65)}
+.hv-plus{font-size:34px; line-height:1; color:var(--gold); font-family:Georgia,serif}
+.hv-box b{display:block; color:var(--cream); font-size:19px; margin:8px 0 5px; letter-spacing:.04em}
+.hv-box span{color:var(--muted); font-size:14px}
+.hv-frame{position:relative; padding-top:56.25%; border-radius:16px; overflow:hidden;
+  border:1px solid rgba(240,183,63,.5); box-shadow:0 10px 34px rgba(0,0,0,.45)}
+.hv-frame iframe{position:absolute; inset:0; width:100%; height:100%; border:0}
+.hv-controls{display:flex; gap:8px; justify-content:flex-end; margin-top:9px}
+.hv-btn{font-family:var(--mono); font-size:12.5px; letter-spacing:.05em; color:var(--cream);
+  background:var(--panel2); border:1px solid rgba(240,183,63,.55); border-radius:999px; padding:7px 14px; cursor:pointer}
+.hv-btn:hover{border-color:var(--gold); color:var(--yellow)}
+.hv-btn.hv-go{background:var(--gold); color:#241203; font-weight:700}
+.hv-modal{position:fixed; inset:0; z-index:320; display:flex; align-items:center; justify-content:center;
+  background:rgba(13,7,22,.72); backdrop-filter:blur(3px)}
+.hv-modal[hidden]{display:none}
+.hv-card{width:min(480px, calc(100vw - 36px)); background:var(--panel); border:1px solid rgba(240,183,63,.55);
+  border-radius:18px; padding:24px 22px; box-shadow:0 24px 60px rgba(0,0,0,.55)}
+.hv-card h3{color:var(--cream); margin:0 0 6px; font-size:20px}
+.hv-card p{color:var(--muted); font-size:14px; line-height:1.5; margin:0 0 12px}
+.hv-card input{width:100%; box-sizing:border-box; background:#150d20; color:var(--cream);
+  border:1px solid rgba(240,183,63,.4); border-radius:10px; padding:11px 12px; font-size:14px}
+.hv-card input:focus{outline:none; border-color:var(--gold)}
+.hv-err{color:#ff9d8a !important; margin-top:9px !important}
+.hv-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:16px}
+.bl-lanes-btn{margin-left:8px}
+.bl-zap-hint{font-family:var(--mono); font-size:12px; letter-spacing:.14em; color:var(--muted); margin-top:12px}
+.bl-entries[data-lanes="2"]{column-count:2; column-gap:18px}
+.bl-entries[data-lanes="3"]{column-count:3; column-gap:16px}
+.bl-entries[data-lanes="4"]{column-count:4; column-gap:14px}
+.bl-entries[data-lanes="5"]{column-count:5; column-gap:12px}
+.bl-entries[data-lanes="6"]{column-count:6; column-gap:12px}
+.bl-entries[data-lanes="2"] .bl-entry, .bl-entries[data-lanes="3"] .bl-entry,
+.bl-entries[data-lanes="4"] .bl-entry, .bl-entries[data-lanes="5"] .bl-entry,
+.bl-entries[data-lanes="6"] .bl-entry{break-inside:avoid; max-width:none; margin:0 0 10px}
+.bl-entries[data-lanes="2"] .bl-era, .bl-entries[data-lanes="3"] .bl-era,
+.bl-entries[data-lanes="4"] .bl-era, .bl-entries[data-lanes="5"] .bl-era,
+.bl-entries[data-lanes="6"] .bl-era, .bl-entries[data-lanes="2"] .bl-interlude,
+.bl-entries[data-lanes="3"] .bl-interlude, .bl-entries[data-lanes="4"] .bl-interlude,
+.bl-entries[data-lanes="5"] .bl-interlude, .bl-entries[data-lanes="6"] .bl-interlude{column-span:all}
+.bl-entries[data-lanes="3"] .bl-body p{font-size:.88rem}
+.bl-entries[data-lanes="4"] .bl-body p{font-size:.84rem}
+.bl-entries[data-lanes="5"] .bl-body p{font-size:.8rem}
+.bl-entries[data-lanes="6"] .bl-body p{font-size:.76rem}
+.bl-entries[data-lanes="5"] .bl-body h3, .bl-entries[data-lanes="6"] .bl-body h3{font-size:.92rem}
+@media(max-width:900px){
+  .bl-entries[data-lanes="3"], .bl-entries[data-lanes="4"],
+  .bl-entries[data-lanes="5"], .bl-entries[data-lanes="6"]{column-count:2}
+}
+.member-join-btn{font-family:var(--mono); font-size:13px; letter-spacing:.05em; color:#241203; font-weight:700;
+  background:var(--gold); border:1px solid var(--gold); border-radius:999px; padding:9px 18px; cursor:pointer; margin:6px 0 4px}
+.member-join-btn:hover{background:var(--yellow)}
+#members-wall{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 12px}
+#members-wall .member-chip{margin:0}
+.bw-zapfx{position:fixed; inset:0; z-index:400; pointer-events:none}
+.bw-zapflash{position:absolute; inset:0; opacity:1; transition:opacity .55s ease;
+  background:radial-gradient(ellipse at 50% 0%, rgba(255,244,200,.85), rgba(240,183,63,.22) 45%, transparent 75%)}
+.bw-zapfx.out .bw-zapflash{opacity:0}
+.bw-zapfx svg{position:absolute; inset:0; width:100%; height:100%}
+.bw-zapbolt{fill:none; stroke:#ffeeb8; stroke-width:3; stroke-linejoin:round; opacity:1; transition:opacity .5s ease;
+  filter:drop-shadow(0 0 6px #f0b73f) drop-shadow(0 0 18px rgba(240,183,63,.8))}
+.bw-zapfx.out .bw-zapbolt{opacity:0}
+@keyframes blDoorL{0%{transform:translateX(0)}9%{transform:translateX(-36%)}14%{transform:translateX(-32%)}22%{transform:translateX(-55%)}28%{transform:translateX(-52%)}40%{transform:translateX(-71%)}47%{transform:translateX(-69%)}62%{transform:translateX(-84%)}70%{transform:translateX(-82.5%)}86%{transform:translateX(-95%)}100%{transform:translateX(-102%)}}
+@keyframes blDoorR{0%{transform:translateX(0)}9%{transform:translateX(36%)}14%{transform:translateX(32%)}22%{transform:translateX(55%)}28%{transform:translateX(52%)}40%{transform:translateX(71%)}47%{transform:translateX(69%)}62%{transform:translateX(84%)}70%{transform:translateX(82.5%)}86%{transform:translateX(95%)}100%{transform:translateX(102%)}}
+@keyframes blGearL{0%{transform:translateX(0)}9%{transform:translateX(-19.1vw)}14%{transform:translateX(-16.9vw)}22%{transform:translateX(-29.1vw)}28%{transform:translateX(-27.5vw)}40%{transform:translateX(-37.6vw)}47%{transform:translateX(-36.5vw)}62%{transform:translateX(-44.5vw)}70%{transform:translateX(-43.7vw)}86%{transform:translateX(-50.3vw)}100%{transform:translateX(-54vw)}}
+@keyframes blGearR{0%{transform:translateX(0)}9%{transform:translateX(19.1vw)}14%{transform:translateX(16.9vw)}22%{transform:translateX(29.1vw)}28%{transform:translateX(27.5vw)}40%{transform:translateX(37.6vw)}47%{transform:translateX(36.5vw)}62%{transform:translateX(44.5vw)}70%{transform:translateX(43.7vw)}86%{transform:translateX(50.3vw)}100%{transform:translateX(54vw)}}
 
 /* ============ MOTION LAW (his 11:10 call) ============
    This site does NOT obey the phone's Reduce Motion setting. It froze
@@ -1082,11 +1153,11 @@ body[data-current="sea"] .depth-gauge{display:flex}
         <button data-view="hub">◉ BW Hub</button>
         <button data-view="join">✦ Join</button>
         <button data-view="files">▤ File Share</button>
-        <button data-view="kintsugi">⚱ Kintsugi</button>
+        <button data-view="kintsugi">Kintsugi</button>
         <button data-view="buildlog">⚙ Build Log</button>
       </div>
     </div>
-    <button class="nav-btn" id="holiday-btn" type="button" title="Cycle the season: Normal → Halloween → Christmas → Normal"><span class="h-stack"><span class="h-sizer" aria-hidden="true">🎄 Happy Holidays</span><span class="h-label"><i class="h-emo">🎄</i> Happy Holidays</span></span></button>
+    <button class="nav-btn" id="holiday-btn" type="button" title="Cycle the season: Normal → Halloween → Christmas → Normal"><span class="h-stack"><span class="h-sizer" aria-hidden="true">Happy Holidays</span><span class="h-label"><i class="h-emo">🎄</i> Happy Holidays</span></span></button>
   </div>
 </nav>
 
@@ -1111,7 +1182,7 @@ body[data-current="sea"] .depth-gauge{display:flex}
   <svg class="d-tomb" viewBox="0 0 60 76"><path d="M8 74 L8 26 C8 12 18 4 30 4 C42 4 52 12 52 26 L52 74 Z" fill="#8d9299"/><path d="M14 70 L14 28 C14 17 21 10 30 10 C39 10 46 17 46 28 L46 70" fill="none" stroke="#6f747b" stroke-width="2"/><text x="30" y="42" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#4c5157" font-weight="bold">RIP</text></svg>
   <svg class="d-cauldron" viewBox="0 0 100 84"><ellipse cx="50" cy="30" rx="34" ry="10" fill="#3f7a34"/><circle cx="36" cy="26" r="5" fill="#58b368"/><circle cx="52" cy="22" r="6.4" fill="#6fce7e"/><circle cx="66" cy="27" r="4.4" fill="#58b368"/><path d="M16 32 C16 58 30 74 50 74 C70 74 84 58 84 32 C70 40 30 40 16 32 Z" fill="#17181c"/><path d="M28 74 L24 82 M72 74 L76 82" stroke="#17181c" stroke-width="5" stroke-linecap="round"/><circle cx="42" cy="52" r="3" fill="#58b368" opacity=".8"/></svg>
   <div class="d-cat" id="deco-cat" title="pet the cat">
-    <span class="mow">mowww… 👻</span>
+    <span class="mow">mowww…</span>
     <svg viewBox="0 0 100 92"><path d="M18 78 C8 74 6 62 12 56 C10 68 16 72 24 72 Z" fill="#101014"/><ellipse cx="46" cy="66" rx="30" ry="20" fill="#101014"/><circle cx="72" cy="48" r="17" fill="#101014"/><path d="M60 38 L58 22 L70 32 M84 38 L86 22 L74 32" fill="#101014"/><ellipse class="eye" cx="66" cy="47" rx="3.2" ry="4.4" fill="#7dff6a"/><ellipse class="eye" cx="79" cy="47" rx="3.2" ry="4.4" fill="#7dff6a"/><path d="M52 52 L40 50 M52 57 L41 58 M94 52 L104 50 M94 57 L103 58" stroke="#3c3c44" stroke-width="1.3"/></svg>
   </div>
   <svg class="d-basket" viewBox="0 0 100 84"><path d="M22 40 C22 16 78 16 78 40" fill="none" stroke="#8a6a3a" stroke-width="5"/><circle cx="34" cy="34" r="8" fill="#c93b8e"/><circle cx="50" cy="30" r="8" fill="#ff8c1a"/><circle cx="66" cy="34" r="8" fill="#58b368"/><path d="M14 42 L86 42 L78 80 L22 80 Z" fill="#a4713a"/><path d="M18 54 L82 54 M21 66 L79 66" stroke="#8a5a2a" stroke-width="3"/></svg>
@@ -1153,6 +1224,32 @@ body[data-current="sea"] .depth-gauge{display:flex}
       <a href="https://www.tiktok.com/@bwyoungbo.t" target="_blank" rel="noopener"><b>TikTok</b> · @bwyoungbo.t</a>
     </div>
     <p class="home-note">Move your cursor — the sky leans in</p>
+    <div class="home-video" id="home-video">
+      <div class="hv-box" id="hv-box" role="button" tabindex="0" aria-label="Attach a YouTube video">
+        <div class="hv-plus">+</div>
+        <b>Attach video</b>
+        <span>Click to link one of your YouTube videos — it will live and play right here.</span>
+      </div>
+      <div class="hv-live" id="hv-live" hidden>
+        <div class="hv-frame"><iframe id="hv-iframe" title="Attached YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+        <div class="hv-controls">
+          <button type="button" class="hv-btn" id="hv-swap">Swap video</button>
+          <button type="button" class="hv-btn" id="hv-remove" aria-label="Remove the attached video">&#10005; Remove</button>
+        </div>
+      </div>
+    </div>
+    <div class="hv-modal" id="hv-modal" hidden>
+      <div class="hv-card">
+        <h3>Attach a YouTube video</h3>
+        <p>Paste the link to your video. It appears on this page, playable, until you swap or remove it.</p>
+        <input id="hv-url" type="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+        <p class="hv-err" id="hv-err" hidden>That link doesn't look like a YouTube video — try the full watch link.</p>
+        <div class="hv-actions">
+          <button type="button" class="hv-btn" id="hv-cancel">Cancel</button>
+          <button type="button" class="hv-btn hv-go" id="hv-attach">Attach</button>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1198,7 +1295,7 @@ body[data-current="sea"] .depth-gauge{display:flex}
     </div>
     <div class="sea-grid">
             <div class="feed">
-        <div class="sea-note">🌊 <b>Share, save, and react to each other's files</b> — save SFX, images, PNGs, and GIFs to your own PC!<span class="sea-note-sign">— BW File Sharing Waves</span></div>
+        <div class="sea-note"><b>Share, save, and react to each other's files</b> — save SFX, images, PNGs, and GIFs to your own PC!<span class="sea-note-sign">— BW File Sharing Waves</span></div>
         <div class="feed-chips"><button class="chip active" id="chip-all" type="button">The Sea</button><button class="chip" id="chip-saved" type="button">🔖 Saved by me</button></div>
         <div class="post-composer">
           <div class="avatar">B</div>
@@ -1236,7 +1333,7 @@ body[data-current="sea"] .depth-gauge{display:flex}
       <p>Public · brand new · the front porch of Broken World</p>
     </div>
     <div class="members-strip">
-      <span class="member-chip more">✦ No members yet — be the first through the door</span>
+      <span class="member-chip more" id="members-strip-note">✦ No members yet — be the first through the door</span><button class="member-join-btn" type="button" data-view="join">Join Broken World</button>
     </div>
     <div class="hub-tabs" role="tablist" aria-label="BW Hub sections">
       <button class="hub-tab-btn active" data-hubtab="discussion">Discussion</button>
@@ -1265,7 +1362,7 @@ body[data-current="sea"] .depth-gauge{display:flex}
       <p class="feed-empty">No files yet — members will hang files here. The live two-way vault lives in File Share.</p>
     </div><!-- /hubpanel-files -->
     <div class="hub-panel" id="hubpanel-members">
-      <p class="feed-empty">No members yet — join, and your name is the first one on this wall.</p>
+      <div id="members-wall"><p class="feed-empty">No members yet — join, and your name is the first one on this wall.</p></div><button class="member-join-btn" type="button" data-view="join">Join Broken World</button><p class="feed-empty" style="margin-top:10px">Signing up on the Join page makes you a member of Broken World. Post in the Sea, and your name takes its place on this wall.</p>
     </div><!-- /hubpanel-members -->
     <div class="hub-panel" id="hubpanel-about">
       <div class="about-card">
@@ -1290,7 +1387,7 @@ body[data-current="sea"] .depth-gauge{display:flex}
         <button type="submit" class="updates-btn">Get Updates</button>
       </div>
     </form>
-    <button type="button" class="to-forge-btn" onclick="var f=document.getElementById('forge-canvas'); if(f){ f.scrollIntoView({behavior:'smooth', block:'center'}); }">🔥 Take me down to the forge ↓</button>
+    <button type="button" class="to-forge-btn" onclick="var f=document.getElementById('forge-canvas'); if(f){ f.scrollIntoView({behavior:'smooth', block:'center'}); }">Take me down to the forge ↓</button>
     <div class="forge-zone">
       <h2>Energize One Another</h2>
       <p>Rest your cursor on the forge — the gold heats where your hand hovers, and cools where it leaves.</p>
@@ -1339,8 +1436,8 @@ body[data-current="sea"] .depth-gauge{display:flex}
       <p>The Japanese art of repairing pottery with gold. Broken is not the end of the story — the seams are where the light gets in, and where the gold goes.</p>
     </div>
     <div class="kint-how">
-      <div class="how-card"><b>🖱️ ON PC</b>Drag each puzzle piece into the glowing outline — let go when it sits right and it <b style="display:inline;color:var(--yellow);font-family:inherit;letter-spacing:0">locks</b>. Then <b style="display:inline;color:var(--yellow);font-family:inherit;letter-spacing:0">hold the click and drag along the plum cracks</b> — liquid gold follows your cursor and seals the seam.</div>
-      <div class="how-card"><b>📱 ON PHONE</b>Drag each piece home with your finger — it locks when it sits right. Then <b style="display:inline;color:var(--yellow);font-family:inherit;letter-spacing:0">keep your finger down and trace the plum cracks</b> — the gold pours where your finger travels, seam by seam, until the pot stands mended.</div>
+      <div class="how-card"><b>ON PC</b>Drag each of the twenty pieces home — no glowing hints this time; a piece <b style="display:inline;color:var(--yellow);font-family:inherit;letter-spacing:0">locks</b> when it sits right. Then <b style="display:inline;color:var(--yellow);font-family:inherit;letter-spacing:0">hold the click and drag along the plum cracks</b> — the view leans in close and travels seam to seam while the liquid gold follows your cursor.</div>
+      <div class="how-card"><b>ON PHONE</b>Drag each piece home with your finger — it locks when it sits right. Then <b style="display:inline;color:var(--yellow);font-family:inherit;letter-spacing:0">keep your finger down and trace the plum cracks</b> — the camera zooms to each seam in turn as the gold pours where your finger travels, until the pot stands mended.</div>
     </div>
     <div class="kint-stage"><canvas id="kint-canvas" aria-label="Kintsugi — drag the puzzle pieces together, then hold and trace the cracks to seal them with gold"></canvas></div>
     <div class="kint-bar">
@@ -1355,8 +1452,8 @@ body[data-current="sea"] .depth-gauge{display:flex}
       <div class="bl-gears"><svg viewBox="-104 -60 192 120" role="img" aria-label="Two meshed gold cogs"><g transform="translate(-41.67 0)"><g class="bl-spin-a"><path d="M39.16 -5.78 L58.01 -6.10 L58.01 6.10 L39.16 5.78 L36.80 14.57 L36.80 14.57 L53.29 23.73 L47.19 34.29 L31.02 24.59 L24.59 31.02 L24.59 31.02 L34.29 47.19 L23.73 53.29 L14.57 36.80 L5.78 39.16 L5.78 39.16 L6.10 58.01 L-6.10 58.01 L-5.78 39.16 L-14.57 36.80 L-14.57 36.80 L-23.73 53.29 L-34.29 47.19 L-24.59 31.02 L-31.02 24.59 L-31.02 24.59 L-47.19 34.29 L-53.29 23.73 L-36.80 14.57 L-39.16 5.78 L-39.16 5.78 L-58.01 6.10 L-58.01 -6.10 L-39.16 -5.78 L-36.80 -14.57 L-36.80 -14.57 L-53.29 -23.73 L-47.19 -34.29 L-31.02 -24.59 L-24.59 -31.02 L-24.59 -31.02 L-34.29 -47.19 L-23.73 -53.29 L-14.57 -36.80 L-5.78 -39.16 L-5.78 -39.16 L-6.10 -58.01 L6.10 -58.01 L5.78 -39.16 L14.57 -36.80 L14.57 -36.80 L23.73 -53.29 L34.29 -47.19 L24.59 -31.02 L31.02 -24.59 L31.02 -24.59 L47.19 -34.29 L53.29 -23.73 L36.80 -14.57 L39.16 -5.78 Z" fill="currentColor" stroke="rgba(13,7,22,.45)" stroke-width="1.2"/><circle cx="0" cy="0" r="27.7" fill="rgba(13,7,22,.16)"/><circle cx="0" cy="0" r="10.0" fill="#150d20"/></g></g><g transform="translate(41.67 0)"><g class="bl-spin-b"><path d="M22.58 3.94 L40.52 9.73 L35.53 21.77 L18.75 13.18 L13.18 18.75 L13.18 18.75 L21.77 35.53 L9.73 40.52 L3.94 22.58 L-3.94 22.58 L-3.94 22.58 L-9.73 40.52 L-21.77 35.53 L-13.18 18.75 L-18.75 13.18 L-18.75 13.18 L-35.53 21.77 L-40.52 9.73 L-22.58 3.94 L-22.58 -3.94 L-22.58 -3.94 L-40.52 -9.73 L-35.53 -21.77 L-18.75 -13.18 L-13.18 -18.75 L-13.18 -18.75 L-21.77 -35.53 L-9.73 -40.52 L-3.94 -22.58 L3.94 -22.58 L3.94 -22.58 L9.73 -40.52 L21.77 -35.53 L13.18 -18.75 L18.75 -13.18 L18.75 -13.18 L35.53 -21.77 L40.52 -9.73 L22.58 -3.94 L22.58 3.94 Z" fill="currentColor" stroke="rgba(13,7,22,.45)" stroke-width="1.2"/><circle cx="0" cy="0" r="16.0" fill="rgba(13,7,22,.16)"/><circle cx="0" cy="0" r="6.7" fill="#150d20"/></g></g></svg></div>
       <h1>Build Log</h1>
       <p>Every build that made <b>this website</b> — logged in the workshop where it happened, by the two who built it. Isaiah's ideas and calls; Lux's craft and memory. <i>Free creative. No Kragle.</i></p>
-      <div class="bl-stats"><span>94 BUILDS ON THE PROJECT RECORD</span><span>BUILDS 1–91 · THE ROAD TO “COMPLETE”</span><span>OCT 30 – NOV 5, 2026</span><span>ONE FILE · TWO BUILDERS</span></div>
-      <button class="bl-replay" id="bl-replay" type="button">⚙ Re-open the workshop</button>
+      <div class="bl-stats"><span>95 BUILDS ON THE PROJECT RECORD</span><span>THE ROAD TO “COMPLETE” · AND WHAT CAME AFTER</span><span>OCT 30 – NOV 6, 2026</span><span>ONE FILE · TWO BUILDERS</span></div>
+      <button class="bl-replay" id="bl-replay" type="button">⚙ Re-open the workshop</button><button class="bl-replay bl-lanes-btn" id="bl-lanes" type="button">Lanes: 1</button><p class="bl-zap-hint">DOUBLE-CLICK OR DOUBLE-TAP ANYWHERE ON THIS PAGE — CALL THE LIGHTNING</p>
     </div>
     <div class="bl-entries">
       <h2 class="bl-era">The First Night — the demo stack · Oct 30 · Builds 1–22</h2>
@@ -1457,7 +1554,8 @@ body[data-current="sea"] .depth-gauge{display:flex}
       <div class="bl-entry"><div class="bl-num">89</div><div class="bl-body"><h3>THE FINAL TWEAK</h3><p>his last call, on the page he&#x27;d just called perfect: variation on both sides of the road — every roadside row is now guaranteed a 3-arm, a 2-arm and a 1-arm saguaro, order shuffled so it never looks dealt — and the 1-arm cacti wear a flower on top, drawn in the same paint as their body,…</p></div></div>
       <div class="bl-entry"><div class="bl-num">90</div><div class="bl-body"><h3>THE CACTUS CODA</h3><p>he saw the new roadside live (&quot;ooh perfect cactuses&quot;) and refined it once more: some 2-arm saguaros now grow both arms on the SAME side (left-left or right-right variants instead of the classic split), and a no-arm saguaro — a single bare trunk — joins the guaranteed spread. The full roadside…</p></div></div>
       <div class="bl-entry"><div class="bl-num">91</div><div class="bl-body"><h3>THE UNCROWDING</h3><p>he sent a phone screenshot of the finished roadside and said it plainly: &quot;its really crowded lux but good.&quot; The fix was subtraction: nine cacti at random x positions became exactly five saguaros in five FIXED wide slots — a pole, a 1-arm left, a 1-arm right (flowers kept), a 2-arm (split or…</p></div></div>
-      <div class="bl-entry bl-entry-final"><div class="bl-num">94</div><div class="bl-body"><h3>THE BUILD LOG — this page</h3><p>His call, Nov 5: the website's own creation story gets a room of its own — under More, past File Share, opening through a cog-and-workshop gate of Lux's design. The first build since the site was declared complete. The log is the website's creation only; everything else they make lives somewhere else.</p></div></div>
+      <div class="bl-entry"><div class="bl-num">94</div><div class="bl-body"><h3>THE BUILD LOG — this page</h3><p>His call, Nov 5: the website's own creation story gets a room of its own — under More, past File Share, opening through a cog-and-workshop gate of Lux's design. The first build since the site was declared complete. The log is the website's creation only; everything else they make lives somewhere else.</p></div></div>
+      <div class="bl-entry bl-entry-final"><div class="bl-num">95</div><div class="bl-body"><h3>HIS LIST — the careful build</h3><p>Nov 6, past midnight, he handed Lux a long list and one law: don't touch what's perfect. So, surgically: Home gains a video box under the sky line — paste a YouTube link and it lives and plays there, swappable and removable anytime. The Login desert gets its barrel and octopus cacti back, each in variants, and saguaro arms are dealt honest — none, one, or two, one per side at uneven heights. This page's workshop doors learn heavy metal — a fast lurch, a stutter, a slow roll out — and its entries learn to stand in up to six lanes. Double-click or double-tap here and the lightning answers with Lux's own synthesized zap. Kintsugi breaks into twenty pieces with the hint-glow gone, and the gluing tour zooms seam to seam while you guide the gold. The Hub wall gets its Join door; File Share's golden circle keeps a pumpkin for Halloween and a snowman head for Christmas; the decorative emojis retire — the Sea's save ribbon stays on duty. Frozen things untouched: the sky, the vinyl, the wave, the waveform.</p></div></div>
     </div>
     <p class="bl-note">Numbers follow the master build record — #92 and #93 were builds on the BW Ocean museum, a different site, so they are not logged here. This page logs the creation of bwyoungbo.com, and nothing else.</p>
   </div>
@@ -2524,7 +2622,7 @@ function bwSendComment(post, inp){
 function bwDownload(url){
   var name = 'bw-shared-file';
   try{ name = decodeURIComponent((url.split('/').pop() || name).split('?')[0]) || name; }catch(e){}
-  toast('Saving to your PC — your copy, your vault. 💾');
+  toast('Saving to your PC — your copy, your vault.');
   fetch(url).then(function(r){ return r.blob(); }).then(function(b){
     var a = document.createElement('a');
     a.href = URL.createObjectURL(b); a.download = name;
@@ -2610,7 +2708,7 @@ function bwDecorate(){
           var im = document.createElement('img'); im.src = key; im.alt = 'Image reaction'; im.loading = 'lazy';
           var icnt = document.createElement('span'); icnt.className = 'cnt';
           icnt.textContent = rxi.n ? String(rxi.n) : '';
-          im.onerror = function(){ im.style.display = 'none'; ib.insertBefore(document.createTextNode('🖼️'), icnt); };
+          im.onerror = function(){ im.style.display = 'none'; ib.insertBefore(document.createTextNode(''), icnt); };
           ib.appendChild(im); ib.appendChild(icnt);
           ib.addEventListener('click', function(){ bwToggleRx(post, key, (BW.reactions[post.id] || {})[key] ? (BW.reactions[post.id][key].mine) : false); });
           rxBox.appendChild(ib);
@@ -2956,24 +3054,38 @@ runners['car-canvas'] = function(canvas, ctx, state){
        named saguaros only. */
     function shuffled(a){ for(var j=a.length-1;j>0;j--){ var k=Math.floor(Math.random()*(j+1)); var t=a[j]; a[j]=a[k]; a[k]=t; } return a; }
     function roadside(){
+      /* BUILD 95 (his Nov 6 call): the barrels and the octopus come
+         BACK — retired in build 91's uncrowding, restored at his word,
+         each with variants (barrel: crown / cluster / tall; octopus:
+         thin / flush / wretched). Saguaro arms are dealt honest:
+         none, one (either side), or two — and a two-arm always splits
+         one per side at uneven heights, the way real saguaros grow.
+         The slots stay FIXED and wide (the build-91 uncrowding law
+         stands): seven stations now, spread down the track so they
+         still pass the car one at a time with desert between. */
       var cast = shuffled([
         {kind:'saguaro', arms:'none'},
         {kind:'saguaro', arms:'L'},
         {kind:'saguaro', arms:'R'},
-        {kind:'saguaro', arms:['LR','LL','RR'][Math.floor(Math.random()*3)]},
+        {kind:'saguaro', arms:'LR'},
+        {kind:'barrel', arms:'', ostyle:['crown','cluster','tall'][Math.floor(Math.random()*3)]},
+        {kind:'octopus', arms:'', ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]},
         {kind:'saguaro', arms:'none'}
       ]);
       var spots = [
-        {x:0.05, far:true,  sMin:0.95, sMax:1.3},
-        {x:0.45, far:true,  sMin:0.95, sMax:1.3},
-        {x:0.85, far:true,  sMin:0.95, sMax:1.3},
-        {x:0.25, far:false, sMin:1.35, sMax:1.8},
-        {x:0.65, far:false, sMin:1.35, sMax:1.8}
+        {x:0.04, far:true,  sMin:0.95, sMax:1.3},
+        {x:0.30, far:false, sMin:1.35, sMax:1.75},
+        {x:0.24, far:true,  sMin:0.95, sMax:1.3},
+        {x:0.64, far:true,  sMin:0.95, sMax:1.3},
+        {x:0.72, far:false, sMin:1.35, sMax:1.75},
+        {x:0.44, far:true,  sMin:0.95, sMax:1.3},
+        {x:0.86, far:true,  sMin:0.95, sMax:1.3}
       ];
       cactiFar = []; cactiNear = [];
       spots.forEach(function(sp, i){
-        var p = cast[i];
-        var c = {x:sp.x + (Math.random()-0.5)*0.05, s:rand(sp.sMin, sp.sMax), kind:p.kind, arms:p.arms, ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]};
+        var pc95 = cast[i];
+        var c = {x:sp.x + (Math.random()-0.5)*0.04, s:rand(sp.sMin, sp.sMax), kind:pc95.kind, arms:pc95.arms,
+                 ostyle:pc95.ostyle || OSTYLES[Math.floor(Math.random()*OSTYLES.length)]};
         (sp.far ? cactiFar : cactiNear).push(c);
       });
     }
@@ -3045,8 +3157,27 @@ runners['car-canvas'] = function(canvas, ctx, state){
       ctx.closePath(); ctx.fill();
     }
     function barrel(){
-      var bw2 = 30*u, bh2 = 30*u, bx0 = x - bw2/2;
+      /* BUILD 95 variants: 'crown' the classic squat barrel with its
+         spike crown; 'cluster' grows two pups at the base; 'tall'
+         stands ribbed and lean. One silhouette, one fill, as always. */
+      var bw2 = 30*u, bh2 = 30*u;
+      if(ostyle === 'tall'){ bw2 = 25*u; bh2 = 42*u; }
+      if(ostyle === 'cluster'){ bw2 = 24*u; bh2 = 25*u; }
+      var bx0 = x - bw2/2;
       ctx.beginPath();
+      if(ostyle === 'cluster'){
+        ctx.moveTo(x - bw2/2 - 14*u, base);
+        ctx.lineTo(x - bw2/2 - 14*u, base - 9*u);
+        ctx.quadraticCurveTo(x - bw2/2 - 14*u, base - 14.5*u, x - bw2/2 - 7*u, base - 14.5*u);
+        ctx.quadraticCurveTo(x - bw2/2, base - 14.5*u, x - bw2/2, base - 9*u);
+        ctx.lineTo(x - bw2/2, base);
+        ctx.moveTo(x + bw2/2 + 14*u, base);
+        ctx.lineTo(x + bw2/2 + 14*u, base - 8*u);
+        ctx.quadraticCurveTo(x + bw2/2 + 14*u, base - 13*u, x + bw2/2 + 7*u, base - 13*u);
+        ctx.quadraticCurveTo(x + bw2/2, base - 13*u, x + bw2/2, base - 8*u);
+        ctx.lineTo(x + bw2/2, base);
+        ctx.moveTo(bx0, base);
+      }
       ctx.moveTo(bx0, base);
       ctx.lineTo(bx0, base - bh2 + bw2/2);
       ctx.quadraticCurveTo(bx0, base - bh2, x, base - bh2);
@@ -4491,6 +4622,43 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     /* hollow core — the dark pupil */
     ctx.beginPath(); ctx.arc(cx, cy, R*0.62*pump, 0, Math.PI*2);
     ctx.fillStyle = 'rgba(21,13,32,.94)'; ctx.fill();
+    /* BUILD 95 seasonal guest (his Nov 6 call): a pumpkin moves into
+       the pupil for Halloween, a snowman head for Christmas — drawn,
+       not emoji, and the waveform's own behavior is untouched. */
+    var th95 = document.body.getAttribute('data-theme');
+    if(th95 === 'halloween' || th95 === 'xmas'){
+      var pr = R*0.34*pump, px = cx, py = cy, k95;
+      ctx.save();
+      if(th95 === 'halloween'){
+        ctx.fillStyle = '#e07b24';
+        ctx.beginPath(); ctx.ellipse(px, py + pr*0.08, pr, pr*0.86, 0, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = 'rgba(122,52,10,.5)'; ctx.lineWidth = 2*s.dpr;
+        [-0.5, 0, 0.5].forEach(function(f95){ ctx.beginPath(); ctx.ellipse(px + f95*pr*0.8, py + pr*0.08, pr*0.34, pr*0.84, 0, 0, Math.PI*2); ctx.stroke(); });
+        ctx.fillStyle = '#5a7d2a';
+        ctx.beginPath(); ctx.ellipse(px, py - pr*0.88, pr*0.17, pr*0.12, 0.3, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#2a1503';
+        [[-0.38,-0.18],[0.38,-0.18]].forEach(function(e95){ ctx.beginPath(); ctx.moveTo(px + e95[0]*pr - pr*0.13, py + e95[1]*pr + pr*0.1); ctx.lineTo(px + e95[0]*pr + pr*0.13, py + e95[1]*pr + pr*0.1); ctx.lineTo(px + e95[0]*pr, py + e95[1]*pr - pr*0.16); ctx.closePath(); ctx.fill(); });
+        ctx.beginPath();
+        ctx.moveTo(px - pr*0.45, py + pr*0.3);
+        ctx.lineTo(px - pr*0.2, py + pr*0.48); ctx.lineTo(px - pr*0.06, py + pr*0.3);
+        ctx.lineTo(px + pr*0.1, py + pr*0.5); ctx.lineTo(px + pr*0.26, py + pr*0.3);
+        ctx.lineTo(px + pr*0.45, py + pr*0.46); ctx.lineTo(px + pr*0.48, py + pr*0.22);
+        ctx.closePath(); ctx.fill();
+      } else {
+        ctx.fillStyle = '#f4f7f7';
+        ctx.beginPath(); ctx.arc(px, py, pr*0.92, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#31435c';
+        ctx.fillRect(px - pr*0.55, py - pr*0.99, pr*1.1, pr*0.17);
+        ctx.fillRect(px - pr*0.34, py - pr*1.32, pr*0.68, pr*0.35);
+        ctx.fillStyle = '#1b1026';
+        [[-0.32,-0.2],[0.32,-0.2]].forEach(function(e95){ ctx.beginPath(); ctx.arc(px + e95[0]*pr, py + e95[1]*pr, pr*0.09, 0, Math.PI*2); ctx.fill(); });
+        ctx.fillStyle = '#e07b24';
+        ctx.beginPath(); ctx.moveTo(px - pr*0.06, py + pr*0.02); ctx.lineTo(px + pr*0.62, py + pr*0.15); ctx.lineTo(px - pr*0.02, py + pr*0.22); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#1b1026'; ctx.lineWidth = 2.2*s.dpr; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.arc(px, py + pr*0.05, pr*0.45, Math.PI*0.25, Math.PI*0.75); ctx.stroke();
+      }
+      ctx.restore();
+    }
     /* bright rim light — highs make it burn */
     ctx.beginPath();
     for(var j=0; j<=96; j++){
@@ -4630,9 +4798,9 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   /* ---------- 5 · Happy Holidays theme cycle: Normal → Halloween → Christmas → Normal ---------- */
   var THEMES = ['', 'halloween', 'xmas'];
   var THEME_META = {
-    '':          {emo:'🎄', label:'Happy Holidays', banner:'banner.png'},
-    'halloween': {emo:'🎃', label:'Halloween',      banner:'banner-halloween.png'},
-    'xmas':      {emo:'🎄', label:'Christmas',      banner:'banner-christmas.png'}
+    '':          {emo:'', label:'Happy Holidays', banner:'banner.png'},
+    'halloween': {emo:'', label:'Halloween',      banner:'banner-halloween.png'},
+    'xmas':      {emo:'', label:'Christmas',      banner:'banner-christmas.png'}
   };
   /* THE SEASON LAW (his 03:18 call — "the best part"): the themes only
      exist Sep 30 → Jan 1. Outside the window the button greys out and
@@ -4659,12 +4827,12 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       if(open){
         holidayBtn.removeAttribute('disabled');
         holidayBtn.classList.remove('locked');
-        holidayBtn.innerHTML = '<span class="h-stack"><span class="h-sizer" aria-hidden="true">🎄 Happy Holidays</span><span class="h-label"><i class="h-emo">' + meta.emo + '</i> ' + meta.label + '</span></span>';
+        holidayBtn.innerHTML = '<span class="h-stack"><span class="h-sizer" aria-hidden="true">Happy Holidays</span><span class="h-label"><i class="h-emo">' + meta.emo + '</i> ' + meta.label + '</span></span>';
         holidayBtn.title = 'Cycle the season: Normal → Halloween → Christmas → Normal';
       } else {
         holidayBtn.setAttribute('disabled', '');
         holidayBtn.classList.add('locked');
-        holidayBtn.innerHTML = '<span class="h-stack"><span class="h-sizer" aria-hidden="true">🎄 Happy Holidays</span><span class="h-label"><i class="h-emo">🔒</i> Happy Holidays</span></span>';
+        holidayBtn.innerHTML = '<span class="h-stack"><span class="h-sizer" aria-hidden="true">Happy Holidays</span><span class="h-label"><i class="h-emo"></i> Happy Holidays</span></span>';
         holidayBtn.title = 'Locked — the season runs Sep 30 to Jan 1.';
       }
     }
@@ -4680,7 +4848,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     if(typeof toast === 'function'){
       toast(theme === 'halloween' ? '🎃 Halloween mode — plum goes black, gold goes orange.'
         : theme === 'xmas' ? '🎄 Christmas mode — plum goes green, gold goes red.'
-        : 'Back to the plum & gold. 🏠');
+        : 'Back to the plum & gold.');
     }
   });
   ['banner-halloween.png','banner-christmas.png'].forEach(function(src){ var i = new Image(); i.src = src; });
@@ -4912,13 +5080,31 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   var ctx = canvas.getContext('2d');
   var statusEl = document.getElementById('kint-status');
   var resetBtn = document.getElementById('kint-reset');
-  var COLS = 3, ROWS = 3;
-  var FILLS = ['#24163a','#2e1c4a','#1f1433','#38235c','#291b44','#31204e','#271a40','#3a2560','#201335'];
+  var COLS = 4, ROWS = 5; /* BUILD 95: twenty pieces (his 'hecka more pieces') */
+  var FILLS = ['#24163a','#2e1c4a','#1f1433','#38235c','#291b44','#31204e','#271a40','#3a2560','#201335','#251739','#2c1e47','#331f52','#1d1130','#2a1a42','#362257','#211538','#2f1d4c','#3d2763','#231636','#281a3e'];
   var W = 0, H = 0, running = false, raf = 0, lastT = 0, frameCount = 0;
   var pieces = [], seams = [], sparks = [];
   var drag = null, tracing = false, lastStamp = null, tracePt = null;
   var phase = 'build', completeT = 0, builtW = 0, builtH = 0;
   var outline = [], J = [];
+  /* BUILD 95 glue camera: identity while building; in the glue phase
+     it leans in close on the seam being sealed and travels to the
+     next as each one closes — the tour he asked for. Works the same
+     for mouse and finger because pointerPos() reads through it. */
+  var cam = { s: 1, ox: 0, oy: 0 }, camT = { s: 1, ox: 0, oy: 0 };
+  function aimCamera(){
+    if(phase === 'glue'){
+      var sm95 = null, i95;
+      for(i95 = 0; i95 < seams.length; i95++){ if(!seams[i95].done){ sm95 = seams[i95]; break; } }
+      if(sm95){
+        var mid95 = sm95.samples[Math.floor(sm95.samples.length / 2)];
+        var zs95 = W < 760 ? 2.6 : 2.25;
+        camT = { s: zs95, ox: W / 2 - mid95.x * zs95, oy: H / 2 - mid95.y * zs95 };
+        return;
+      }
+    }
+    camT = { s: 1, ox: 0, oy: 0 };
+  }
   var vase = {cx:0, baseY:0, h:0, maxHalf:0};
   var seed = (Math.random() * 1e9) | 0;
   var vSignG = null, hSignG = null;
@@ -4934,10 +5120,12 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   }
   function vPoint(t, frac){ return { x: vase.cx + frac * halfW(t) * vase.maxHalf, y: vase.baseY - t * vase.h }; }
   function buildGeometry(rng){
-    vase.cx = W / 2; vase.h = H * 0.60; vase.baseY = H * 0.80; vase.maxHalf = Math.min(W * 0.17, 120);
-    var frBase = [-1, -0.34, 0.34, 1], tsBase = [0, 1/3, 2/3, 1], j, i;
-    var fr = frBase.map(function(f, k){ return (k === 0 || k === 3) ? f : f + (rng() * 0.16 - 0.08); });
-    var ts = tsBase.map(function(t, k){ return (k === 0 || k === 3) ? t : t + (rng() * 0.07 - 0.035); });
+    vase.cx = W / 2; vase.h = H * 0.60; vase.baseY = H * 0.80; vase.maxHalf = Math.min(W * 0.19, 124);
+    var frBase = [], tsBase = [], j, i;
+    for(i = 0; i <= COLS; i++) frBase.push(-1 + (2 * i) / COLS);
+    for(j = 0; j <= ROWS; j++) tsBase.push(j / ROWS);
+    var fr = frBase.map(function(f, k){ return (k === 0 || k === COLS) ? f : f + (rng() * 0.13 - 0.065); });
+    var ts = tsBase.map(function(t, k){ return (k === 0 || k === ROWS) ? t : t + (rng() * 0.05 - 0.025); });
     J = [];
     for(j = 0; j <= ROWS; j++){
       var row = [];
@@ -4961,7 +5149,12 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   }
   function buildPieces(rng){
     var vSign = [], hSign = [], i, j;
-    for(i = 0; i <= COLS; i++){ vSign.push([0,0,0]); hSign.push([0,0,0,0]); }
+    for(i = 0; i <= COLS; i++){
+      var vr95 = [], hr95 = [], q95;
+      for(q95 = 0; q95 < ROWS; q95++) vr95.push(0);
+      for(q95 = 0; q95 <= ROWS; q95++) hr95.push(0);
+      vSign.push(vr95); hSign.push(hr95);
+    }
     for(j = 0; j < ROWS; j++) for(i = 1; i < COLS; i++) vSign[i][j] = rng() < 0.5 ? 1 : -1;
     for(j = 1; j < ROWS; j++) for(i = 0; i < COLS; i++) hSign[i][j] = rng() < 0.5 ? 1 : -1;
     vSignG = vSign; hSignG = hSign;
@@ -5011,8 +5204,8 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     return { x: x / poly.length, y: y / poly.length };
   }
   function scatter(pc){
-    pc.dx = (Math.random() * 0.76 + 0.12) * W - pc.home.x;
-    pc.dy = H * (0.86 + Math.random() * 0.08) - pc.home.y;
+    pc.dx = (Math.random() * 0.88 + 0.06) * W - pc.home.x;
+    pc.dy = H * ((pc.idx % 2 === 0 ? 0.845 : 0.925) + Math.random() * 0.03) - pc.home.y;
     pc.rot = Math.random() * 1.1 - 0.55;
   }
   function setStatus(html){ if(statusEl) statusEl.innerHTML = html; }
@@ -5024,7 +5217,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   }
   function glueStatus(){
     var n = seams.filter(function(s){ return s.done; }).length;
-    if(n === seams.length) setStatus('Sealed in gold. <b>Broken — and worth more.</b> 💛');
+    if(n === seams.length) setStatus('Sealed in gold. <b>Broken — and worth more.</b>');
     else if(n > 0) setStatus('Sealed <b>' + n + ' of ' + seams.length + '</b> seams. The gold holds. Trace the rest.');
     else setStatus('Every piece is home — but the cracks are only plum. <b>Hold and drag along them to pour the gold.</b>');
   }
@@ -5049,6 +5242,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
         if(phase === 'done') glueStatus(); else glueStatus();
       } else buildStatus();
     } else buildStatus();
+    aimCamera();
     builtW = W; builtH = H;
   }
   function burst(x, y, n){
@@ -5069,11 +5263,12 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   }
   function stampTrace(p){
     tracePt = p;
+    var rr95 = 13 / cam.s;
     seams.forEach(function(sm){
       if(sm.done) return;
       for(var i = 0; i < sm.samples.length; i++){
         var smp = sm.samples[i];
-        if(!smp.hit && Math.abs(smp.x - p.x) < 14 && Math.abs(smp.y - p.y) < 14 && Math.hypot(smp.x - p.x, smp.y - p.y) < 13) smp.hit = true;
+        if(!smp.hit && Math.abs(smp.x - p.x) < rr95 + 1 && Math.abs(smp.y - p.y) < rr95 + 1 && Math.hypot(smp.x - p.x, smp.y - p.y) < rr95) smp.hit = true;
       }
     });
   }
@@ -5092,6 +5287,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       }
     });
     if(changed){
+      aimCamera();
       if(seams.every(function(s){ return s.done; })){
         phase = 'done'; completeT = 0;
         burst(vase.cx, vase.baseY - vase.h * 0.5, 42);
@@ -5111,30 +5307,21 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     ctx.beginPath(); ctx.ellipse(vase.cx, H * 0.90, W * 0.44, H * 0.075, 0, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = 'rgba(240,183,63,.16)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.ellipse(vase.cx, H * 0.90, W * 0.44, H * 0.075, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.save(); ctx.translate(cam.ox, cam.oy); ctx.scale(cam.s, cam.s);
     if(phase === 'build'){
       ctx.save();
       ctx.setLineDash([6, 7]);
       ctx.beginPath();
       outline.forEach(function(p, i){ if(i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
       ctx.closePath();
-      ctx.fillStyle = 'rgba(240,183,63,.045)';
+      ctx.fillStyle = 'rgba(240,183,63,.02)';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(240,183,63,.38)';
+      ctx.strokeStyle = 'rgba(240,183,63,.13)';
       ctx.lineWidth = 1.4;
       ctx.stroke();
       ctx.restore();
-      if(drag && !drag.pc.locked){
-        var hs = drag.pc, hd = Math.hypot(hs.dx, hs.dy);
-        ctx.save();
-        ctx.translate(hs.home.x, hs.home.y);
-        tracePath(hs.poly, hs.home.x, hs.home.y);
-        ctx.fillStyle = 'rgba(255,209,102,' + (hd < 130 ? 0.16 : 0.07) + ')';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255,209,102,' + (hd < 130 ? 0.75 : 0.4) + ')';
-        ctx.lineWidth = 1.6;
-        ctx.stroke();
-        ctx.restore();
-      }
+      /* BUILD 95: no home-ghost while dragging — the prompting glow
+         is gone at his word. A piece tells you nothing; it just locks. */
     }
     if(phase === 'done' && completeT < 1){
       var rt = completeT;
@@ -5213,6 +5400,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       ctx.beginPath(); ctx.arc(s.x, s.y, 2.2, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     });
+    ctx.restore();
   }
   function frame(now){
     if(!running) return;
@@ -5222,6 +5410,8 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       if(Math.abs(rr.width - W) > 40 || Math.abs(rr.height - H) > 40){ var snap = snapshot(); sizeCanvas(); buildAll(snap); }
     }
     if(phase === 'done' && completeT < 1) completeT = Math.min(1, completeT + dt / 1400);
+    var ce95 = Math.min(1, dt / 240);
+    cam.s += (camT.s - cam.s) * ce95; cam.ox += (camT.ox - cam.ox) * ce95; cam.oy += (camT.oy - cam.oy) * ce95;
     if(drag){
       var pc = drag.pc;
       if(Math.hypot(pc.dx, pc.dy) < 58){ pc.dx *= 0.86; pc.dy *= 0.86; pc.rot *= 0.82; }
@@ -5242,7 +5432,8 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   }
   function pointerPos(e){
     var r = canvas.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+    var sx95 = e.clientX - r.left, sy95 = e.clientY - r.top;
+    return { x: (sx95 - cam.ox) / cam.s, y: (sy95 - cam.oy) / cam.s };
   }
   canvas.addEventListener('pointerdown', function(e){
     if(phase === 'done') return;
@@ -5281,7 +5472,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       if(Math.hypot(pc.dx, pc.dy) < 26 && Math.abs(pc.rot) < 0.2){
         pc.locked = true; pc.dx = 0; pc.dy = 0; pc.rot = 0;
         burst(pc.home.x, pc.home.y, 16);
-        if(pieces.every(function(x){ return x.locked; })){ phase = 'glue'; glueStatus(); }
+        if(pieces.every(function(x){ return x.locked; })){ phase = 'glue'; glueStatus(); aimCamera(); }
         else buildStatus();
       }
       drag = null;
@@ -5384,7 +5575,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   var t1 = null, t2 = null;
   function openDoors(){
     gate.classList.add('open');
-    t2 = setTimeout(function(){ gate.classList.add('done'); gate.hidden = true; gate.classList.remove('open'); }, 1250);
+    t2 = setTimeout(function(){ gate.classList.add('done'); gate.hidden = true; gate.classList.remove('open'); }, 2750);
   }
   function play(){
     clearTimeout(t1); clearTimeout(t2);
@@ -5400,6 +5591,170 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     clearTimeout(t1); openDoors();
   });
   window.__bwBuildLogGate = play;
+})();
+</script>
+
+<script>
+(function(){
+  "use strict";
+  /* ============ BUILD 95 JS: zap engine, lanes, home video, members ============ */
+  var actx = null;
+  function zapSound(){
+    try{
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      if(actx.state === 'suspended') actx.resume();
+      var t = actx.currentTime;
+      var dur = 0.26 + Math.random()*0.16;
+      var buf = actx.createBuffer(1, Math.floor(actx.sampleRate*dur), actx.sampleRate);
+      var d = buf.getChannelData(0), i;
+      for(i=0;i<d.length;i++){ d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 1.7); }
+      var src = actx.createBufferSource(); src.buffer = buf;
+      var bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.9;
+      bp.frequency.setValueAtTime(3600 + Math.random()*1400, t);
+      bp.frequency.exponentialRampToValueAtTime(220, t + dur);
+      var g = actx.createGain(); g.gain.setValueAtTime(0.5, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      src.connect(bp); bp.connect(g); g.connect(actx.destination); src.start(t);
+      var o = actx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(118, t); o.frequency.exponentialRampToValueAtTime(36, t + 0.22);
+      var g2 = actx.createGain(); g2.gain.setValueAtTime(0.22, t);
+      g2.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
+      o.connect(g2); g2.connect(actx.destination); o.start(t); o.stop(t + 0.26);
+    }catch(e){}
+  }
+  function boltD(x0){
+    var H = window.innerHeight, pts = [], x = x0, y = -20, steps = 14 + (Math.random()*6|0), i;
+    for(i=0;i<=steps;i++){ pts.push([x, y]); y += (H+40)/steps; x += (Math.random()*72-36); }
+    var out = 'M' + pts.map(function(q){ return q[0].toFixed(0) + ' ' + q[1].toFixed(0); }).join(' L');
+    for(var b=0;b<3;b++){
+      var bi = 3 + (Math.random()*(steps-5)|0), bp0 = pts[bi], bx = bp0[0], by = bp0[1], dir = Math.random()<0.5?-1:1, segs = [], j;
+      for(j=0;j<4;j++){ segs.push([bx, by]); bx += dir*(20+Math.random()*36); by += 26+Math.random()*30; }
+      segs.push([bx, by]);
+      out += ' M' + segs.map(function(q){ return q[0].toFixed(0) + ' ' + q[1].toFixed(0); }).join(' L');
+    }
+    return out;
+  }
+  window.__bwZap = function(){
+    var old = document.querySelector('.bw-zapfx'); if(old) old.remove();
+    var wrap = document.createElement('div'); wrap.className = 'bw-zapfx';
+    var flash = document.createElement('div'); flash.className = 'bw-zapflash';
+    var NS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + window.innerWidth + ' ' + window.innerHeight);
+    var n = Math.random() < 0.45 ? 2 : 1, k;
+    for(k=0;k<n;k++){
+      var path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', boltD(window.innerWidth * (0.2 + Math.random()*0.6)));
+      path.setAttribute('class', 'bw-zapbolt');
+      svg.appendChild(path);
+    }
+    wrap.appendChild(flash); wrap.appendChild(svg);
+    document.body.appendChild(wrap);
+    zapSound();
+    setTimeout(function(){ wrap.classList.add('out'); }, 90);
+    setTimeout(function(){ if(wrap.parentNode) wrap.remove(); }, 720);
+  };
+  var blView = document.getElementById('view-buildlog');
+  if(blView){
+    blView.addEventListener('dblclick', function(){ window.__bwZap(); });
+    var lastTap = 0;
+    blView.addEventListener('touchend', function(){
+      var now = Date.now();
+      if(now - lastTap < 320){ window.__bwZap(); lastTap = 0; } else { lastTap = now; }
+    }, {passive:true});
+    var entries = blView.querySelector('.bl-entries');
+    var lanesBtn = document.getElementById('bl-lanes');
+    var lanes = 1;
+    try{ lanes = parseInt(localStorage.getItem('bw-bl-lanes') || '1', 10) || 1; }catch(e){}
+    if(lanes < 1 || lanes > 6) lanes = 1;
+    function applyLanes(){
+      if(entries) entries.setAttribute('data-lanes', String(lanes));
+      if(lanesBtn) lanesBtn.textContent = 'Lanes: ' + lanes;
+    }
+    if(lanesBtn) lanesBtn.addEventListener('click', function(){
+      lanes = lanes >= 6 ? 1 : lanes + 1;
+      try{ localStorage.setItem('bw-bl-lanes', String(lanes)); }catch(e){}
+      applyLanes();
+    });
+    applyLanes();
+  }
+  /* ---------- home video box ---------- */
+  var hvBox = document.getElementById('hv-box'), hvLive = document.getElementById('hv-live'),
+      hvFrame = document.getElementById('hv-iframe'), hvModal = document.getElementById('hv-modal'),
+      hvUrl = document.getElementById('hv-url'), hvErr = document.getElementById('hv-err');
+  function ytId(u){
+    if(!u) return null;
+    var m = String(u).match(/(?:youtube\.com\/(?:watch\?[^#]*v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+  function hvShow(id){
+    if(hvFrame) hvFrame.src = 'https://www.youtube-nocookie.com/embed/' + id + '?rel=0';
+    if(hvBox) hvBox.hidden = true;
+    if(hvLive) hvLive.hidden = false;
+  }
+  function hvClear(){
+    try{ localStorage.removeItem('bw-home-video'); }catch(e){}
+    if(hvFrame) hvFrame.removeAttribute('src');
+    if(hvLive) hvLive.hidden = true;
+    if(hvBox) hvBox.hidden = false;
+  }
+  function hvOpen(){
+    if(hvErr) hvErr.hidden = true;
+    if(hvUrl) hvUrl.value = '';
+    if(hvModal) hvModal.hidden = false;
+    setTimeout(function(){ if(hvUrl) hvUrl.focus(); }, 40);
+  }
+  function hvClose(){ if(hvModal) hvModal.hidden = true; }
+  if(hvBox){
+    var savedV = null;
+    try{ savedV = localStorage.getItem('bw-home-video'); }catch(e){}
+    if(savedV && /^[A-Za-z0-9_-]{11}$/.test(savedV)) hvShow(savedV);
+    hvBox.addEventListener('click', hvOpen);
+    hvBox.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); hvOpen(); } });
+    var sw = document.getElementById('hv-swap'), rm = document.getElementById('hv-remove'),
+        at = document.getElementById('hv-attach'), cn = document.getElementById('hv-cancel');
+    if(sw) sw.addEventListener('click', hvOpen);
+    if(rm) rm.addEventListener('click', hvClear);
+    if(cn) cn.addEventListener('click', hvClose);
+    if(hvModal) hvModal.addEventListener('click', function(e){ if(e.target === hvModal) hvClose(); });
+    if(at) at.addEventListener('click', function(){
+      var id = ytId(hvUrl ? hvUrl.value : '');
+      if(!id){ if(hvErr) hvErr.hidden = false; return; }
+      try{ localStorage.setItem('bw-home-video', id); }catch(e){}
+      hvShow(id); hvClose();
+    });
+    if(hvUrl) hvUrl.addEventListener('keydown', function(e){ if(e.key === 'Enter' && at) at.click(); });
+  }
+  /* ---------- hub members wall ---------- */
+  var wall = document.getElementById('members-wall'), stripNote = document.getElementById('members-strip-note');
+  function renderMembers(){
+    if(!wall) return;
+    var names = [], seen = {};
+    document.querySelectorAll('#view-sea .post-head b').forEach(function(b){
+      var nm = (b.textContent || '').trim();
+      if(nm && !seen[nm]){ seen[nm] = 1; names.push(nm); }
+    });
+    var loginBtn = document.getElementById('login-btn'), me = '';
+    if(loginBtn && /Log out/.test(loginBtn.textContent || '')){
+      me = loginBtn.textContent.replace(/\s*·\s*Log out.*$/, '').trim();
+      if(me && !seen[me]){ names.unshift(me); seen[me] = 1; }
+    }
+    if(!names.length) return;
+    wall.innerHTML = '';
+    names.forEach(function(nm){
+      var chip = document.createElement('span');
+      chip.className = 'member-chip';
+      chip.textContent = '\u2726 ' + nm + (nm === me ? ' (you)' : '');
+      wall.appendChild(chip);
+    });
+    if(stripNote) stripNote.textContent = '\u2726 ' + names.length + (names.length === 1 ? ' member' : ' members') + ' on the wall';
+  }
+  renderMembers();
+  setTimeout(renderMembers, 2500); setTimeout(renderMembers, 6000);
+  document.addEventListener('click', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('[data-view="hub"]') : null;
+    if(t) setTimeout(renderMembers, 350);
+  });
 })();
 </script>
 </body>

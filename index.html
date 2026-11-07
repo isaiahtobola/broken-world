@@ -529,19 +529,19 @@ body[data-theme="xmas"] .post-card, body[data-theme="xmas"] .post-composer{backg
 .join-btn:hover{background:var(--gold); color:var(--ink)}
 /* 97d — THE LEFT MENU RAIL: the PAGES-bar's twin, standing on the
    left edge of every page, carrying the menus */
-.mrail{position:fixed; left:14px; top:50%; transform:translateY(-50%); z-index:940}
+.mrail{position:fixed; left:14px; top:232px; z-index:940} /* 97g: rail parks just under the header bar (header = 44+132+44+2 = 222px) so it never blocks the sun — his call, Nov 7 */
 .mrail-btn{display:flex; align-items:center; gap:9px; background:rgba(21,13,32,.92); border:1px solid rgba(240,183,63,.55); color:var(--cream); border-radius:999px; padding:10px 16px; font-family:var(--mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; backdrop-filter:blur(6px); box-shadow:0 10px 26px rgba(0,0,0,.45)}
 .mrail-btn:hover{border-color:var(--gold); color:var(--yellow)}
 .mrail-btn .mr-caret{color:var(--gold); font-size:11px; transition:transform .25s}
 .mrail.open .mrail-btn .mr-caret{transform:rotate(180deg)}
-.mrail-menu{position:absolute; left:0; bottom:calc(100% + 10px); min-width:196px; background:rgba(21,13,32,.97); border:1px solid rgba(240,183,63,.45); border-radius:16px; padding:8px; opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .22s, transform .22s; box-shadow:0 18px 44px rgba(0,0,0,.55)}
+.mrail-menu{position:absolute; left:0; top:calc(100% + 10px); min-width:196px; background:rgba(21,13,32,.97); border:1px solid rgba(240,183,63,.45); border-radius:16px; padding:8px; opacity:0; pointer-events:none; transform:translateY(-8px); transition:opacity .22s, transform .22s; box-shadow:0 18px 44px rgba(0,0,0,.55)}
 .mrail.open .mrail-menu{opacity:1; pointer-events:auto; transform:translateY(0)}
 .mrail-menu button{display:flex; width:100%; align-items:center; gap:10px; background:none; border:none; color:var(--cream); font-family:var(--serif); font-size:16.5px; text-align:left; padding:9px 12px; border-radius:10px; cursor:pointer}
 .mrail-menu button:hover{background:rgba(240,183,63,.14); color:var(--yellow)}
 .mrail-menu button.active{color:var(--gold)}
 .mrail-menu button .mr-dot{width:7px; height:7px; border-radius:50%; background:var(--gold); opacity:0; flex:none}
 .mrail-menu button.active .mr-dot{opacity:1}
-@media (max-width:760px){ .mrail{left:10px; top:auto; bottom:86px; transform:none} .mrail-menu{bottom:calc(100% + 10px)} }
+@media (max-width:760px){ .mrail{left:10px; top:182px; bottom:auto; transform:none} .mrail-menu{top:calc(100% + 10px); bottom:auto} } /* 97g: phone header is slimmer (18+132+18+2 = 170px), rail parks under it too */
 .river-bar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:-6px 0 16px}
 .river-bar .rv-label{font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted)}
 .chip.river-chip{border-color:rgba(240,183,63,.55); color:var(--yellow)}

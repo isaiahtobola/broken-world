@@ -1390,6 +1390,11 @@ html.kint-lock{overflow:hidden !important}
         <button type="submit" class="updates-btn">Join Broken World</button>
       </div>
     </form>
+    <div id="welcome-desk" hidden style="max-width:560px;margin:34px auto 10px">
+      <p class="join-copy" id="wd-line" style="margin-top:0">Welcome back. Your welcome letter is waiting at the desk.</p>
+      <button type="button" class="updates-btn" id="wd-send" style="width:100%">Send me my welcome letter</button>
+      <p id="wd-note" style="color:var(--muted);font-size:14.5px;line-height:1.55;margin-top:12px"></p>
+    </div>
     <button type="button" class="to-forge-btn" onclick="var f=document.getElementById('forge-canvas'); if(f){ f.scrollIntoView({behavior:'smooth', block:'center'}); }">Take me down to the forge ↓</button>
     <div class="forge-zone">
       <h2>Energize One Another</h2>
@@ -5969,6 +5974,53 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   document.addEventListener('click', function(e){
     var t = e.target && e.target.closest ? e.target.closest('[data-view="hub"]') : null;
     if(t){ fetchMemberRoster(); setTimeout(renderMembers, 350); }
+  });
+})();
+</script>
+<script>
+(function(){
+  // BUILD 95n: the Welcome desk. Logged in -> the join form steps
+  // aside and the desk appears. The desk has NO address field: the
+  // doorman (bw-welcome) reads the email out of the visitor's own
+  // verified login token and mails only that address.
+  var WELCOME_URL = 'https://bw-welcome.isaiahtobola.workers.dev/welcome';
+  function paint(){
+    var form = document.getElementById('join-form');
+    var desk = document.getElementById('welcome-desk');
+    if(!form || !desk) return;
+    var B = window.BW;
+    if(B && B.user){
+      form.style.display = 'none';
+      desk.hidden = false;
+      var nm = B.name || 'member';
+      var line = document.getElementById('wd-line');
+      if(line) line.textContent = 'Welcome back, ' + nm + '. Your welcome letter is waiting at the desk.';
+      var note = document.getElementById('wd-note');
+      if(note && B.user.email) note.textContent = 'It flies to your own email — ' + B.user.email + ' — the one you are logged in with. The desk can only ever mail the member standing at it.';
+    } else {
+      form.style.display = '';
+      desk.hidden = true;
+    }
+  }
+  document.addEventListener('click', function(){ setTimeout(paint, 350); });
+  setInterval(paint, 1800); setTimeout(paint, 600); setTimeout(paint, 2000);
+  document.addEventListener('click', function(e){
+    if(!e.target || e.target.id !== 'wd-send') return;
+    var B = window.BW;
+    if(!B || !B.sb){ toast('The notebook is still waking — one moment.'); return; }
+    var btn = e.target; btn.disabled = true; btn.textContent = 'Sealing the letter...';
+    B.sb.auth.getSession().then(function(r){
+      var tok = r && r.data && r.data.session && r.data.session.access_token;
+      if(!tok){ toast('Log in first — the desk only serves members.'); btn.disabled = false; btn.textContent = 'Send me my welcome letter'; return; }
+      fetch(WELCOME_URL, { method: 'POST', headers: { 'Authorization': 'Bearer ' + tok } })
+        .then(function(resp){ return resp.json().catch(function(){ return {}; }).then(function(j){ return { ok: resp.ok, j: j }; }); })
+        .then(function(x){
+          btn.disabled = false; btn.textContent = 'Send me my welcome letter';
+          if(x.ok) toast('Your welcome letter is flying — plum and gold, check your inbox.');
+          else toast((x.j && x.j.error) || 'The letter hit a snag — try again in a bit.');
+        })
+        .catch(function(){ btn.disabled = false; btn.textContent = 'Send me my welcome letter'; toast('The letter could not fly just now — the mail room may still be stocking.'); });
+    });
   });
 })();
 </script>

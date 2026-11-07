@@ -1591,7 +1591,17 @@ html.kint-lock{overflow:hidden !important}
       <input type="email" placeholder="Email" aria-label="Email" required>
       <input type="password" placeholder="Create a password" aria-label="Create a password" required>
       <button class="auth-btn gold" type="submit">Create account</button>
+      <a href="#" id="auth-forgot" hidden style="color:var(--muted);font-size:14px;text-align:center;margin-top:2px">Forgot password?</a>
     </form>
+    <form id="auth-newpass-form" hidden>
+      <input type="password" placeholder="New password" aria-label="New password" required minlength="6">
+      <button class="auth-btn gold" type="submit">Set new password</button>
+    </form>
+    <style>
+      #auth-newpass-form{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+      #auth-newpass-form[hidden]{display:none}
+      #auth-newpass-form input{background:#150d20;border:1px solid #3a2560;border-radius:10px;color:#f7ead1;padding:11px 13px;font:inherit}
+    </style>
     <style>
       #auth-email-form{display:flex;flex-direction:column;gap:8px;margin-top:10px}
       #auth-email-form[hidden]{display:none}
@@ -5984,6 +5994,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   // doorman (bw-welcome) reads the email out of the visitor's own
   // verified login token and mails only that address.
   var WELCOME_URL = 'https://bw-welcome.isaiahtobola.workers.dev/welcome';
+  function say95(m){ var t = document.getElementById('toast'); if(!t) return; t.textContent = m; t.classList.add('show'); clearTimeout(window.__say95T); window.__say95T = setTimeout(function(){ t.classList.remove('show'); }, 3400); }
   function paint(){
     var form = document.getElementById('join-form');
     var desk = document.getElementById('welcome-desk');
@@ -6007,19 +6018,82 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   document.addEventListener('click', function(e){
     if(!e.target || e.target.id !== 'wd-send') return;
     var B = window.BW;
-    if(!B || !B.sb){ toast('The notebook is still waking — one moment.'); return; }
+    if(!B || !B.sb){ say95('The notebook is still waking — one moment.'); return; }
     var btn = e.target; btn.disabled = true; btn.textContent = 'Sealing the letter...';
     B.sb.auth.getSession().then(function(r){
       var tok = r && r.data && r.data.session && r.data.session.access_token;
-      if(!tok){ toast('Log in first — the desk only serves members.'); btn.disabled = false; btn.textContent = 'Send me my welcome letter'; return; }
+      if(!tok){ say95('Log in first — the desk only serves members.'); btn.disabled = false; btn.textContent = 'Send me my welcome letter'; return; }
       fetch(WELCOME_URL, { method: 'POST', headers: { 'Authorization': 'Bearer ' + tok } })
         .then(function(resp){ return resp.json().catch(function(){ return {}; }).then(function(j){ return { ok: resp.ok, j: j }; }); })
         .then(function(x){
           btn.disabled = false; btn.textContent = 'Send me my welcome letter';
-          if(x.ok) toast('Your welcome letter is flying — plum and gold, check your inbox.');
-          else toast((x.j && x.j.error) || 'The letter hit a snag — try again in a bit.');
+          if(x.ok) say95('Your welcome letter is flying — plum and gold, check your inbox.');
+          else say95((x.j && x.j.error) || 'The letter hit a snag — try again in a bit.');
         })
-        .catch(function(){ btn.disabled = false; btn.textContent = 'Send me my welcome letter'; toast('The letter could not fly just now — the mail room may still be stocking.'); });
+        .catch(function(){ btn.disabled = false; btn.textContent = 'Send me my welcome letter'; say95('The letter could not fly just now — the mail room may still be stocking.'); });
+    });
+  });
+})();
+</script>
+<script>
+(function(){
+  // BUILD 95o: forgot password. The link lives in the login modal
+  // (login mode only); the recovery landing reopens the modal in
+  // set-a-new-password mode.
+  var tries = 0;
+  function say95(m){ var t = document.getElementById('toast'); if(!t) return; t.textContent = m; t.classList.add('show'); clearTimeout(window.__say95T); window.__say95T = setTimeout(function(){ t.classList.remove('show'); }, 3400); }
+  function B(){ return window.BW; }
+  function forgotLink(){ return document.getElementById('auth-forgot'); }
+  function paint(){
+    var f = forgotLink(); if(!f) return;
+    var form = document.getElementById('auth-email-form');
+    var loginMode = window.__bwAuthMode === 'login';
+    f.hidden = !(loginMode && form && !form.hidden);
+  }
+  setInterval(paint, 800); setTimeout(paint, 700);
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.id === 'auth-forgot'){
+      e.preventDefault();
+      var em = document.querySelector('#auth-email-form input[type="email"]');
+      var email = em ? (em.value || '').trim() : '';
+      var b = B();
+      if(!b || !b.sb){ say95('The notebook is still waking — one moment.'); return; }
+      if(!email){ say95('Type your email in the box above first, then tap Forgot password.'); if(em) em.focus(); return; }
+      b.sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname }).then(function(r){
+        if(r.error) say95('That reset hit a snag: ' + r.error.message);
+        else say95('Reset link sent — check the inbox for ' + email + ', then set your new password.');
+      });
+    }
+  });
+  function openNewPass(){
+    var modal = document.getElementById('login-modal'); if(!modal) return;
+    modal.hidden = false;
+    var t = document.getElementById('modal-title'); if(t) t.textContent = 'Set a New Password';
+    var form = document.getElementById('auth-email-form'); if(form) form.hidden = true;
+    var tog = document.getElementById('auth-email-toggle'); if(tog) tog.style.display = 'none';
+    modal.querySelectorAll('[data-auth]').forEach(function(x){ x.style.display = 'none'; });
+    var np = document.getElementById('auth-newpass-form'); if(np){ np.hidden = false; var i = np.querySelector('input'); if(i) i.focus(); }
+  }
+  if(/type=recovery/.test(location.hash || '')){ setTimeout(openNewPass, 300); setTimeout(openNewPass, 1200); setTimeout(openNewPass, 2500); }
+  (function hook(){
+    var b = B();
+    if(b && b.sb && b.sb.auth){
+      b.sb.auth.onAuthStateChange(function(evt){ if(evt === 'PASSWORD_RECOVERY') openNewPass(); });
+      return;
+    }
+    if(++tries < 40) setTimeout(hook, 500);
+  })();
+  document.addEventListener('submit', function(e){
+    if(!e.target || e.target.id !== 'auth-newpass-form') return;
+    e.preventDefault();
+    var pw = e.target.querySelector('input[type="password"]').value || '';
+    var b = B();
+    if(!b || !b.sb){ say95('The notebook is still waking — one moment.'); return; }
+    b.sb.auth.updateUser({ password: pw }).then(function(r){
+      if(r.error){ say95('That password hit a snag: ' + r.error.message); return; }
+      say95('New password set — you are logged in. Welcome back.');
+      var modal = document.getElementById('login-modal'); if(modal) modal.hidden = true;
+      try{ history.replaceState(null, '', location.pathname + location.search); }catch(_){}
     });
   });
 })();

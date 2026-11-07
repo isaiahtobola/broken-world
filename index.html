@@ -586,6 +586,30 @@ body[data-theme="xmas"] .post-card, body[data-theme="xmas"] .post-composer{backg
 .chip.river-del[data-armed="1"]{background:rgba(120,20,20,.35); color:#ffd9d9}
 .sea-help-q{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin-left:8px; vertical-align:2px; border-radius:50%; border:1px solid rgba(240,183,63,.65); background:rgba(240,183,63,.12); color:var(--yellow); font-family:var(--mono); font-size:13px; line-height:1; cursor:pointer}
 .sea-help-q:hover{background:rgba(240,183,63,.28); color:#fff0bd}
+/* BUILD 101 — the Waters guide goes FULL SCREEN and hearthy: one card
+   lit full at a time, the rest transparent, letters glowing gold one
+   by one as it teaches. */
+#sea-help-modal{padding:0; background:rgba(10,5,18,.9)}
+#sea-help-modal .waters-guide-card{width:100vw; max-width:none; height:100dvh; max-height:none; overflow-y:auto; border:none; border-radius:0; background:rgba(21,13,32,.66); text-align:left; padding:40px 5vw 34px max(5vw,124px); box-shadow:none}
+@media (max-width:760px){#sea-help-modal .waters-guide-card{padding-left:20px}}
+#sea-help-modal .guide-item{transition:opacity .8s ease, transform .8s ease, border-color .8s ease, box-shadow .8s ease}
+#sea-help-modal .guide-item.ghost{opacity:.15}
+#sea-help-modal .guide-item.spot{opacity:1; transform:scale(1.025); border-color:var(--gold); box-shadow:0 0 34px rgba(240,183,63,.22)}
+@keyframes bwHearth{0%,100%{color:inherit; text-shadow:none}14%,26%{color:#ffe9b0; text-shadow:0 0 14px rgba(240,183,63,.8)}}
+#sea-help-modal .hearth-live .hl-ch{animation:bwHearth 7s ease-in-out infinite; animation-delay:var(--gd,0s)}
+#sea-help-modal .guide-item.spot .hl-ch{animation:bwHearth 3.4s ease-in-out infinite; animation-delay:var(--gd,0s)}
+/* BUILD 101 — chip hearth: the transparent water chips are the one
+   place whose letters shimmer gold, one by one, slowly, forever. */
+@keyframes bwChip{0%,100%{color:inherit; text-shadow:none}10%,20%{color:#ffe9b0; text-shadow:0 0 12px rgba(240,183,63,.85)}}
+.hchip .hl-ch{animation:bwChip 6.5s ease-in-out infinite; animation-delay:var(--gd,0s)}
+/* BUILD 101 — lake rows wrap; a Delete can never clip off the panel. */
+.lakes-panel .group-line{flex-wrap:wrap; row-gap:8px}
+.lakes-panel .group-line .avatar{flex:0 0 auto}
+.lakes-panel .group-line .meta{flex:1 1 108px; min-width:0}
+.lakes-panel .group-line .meta b, .lakes-panel .group-line .meta span{overflow-wrap:anywhere}
+.lakes-panel .group-line .join-btn{flex:0 0 auto}
+#lake-list{overflow-x:hidden}
+
 .waters-guide-card{width:min(700px,94vw); max-height:88vh; overflow:auto; text-align:left; padding:32px 32px 26px}
 .waters-guide-card h3{font-size:31px; text-align:center}
 .waters-guide-card .modal-sub{text-align:center}
@@ -1583,7 +1607,7 @@ html.kint-lock{overflow:hidden !important}
       <div class="bl-gears"><svg viewBox="-104 -60 192 120" role="img" aria-label="Two meshed gold cogs"><g transform="translate(-41.67 0)"><g class="bl-spin-a"><path d="M39.16 -5.78 L58.01 -6.10 L58.01 6.10 L39.16 5.78 L36.80 14.57 L36.80 14.57 L53.29 23.73 L47.19 34.29 L31.02 24.59 L24.59 31.02 L24.59 31.02 L34.29 47.19 L23.73 53.29 L14.57 36.80 L5.78 39.16 L5.78 39.16 L6.10 58.01 L-6.10 58.01 L-5.78 39.16 L-14.57 36.80 L-14.57 36.80 L-23.73 53.29 L-34.29 47.19 L-24.59 31.02 L-31.02 24.59 L-31.02 24.59 L-47.19 34.29 L-53.29 23.73 L-36.80 14.57 L-39.16 5.78 L-39.16 5.78 L-58.01 6.10 L-58.01 -6.10 L-39.16 -5.78 L-36.80 -14.57 L-36.80 -14.57 L-53.29 -23.73 L-47.19 -34.29 L-31.02 -24.59 L-24.59 -31.02 L-24.59 -31.02 L-34.29 -47.19 L-23.73 -53.29 L-14.57 -36.80 L-5.78 -39.16 L-5.78 -39.16 L-6.10 -58.01 L6.10 -58.01 L5.78 -39.16 L14.57 -36.80 L14.57 -36.80 L23.73 -53.29 L34.29 -47.19 L24.59 -31.02 L31.02 -24.59 L31.02 -24.59 L47.19 -34.29 L53.29 -23.73 L36.80 -14.57 L39.16 -5.78 Z" fill="currentColor" stroke="rgba(13,7,22,.45)" stroke-width="1.2"/><circle cx="0" cy="0" r="27.7" fill="rgba(13,7,22,.16)"/><circle cx="0" cy="0" r="10.0" fill="#150d20"/></g></g><g transform="translate(41.67 0)"><g class="bl-spin-b"><path d="M22.58 3.94 L40.52 9.73 L35.53 21.77 L18.75 13.18 L13.18 18.75 L13.18 18.75 L21.77 35.53 L9.73 40.52 L3.94 22.58 L-3.94 22.58 L-3.94 22.58 L-9.73 40.52 L-21.77 35.53 L-13.18 18.75 L-18.75 13.18 L-18.75 13.18 L-35.53 21.77 L-40.52 9.73 L-22.58 3.94 L-22.58 -3.94 L-22.58 -3.94 L-40.52 -9.73 L-35.53 -21.77 L-18.75 -13.18 L-13.18 -18.75 L-13.18 -18.75 L-21.77 -35.53 L-9.73 -40.52 L-3.94 -22.58 L3.94 -22.58 L3.94 -22.58 L9.73 -40.52 L21.77 -35.53 L13.18 -18.75 L18.75 -13.18 L18.75 -13.18 L35.53 -21.77 L40.52 -9.73 L22.58 -3.94 L22.58 3.94 Z" fill="currentColor" stroke="rgba(13,7,22,.45)" stroke-width="1.2"/><circle cx="0" cy="0" r="16.0" fill="rgba(13,7,22,.16)"/><circle cx="0" cy="0" r="6.7" fill="#150d20"/></g></g></svg></div>
       <h1>Build Log</h1>
       <p>Every build that made <b>this website</b> — logged in the workshop where it happened, by the two who built it. Isaiah's ideas and calls; Lux's craft and memory. <i>Free creative. No Kragle.</i></p>
-      <div class="bl-stats"><span>100 BUILDS ON THE PROJECT RECORD</span><span>THE ROAD TO “COMPLETE” · AND WHAT CAME AFTER</span><span>OCT 30 – NOV 7, 2026</span><span>ONE FILE · TWO BUILDERS</span></div>
+      <div class="bl-stats"><span>101 BUILDS ON THE PROJECT RECORD</span><span>THE ROAD TO “COMPLETE” · AND WHAT CAME AFTER</span><span>OCT 30 – NOV 7, 2026</span><span>ONE FILE · TWO BUILDERS</span></div>
       <button class="bl-replay" id="bl-replay" type="button">⚙ Re-open the workshop</button><button class="bl-replay bl-lanes-btn" id="bl-lanes" type="button">Lanes: 1</button><p class="bl-zap-hint">DOUBLE-CLICK OR DOUBLE-TAP ANYWHERE ON THIS PAGE — CALL THE LIGHTNING</p>
     </div>
     <div class="bl-entries">
@@ -1689,7 +1713,8 @@ html.kint-lock{overflow:hidden !important}
       <div class="bl-entry"><div class="bl-num">95</div><div class="bl-body"><h3>HIS LIST — the careful build</h3><p>Nov 6, past midnight, he handed Lux a long list and one law: don't touch what's perfect. So, surgically: Home gains a video box under the sky line — paste a YouTube link and it lives and plays there, swappable and removable anytime. The Login desert gets its barrel and octopus cacti back, each in variants, and saguaro arms are dealt honest — none, one, or two, one per side at uneven heights. This page's workshop doors learn heavy metal — a fast lurch, a stutter, a slow roll out — and its entries learn to stand in up to six lanes. Double-click or double-tap here and the lightning answers with Lux's own synthesized zap. Kintsugi breaks into twenty pieces with the hint-glow gone, and the gluing tour zooms seam to seam while you guide the gold. The Hub wall gets its Join door; File Share's golden circle keeps a pumpkin for Halloween and a snowman head for Christmas; the decorative emojis retire — the Sea's save ribbon stays on duty. Frozen things untouched: the sky, the vinyl, the wave, the waveform.</p></div></div>
       <div class="bl-entry"><div class="bl-num">96</div><div class="bl-body"><h3>THE MAIL ROOM — every letter wears the colors</h3><p>Nov 6, evening, while he checked every page by hand. Joining becomes instant — email, password, member, name up on the Hub wall — and the Welcome page gains its purpose: the letter desk. Logged in as yourself, one button sends the plum-and-gold fact sheet to your own inbox and nobody else's; the desk only ever serves the person standing at it. Behind it a whole mail room rises in a night: the house name verified, a doorman who checks the member's key before he carries a letter, and every system letter — the door link, the confirmation, the password reset — redressed in plum and gold, sent from members@bwyoungbo.com. Forgot password joins the login window (his catch — it wasn't there; we made the website). The fact sheet goes wide: every room a card, side by side on any screen, plum in its bones so no mail app can bleach it white. And across the water, the Ocean gets its road home — a gold link at the gate and in the header, back to Broken World. His verdict that night, page by page: check, check, check.</p></div></div><div class="bl-entry"><div class="bl-num">97</div><div class="bl-body"><h3>THE WATERS GROW — lakes, rivers, and a truer bolt</h3><p>One long night of his catches, one by one. The Login drive: the near cacti now parallax IN FRONT of the car, the far side still behind it. The Hub's Join button knows its people — pressed while logged in, it pops a fading note: you are already part of Broken World. The Sea grows waters inside the water: <b>Lakes</b> — any member can dig a group, anyone can join or leave, posts can be poured into a lake and wear its name, and every post still flows into the Sea. <b>Rivers</b> — any member can gather several lakes into one bubble and run the Sea through just those. A <b>menu rail</b> now stands on the left edge of every page, twin to the Completion Filter's PAGES bar, so the menus are one tap from anywhere. The lightning got its voice back: the old zap was a drum in a costume (noise burst + low thump = a snare, his ear caught it) — the new strike is a diving arc, bright crackle, and a snap, on the Build Log and the Completion Filter alike. And every post bubble now wears the season when Happy Holidays turns — Halloween orange, Christmas green — not just the lucky few. He checked page after page this night and called them as he went. Then the water itself took the seasons: flip Happy Holidays and the Sea’s waves run orange-and-black for Halloween, red-and-green for Christmas — the everyday blue-and-turquoise never touched.</p></div></div><div class="bl-entry"><div class="bl-num">98</div><div class="bl-body"><h3>THE WATERS BREATHE — and learn to let go</h3><p>Same night, later — the water learns manners. Every lake and river gains an owner-only ✕, and his law rides on it: <b>deleting a bubble never deletes a word.</b> Fill in a lake or dry up a river and every post ever poured into it stays standing in the Sea; removing a post still takes a walk to the Sea and a second, separate delete, one by one — nobody's voice dies because a bubble popped. And the moment a bubble pops, the mail room writes to everyone who swam in it: your posts are safe in the Sea; dig your own lake and pour them back in. And so nobody has to guess, a <b>? Waters guide</b> rides beside the currents and explains the Sea, the Lakes, the Rivers, the delete law, and the letter in plain words. The front door gets its finishers, too: share the link anywhere and it arrives wearing the banner — his pick — with a gold diamond riding in the browser tab, and the old join row steps out of the Lakes panel so only real lakes swim there. The rivers learn consent in the same round: anyone may bundle your lake into their river and it flows \u2014 but open that river and its owner can step their lake back out with one tap, and the Sea keeps everything either way. Then the water itself moves the way he drew it: step into a <b>Lake</b> and the waves calm toward glass while one great circle breathes — the waveform with the music off, twenty-eight seconds a breath, seen from above like a pond. Step into a <b>River</b> and the Sea runs — a flat S current streaming top to bottom, going somewhere. The colors never change: turquoise and blue, or the season's pair when Happy Holidays turns. Same canvas, same water — only the shape of the motion is new. A last repair the same night: the step-out's two-tap confirm learned to hold its nerve — it now survives the page's own re-renders on a six-second window, a person's pace instead of a robot's.</p></div></div>
 <div class="bl-entry"><div class="bl-num">99</div><div class="bl-body"><h3>THE FLOWER BARRELS</h3><p>Minutes after he called the whole site checked off, one more thing caught his eye on the Login road: room on both sides of the car for a smaller, rounder barrel cactus — with a flower silhouette on top, in the same golden paint as its body. Two of them now stand in the near row for good, one planted on each side of the car&#x27;s home stretch, riding past in front of it and flaring gold in its headlights like the rest of the desert. His words: &quot;same golden color but do your magic.&quot;</p></div></div>
-<div class="bl-entry bl-entry-final"><div class="bl-num">100</div><div class="bl-body"><h3>THE TWO BANKS</h3><p>Build one hundred, called out loud on the night&#x27;s long call while he tested the waters with his own hands. The Rivers move to a bank of their own on the left of the Sea, under the Menus side, and the Lakes keep the right bank — both lists scroll in place, so any member can run down every river and lake there is. A river&#x27;s creator now gets a plain &#x2715; Delete on their own river, the same two-tap promise as a lake: only the creator can dry up what they dug, and every lake and post inside stays in the Sea. And the water learned its shapes for real — open a river and the Sea stands up: one thin stream poured down the full height of the screen like slow gold, snaking in a lazy S — no plankton in it. Open a lake and the water is cut by a mask into one round pond with a wavy gold rim, like the waveform circle with the music off, way slower — flat, flush, breathing slow, no plankton in the lake either.</p></div></div>
+<div class="bl-entry"><div class="bl-num">100</div><div class="bl-body"><h3>THE TWO BANKS</h3><p>Build one hundred, called out loud on the night&#x27;s long call while he tested the waters with his own hands. The Rivers move to a bank of their own on the left of the Sea, under the Menus side, and the Lakes keep the right bank — both lists scroll in place, so any member can run down every river and lake there is. A river&#x27;s creator now gets a plain &#x2715; Delete on their own river, the same two-tap promise as a lake: only the creator can dry up what they dug, and every lake and post inside stays in the Sea. And the water learned its shapes for real — open a river and the Sea stands up: one thin stream poured down the full height of the screen like slow gold, snaking in a lazy S — no plankton in it. Open a lake and the water is cut by a mask into one round pond with a wavy gold rim, like the waveform circle with the music off, way slower — flat, flush, breathing slow, no plankton in the lake either.</p></div></div>
+<div class="bl-entry bl-entry-final"><div class="bl-num">101</div><div class="bl-body"><h3>THE GUIDE LEARNS THE HEARTH</h3><p>Same night, a bundle of his catches while he tested with his own hands. The Login desert grows variety: barrels in different sizes, some of them properly big, and the octopus learns a third body — nodes and ridges, like coral — beside the spiky and the plump; barrels and octopus now ride both sides of the road. The lake breathes a little bigger. The river gets honest: its stream calms from a big S into the forge&#x27;s own pour, way slowed down — a gentle curvy line with wavy edges — and the water behind it flips vertical, strata running down the screen on both sides of the stream. The Waters guide becomes what he described: full screen and hearthy, teaching card by card — one box lit full while the rest go transparent, its letters glowing gold one by one. The little glass chips of the waters — The Sea, Saved by me, the Waters guide, the lake and river chips — become the one place on the site whose letters shimmer gold letter by letter, slowly and forever, so the transparency stays readable. And a screenshot catch of his: a lake row in the panel could shove its Delete button off the edge — the rows wrap now, and every button stays in the frame.</p></div></div>
     </div>
     <p class="bl-note">Numbers follow the master build record — #92 and #93 were builds on the BW Ocean museum, a different site, so they are not logged here. This page logs the creation of bwyoungbo.com, and nothing else.</p>
   </div>
@@ -1748,10 +1773,10 @@ html.kint-lock{overflow:hidden !important}
     <div class="guide-grid">
       <div class="guide-item"><b>🌊 The Sea</b><p>Tap <b>The Sea</b> to see everything. A post made inside a Lake still flows into the Sea and wears that Lake&rsquo;s name as a badge.</p></div>
       <div class="guide-item"><b>🏞️ Lakes</b><p>A Lake is a member-made corner of the Sea. Dig one in the Lakes panel, join or leave with one tap. When you post, use <b>Post to:</b> to pour the post into a Lake.</p></div>
-      <div class="guide-item"><b>〰️ Rivers</b><p>A River bundles several Lakes into one stream. Tap a River to see only the posts from its Lakes, together. Tap <b>The Sea</b> to return to the whole ocean. And if someone bundles your lake into their river and you'd rather not be in it, open the river and tap \u2715 leave beside your lake's name \u2014 your lake steps out, and every post stays in the Sea either way.</p></div>
+      <div class="guide-item"><b>〰️ Rivers</b><p>A River bundles several Lakes into one stream. Tap a River to see only the posts from its Lakes, together. Tap <b>The Sea</b> to return to the whole ocean. And if someone bundles your lake into their river and you'd rather not be in it, open the river and tap ✕ leave beside your lake's name — your lake steps out, and every post stays in the Sea either way.</p></div>
       <div class="guide-item"><b>✕ Deleting a bubble</b><p>Only a Lake&rsquo;s or River&rsquo;s owner can delete it. The ✕ asks twice — tap once, read, tap again — so a bubble never pops by accident.</p></div>
       <div class="guide-item"><b>✉️ The farewell letter</b><p>When an owner deletes a Lake or River, everyone who joined it or posted in it gets an email: the bubble is gone, and here is what that means.</p></div>
-      <div class="guide-item"><b>◯ The water shapes</b><p>Step into a Lake and the water calms — one big circle breathes slowly, like a pond seen from above. Step into a River and the water runs in a flat S current. The colors never change.</p></div>
+      <div class="guide-item"><b>◯ The water shapes</b><p>Step into a Lake and the water calms — one big circle breathes slowly, like a pond seen from above. Step into a River and the water stands up — one thin stream poured down the screen like slow gold, and the water behind it runs vertical too. No plankton live in a Lake or a River. The colors never change.</p></div>
     </div>
     <div class="waters-guide-law"><b>The law of the waters:</b> deleting a Lake or a River removes only the bubble. <b>Every post stays in the Sea.</b> To remove a post, its owner deletes that post separately, in the Sea.</div>
     <p class="modal-note" style="text-align:center; margin-top:14px">What connects, remains.</p>
@@ -3610,7 +3635,7 @@ runners['car-canvas'] = function(canvas, ctx, state){
     }
     var CKINDS = ['saguaro','saguaro','barrel','octopus','pear'];
     var ARMSETS = ['none','L','R','LR','LR','LLR','LRR'];
-    var OSTYLES = ['thin','flush','wretched'];
+    var OSTYLES = ['thin','flush','coral'];
     /* Builds 89+90 dealt a guaranteed saguaro spread into both rows —
        but at random x, and on his phone the nine of them bunched into a
        crowd around the car. Build 91 is his uncrowding call (his words,
@@ -3646,7 +3671,7 @@ runners['car-canvas'] = function(canvas, ctx, state){
         {kind:'saguaro', arms: flip95 ? 'R' : 'L'},
         {kind:'saguaro', arms: flip95 ? 'L' : 'R'},
         {kind:'saguaro', arms:'LR'},
-        {kind:'barrel', arms:'', ostyle:['crown','cluster','tall'][Math.floor(Math.random()*3)]},
+        {kind:'barrel', arms:'', ostyle:['crown','cluster','tall','round'][Math.floor(Math.random()*4)]},
         {kind:'octopus', arms:'', ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]}
       ]);
       var spots = [
@@ -3663,6 +3688,10 @@ runners['car-canvas'] = function(canvas, ctx, state){
         var pc95 = cast[i];
         var c = {x:sp.x + (Math.random()-0.5)*0.04, s:rand(sp.sMin, sp.sMax), kind:pc95.kind, arms:pc95.arms,
                  ostyle:pc95.ostyle || OSTYLES[Math.floor(Math.random()*OSTYLES.length)]};
+        /* BUILD 101 — size variety (his call): barrels and octopus
+           come in different sizes now, some of them properly big. */
+        if(c.kind === 'barrel') c.s *= rand(0.8, 1.35);
+        if(c.kind === 'octopus') c.s *= rand(0.8, 1.3);
         (sp.far ? cactiFar : cactiNear).push(c);
       });
       /* BUILD 99 (his call, Nov 7, minutes after he called the whole
@@ -3674,6 +3703,11 @@ runners['car-canvas'] = function(canvas, ctx, state){
          gold in its headlights. */
       cactiNear.push({x:0.41, s:rand(0.85,1.0), kind:'barrel', arms:'', ostyle:'round'});
       cactiNear.push({x:0.63, s:rand(0.85,1.0), kind:'barrel', arms:'', ostyle:'round'});
+      /* BUILD 101 (his call): company on both sides of the road —
+         an octopus standing left of the car's home stretch and a
+         BIG round barrel to the right, mixed sizes like the rest. */
+      cactiNear.push({x:0.16, s:rand(1.0,1.2), kind:'octopus', arms:'', ostyle:OSTYLES[Math.floor(Math.random()*OSTYLES.length)]});
+      cactiNear.push({x:0.85, s:rand(1.25,1.45), kind:'barrel', arms:'', ostyle:'round'});
     }
     roadside();
     for(i=0;i<4;i++) birds.push({x:Math.random(), y:rand(0.10,0.30), ph:Math.random()*6.28, sp:rand(0.6,1.0), g:0});
@@ -3806,8 +3840,9 @@ runners['car-canvas'] = function(canvas, ctx, state){
     }
     function octopus(){
       ctx.beginPath();
-      ctx.moveTo(x + (ostyle === 'flush' ? 16 : 13)*u, base);
-      ctx.ellipse(x, base, (ostyle === 'flush' ? 16 : 13)*u, 5*u, 0, 3.15, 6.28);
+      var brad = ostyle === 'flush' ? 16 : (ostyle === 'coral' ? 17 : 13);
+      ctx.moveTo(x + brad*u, base);
+      ctx.ellipse(x, base, brad*u, 5*u, 0, 3.15, 6.28);
       if(ostyle === 'thin'){ /* thin and pokey */
         oArm(x, base, 50*u, -3*u, 2.0*u, 0);
         oArm(x, base, 44*u, -13*u, 1.9*u, 0);
@@ -3821,6 +3856,13 @@ runners['car-canvas'] = function(canvas, ctx, state){
         oArm(x, base, 26*u, 11*u, 5.8*u, 0);
         oArm(x, base, 20*u, 20*u, 5.2*u, 0);
         oArm(x, base, 19*u, -21*u, 5.0*u, 0);
+      } else if(ostyle === 'coral'){ /* BUILD 101 — nodes and ridges, like coral (his ask) */
+        var node = function(nx, ny, nr){ ctx.moveTo(nx + nr, ny); ctx.arc(nx, ny, nr, 0, 6.29); };
+        var ridge = function(ry4, rw){ ctx.moveTo(x + rw, ry4); ctx.ellipse(x, ry4, rw, 1.5*u, 0, 0, 6.29); };
+        node(x, base - 8*u, 7.5*u); node(x - 1*u, base - 19*u, 6.6*u); node(x, base - 29*u, 5.6*u); node(x + 1*u, base - 38*u, 4.4*u);
+        node(x - 11*u, base - 6*u, 6.2*u); node(x - 14*u, base - 15*u, 5.2*u); node(x - 16*u, base - 23*u, 4.0*u);
+        node(x + 11*u, base - 6*u, 6.2*u); node(x + 14*u, base - 14*u, 5.2*u); node(x + 16*u, base - 21*u, 4.0*u);
+        ridge(base - 13.5*u, 6.8*u); ridge(base - 24*u, 5.9*u); ridge(base - 33.5*u, 4.9*u);
       } else { /* wretched and branchy */
         oArm(x, base, 40*u, -6*u, 3.4*u, -7*u);
         oArm(x, base, 30*u, -18*u, 3.2*u, 6*u);
@@ -4337,7 +4379,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       ctx.fillStyle = 'rgb('+r+','+g+','+b+')';
       /* while active, waves go near-solid so the plum page behind them
          can't bleed through the translucency and purple the mix */
-      ctx.globalAlpha = (L.alpha + (1 - L.alpha) * 0.7 * mx) * (1 - 0.45 * state.lakeK - 0.2 * state.riverK) * (1 - state.lakeK) * (1 - 0.9 * state.riverK); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.globalAlpha = (L.alpha + (1 - L.alpha) * 0.7 * mx) * (1 - 0.45 * state.lakeK - 0.2 * state.riverK) * (1 - state.lakeK) * (1 - state.riverK); ctx.fill(); ctx.globalAlpha = 1;
       /* plankton bloom — neon specks drifting in this layer's water */
       L.bloom += ((L.bloomOn ? 1 : 0) - L.bloom) * 0.06;
       if(L.bloom > 0.02 && state.lakeK < 0.95 && state.riverK < 0.95){
@@ -4357,6 +4399,28 @@ runners['sea-canvas'] = function(canvas, ctx, state){
         });
       }
     });
+    /* BUILD 101 — THE BACKGROUND TURNS (his call): in a river the
+       dimmed horizontal sea was not enough — the water behind the
+       stream flips VERTICAL too: the same layers rotated, strata
+       marching across the width, every line wavy along its length,
+       so the pour runs between wavy water on both sides. */
+    if(state.riverK > 0.02){
+      layers.forEach(function(L){
+        if(!L._rgb) return;
+        ctx.beginPath(); ctx.moveTo(W, 0);
+        for(var vy = 0; vy <= H; vy += 6){
+          var vx = W * L.base
+            + Math.sin(vy * L.len * 2.2 + t * L.spd * 2.2) * W * L.amp * ampK
+            + Math.sin(vy * L.len * 5.9 - t * L.spd * 1.6) * W * L.amp * 0.45 * ampK;
+          ctx.lineTo(vx, vy);
+        }
+        ctx.lineTo(W, H); ctx.closePath();
+        ctx.fillStyle = 'rgb(' + L._rgb[0] + ',' + L._rgb[1] + ',' + L._rgb[2] + ')';
+        ctx.globalAlpha = (L._alp === undefined ? 0.6 : L._alp) * 0.78 * state.riverK;
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
     /* — the mood shapes: one breathing circle (lake), one S current (river) — */
     var mc = 'rgb(' + moodRGB[0] + ',' + moodRGB[1] + ',' + moodRGB[2] + ')';
     if(state.lakeK > 0.02){
@@ -4366,7 +4430,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
          the land around the pond. Inside: the same layered water,
          calmed flat, breathing slow. No plankton live in a lake. */
       var cx = W / 2, cy = H * 0.54;
-      var Rb = Math.min(W, H) * 0.34 * (1 + 0.035 * Math.sin(t * 0.22));
+      var Rb = Math.min(W, H) * 0.385 * (1 + 0.035 * Math.sin(t * 0.22));
       /* the rim itself is wavy — the waveform circle with the music
          off, way slower: three lazy swells travelling around the edge */
       var pondR = function(a){ return Rb * (1 + 0.028 * Math.sin(a * 3 + t * 0.22) + 0.018 * Math.sin(a * 5 - t * 0.16) + 0.012 * Math.sin(a * 8 + t * 0.10)); };
@@ -4418,28 +4482,37 @@ runners['sea-canvas'] = function(canvas, ctx, state){
          call): the Sea lies horizontal and takes most of the screen;
          a river does NOT. One stream, kind of thin, poured down the
          full height of the screen the way the forge pours its gold —
-         a slow, wavy S snake. No plankton run in a river. */
+         a gentle curvy line with wavy edges, not a big S. No plankton run in a river. */
       ctx.save();
       var rBase = Math.max(22 * s.dpr, Math.min(W * 0.026, 38 * s.dpr));
-      var rCx = function(y){ return W / 2 + Math.sin(y * 0.0062 - t * 0.45) * W * 0.10 + Math.sin(y * 0.014 - t * 0.8) * W * 0.018 + Math.sin(y * 0.0016 + t * 0.11) * W * 0.02; };
-      var rTh = function(y){ return rBase * (1 + 0.34 * Math.sin(y * 0.008 + t * 0.5) + 0.20 * Math.sin(y * 0.023 - t * 0.6)); };
+      /* the pour leans gold, the way the forge's stream does — mixed
+         from the water's own color so the seasons still run it */
+      var pourRGB = [Math.round(moodRGB[0] + (255 - moodRGB[0]) * 0.38), Math.round(moodRGB[1] + (209 - moodRGB[1]) * 0.38), Math.round(moodRGB[2] + (102 - moodRGB[2]) * 0.38)];
+      var pour = 'rgb(' + pourRGB[0] + ',' + pourRGB[1] + ',' + pourRGB[2] + ')';
+      var rCx = function(y){ return W / 2 + Math.sin(y * 0.0045 - t * 0.30) * W * 0.035 + Math.sin(y * 0.013 - t * 0.5) * W * 0.008 + Math.sin(y * 0.0016 + t * 0.08) * W * 0.014; };
+      var rTh = function(y){ return rBase * (1 + 0.30 * Math.sin(y * 0.007 + t * 0.32) + 0.16 * Math.sin(y * 0.019 - t * 0.42)); };
       /* the pour itself: one filled ribbon, bulging and narrowing */
       ctx.beginPath();
       for(var ry = -24; ry <= H + 24; ry += 10){ var exL = rCx(ry) - rTh(ry); if(ry === -24) ctx.moveTo(exL, ry); else ctx.lineTo(exL, ry); }
       for(var ry2 = H + 24; ry2 >= -24; ry2 -= 10){ ctx.lineTo(rCx(ry2) + rTh(ry2), ry2); }
       ctx.closePath();
-      ctx.fillStyle = mc;
-      ctx.globalAlpha = 0.34 * state.riverK;
+      ctx.fillStyle = pour;
+      ctx.globalAlpha = 0.5 * state.riverK;
       ctx.fill();
+      ctx.strokeStyle = 'rgba(240,183,63,.85)';
+      ctx.globalAlpha = 0.30 * state.riverK;
+      ctx.lineWidth = Math.max(1, 1.6 * s.dpr);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
       /* two slow threads riding inside the stream */
       [-0.38, 0.38].forEach(function(off){
         ctx.beginPath();
         for(var ry3 = -24; ry3 <= H + 24; ry3 += 9){
-          var xx3 = rCx(ry3) + rTh(ry3) * off + Math.sin(ry3 * 0.016 - t * 0.9 + off * 4) * 4.5 * s.dpr;
+          var xx3 = rCx(ry3) + rTh(ry3) * off + Math.sin(ry3 * 0.013 - t * 0.55 + off * 4) * 4 * s.dpr;
           if(ry3 === -24) ctx.moveTo(xx3, ry3); else ctx.lineTo(xx3, ry3);
         }
-        ctx.strokeStyle = mc;
-        ctx.globalAlpha = 0.5 * state.riverK;
+        ctx.strokeStyle = pour;
+        ctx.globalAlpha = 0.65 * state.riverK;
         ctx.lineWidth = Math.max(1.2, 1.8 * s.dpr);
         ctx.stroke();
       });
@@ -6800,18 +6873,89 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
 </script>
 
 <script>/* BUILD 98 — Waters guide open/close. Handlers use closest():
-   Living Text wraps letters in spans, and a span may take the tap. */
+   Living Text wraps letters in spans, and a span may take the tap.
+   BUILD 101 — the guide goes full-screen and hearthy, and the water
+   chips get their letter shimmer. */
 (function(){
   var modal = document.getElementById('sea-help-modal');
   if(!modal) return;
-  function open(){ modal.hidden = false; var c = document.getElementById('sea-help-close'); if(c) c.focus(); }
-  function close(){ modal.hidden = true; }
+  /* give an element the hearth: stagger a gold glow across its
+     letters. If Living Text already split them, reuse its spans;
+     otherwise split the plain text now. */
+  function hearthLetters(el, step){
+    if(!el || el.dataset.hearth) return;
+    el.dataset.hearth = '1';
+    var spans = el.querySelectorAll('.hl-ch');
+    if(spans.length){
+      spans.forEach(function(s, i){ s.style.setProperty('--gd', (i * step) + 'ms'); });
+      return;
+    }
+    var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+    var texts = [];
+    while(walker.nextNode()) texts.push(walker.currentNode);
+    var n = 0;
+    texts.forEach(function(tn){
+      var txt = tn.nodeValue;
+      if(!txt || !txt.trim()) return;
+      var frag = document.createDocumentFragment();
+      for(var i = 0; i < txt.length; i++){
+        var sp = document.createElement('span');
+        sp.className = 'hl-ch';
+        sp.textContent = txt[i];
+        sp.style.setProperty('--gd', (n++ * step) + 'ms');
+        frag.appendChild(sp);
+      }
+      tn.parentNode.replaceChild(frag, tn);
+    });
+  }
+  /* — the teaching tour: one card full, the rest transparent — */
+  var items = Array.prototype.slice.call(modal.querySelectorAll('.guide-item'));
+  var tourTimer = null, tourIdx = -1;
+  function spot(i){
+    tourIdx = i;
+    items.forEach(function(it, j){
+      it.classList.toggle('spot', j === i);
+      it.classList.toggle('ghost', j !== i);
+      if(j === i) hearthLetters(it, 34);
+    });
+  }
+  function startTour(){
+    stopTour();
+    spot(0);
+    tourTimer = setInterval(function(){ spot((tourIdx + 1) % items.length); }, 4200);
+  }
+  function stopTour(){ if(tourTimer){ clearInterval(tourTimer); tourTimer = null; } }
+  items.forEach(function(it, j){ it.addEventListener('click', function(){ spot(j); stopTour(); tourTimer = setInterval(function(){ spot((tourIdx + 1) % items.length); }, 4200); }); });
+  function open(){
+    modal.hidden = false;
+    ['sea-help-title'].forEach(function(id){ var el = document.getElementById(id); if(el){ el.classList.add('hearth-live'); hearthLetters(el, 60); } });
+    modal.querySelectorAll('.modal-sub, .waters-guide-intro, .waters-guide-law, .modal-note').forEach(function(el){ el.classList.add('hearth-live'); hearthLetters(el, 26); });
+    startTour();
+    var c = document.getElementById('sea-help-close'); if(c) c.focus();
+  }
+  function close(){ modal.hidden = true; stopTour(); }
   document.addEventListener('click', function(e){
     var t = e.target;
     if(t && t.closest && t.closest('.sea-help-open')){ open(); return; }
     if(t === modal || (t && t.closest && t.closest('#sea-help-close'))) close();
   });
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && !modal.hidden) close(); });
+  /* — chip hearth: the glass water chips shimmer, letter by letter — */
+  function chipUp(el){ if(el && el.classList && el.classList.contains('chip')){ el.classList.add('hchip'); hearthLetters(el, 70); } }
+  ['chip-all', 'chip-saved', 'sea-help-btn', 'river-new-btn'].forEach(function(id){ chipUp(document.getElementById(id)); });
+  var mo = new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      m.addedNodes.forEach(function(nd){
+        if(nd.nodeType !== 1) return;
+        chipUp(nd);
+        if(nd.querySelectorAll) nd.querySelectorAll('.chip').forEach(chipUp);
+      });
+    });
+  });
+  ['lake-chips', 'river-bar'].forEach(function(id){
+    var host = document.getElementById(id);
+    if(host) mo.observe(host, { childList: true, subtree: true });
+  });
 })();
 </script>
 </body>

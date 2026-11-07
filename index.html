@@ -3057,6 +3057,8 @@ window.__bwAuth = function(form){
     bwApplyAuth();
     bwFetchFiles();
     bwFetchPosts();
+    if(typeof bwFetchLakes === 'function') bwFetchLakes();
+    if(typeof bwFetchRivers === 'function') bwFetchRivers();
   });
   /* Sea filter chips: the whole Sea, or only what you saved */
   var chipAll = document.getElementById('chip-all'), chipSaved = document.getElementById('chip-saved');
@@ -3293,7 +3295,13 @@ window.__bwAuth = function(form){
     var host = document.getElementById('river-members');
     if(!host) return;
     var R = BW.riverFilter ? BW.rivers[BW.riverFilter] : null;
-    if(!R || !R.lakes || !R.lakes.length){ host.hidden = true; host.innerHTML = ''; return; }
+    if(!R || !R.lakes || !R.lakes.length){
+      if(host._bwSig !== 'none'){ host._bwSig = 'none'; host.hidden = true; host.innerHTML = ''; }
+      return;
+    }
+    var sig = R.id + '|' + R.lakes.join(',') + '|' + (BW.user ? BW.user.id : 'anon');
+    if(host._bwSig === sig) return; /* same waters — leave the buttons (and any armed tap) untouched */
+    host._bwSig = sig;
     host.hidden = false; host.innerHTML = '';
     var lab = document.createElement('span');
     lab.textContent = 'In this river: ';
@@ -3316,13 +3324,15 @@ window.__bwAuth = function(form){
   window.__bwRiverMembers = bwRenderRiverMembers;
   function bwLeaveRiver(riverId, lakeId, lakeName, riverName, btn){
     if(!BW.user || !BW.sb) return;
-    if(!bwArm(btn, 'Sure? Tap again to step out')) return;
-    BW.sb.from('river_lakes').delete().eq('river_id', riverId).eq('lake_id', lakeId).then(function(res){
-      if(res.error){ toast('That did not go through \u2014 ' + res.error.message); return; }
-      var R = BW.rivers[riverId];
-      if(R) R.lakes = R.lakes.filter(function(x){ return x !== lakeId; });
-      bwRenderRivers(); bwDecorate();
-      toast('Your lake ' + lakeName + ' stepped out of the river ' + riverName + ' \u2014 every post is still in the Sea.');
+    bwArm(btn, 'Sure? Tap again to step out', function(){
+      btn.textContent = 'Stepping out\u2026';
+      BW.sb.from('river_lakes').delete().eq('river_id', riverId).eq('lake_id', lakeId).then(function(res){
+        if(res.error){ toast('That did not go through \u2014 ' + res.error.message); btn.textContent = '\u2715 leave'; return; }
+        var R = BW.rivers[riverId];
+        if(R) R.lakes = R.lakes.filter(function(x){ return x !== lakeId; });
+        bwRenderRivers(); bwDecorate();
+        toast('Your lake ' + lakeName + ' stepped out of the river ' + riverName + ' \u2014 every post is still in the Sea.');
+      });
     });
   }
   function bwFetchRivers(){

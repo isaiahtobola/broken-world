@@ -519,6 +519,18 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   padding:8px 18px; border-radius:999px; transition:background .2s, color .2s;
 }
 .join-btn:hover{background:var(--gold); color:var(--ink)}
+.river-bar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:-6px 0 16px}
+.river-bar .rv-label{font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted)}
+.chip.river-chip{border-color:rgba(240,183,63,.55); color:var(--yellow)}
+#river-create{display:none; gap:8px; flex-wrap:wrap; align-items:center; margin:-6px 0 16px; background:var(--panel); border:1px solid rgba(240,183,63,.4); border-radius:14px; padding:12px 14px}
+#river-create.open{display:flex}
+#river-create input[type="text"]{flex:1; min-width:150px; background:rgba(13,7,22,.6); border:1px solid rgba(184,166,217,.35); border-radius:10px; padding:9px 12px; color:var(--cream); font-family:var(--serif); font-size:14.5px; outline:none}
+#river-create label{font-family:var(--mono); font-size:12px; color:var(--cream); display:flex; gap:6px; align-items:center; border:1px solid rgba(184,166,217,.35); border-radius:999px; padding:6px 12px; cursor:pointer}
+.lake-badge{display:inline-block; font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--yellow); border:1px solid rgba(255,209,102,.55); border-radius:999px; padding:2px 9px; margin-left:8px; vertical-align:2px}
+#lake-chips{flex-wrap:wrap}
+#lake-create{display:flex; gap:8px; margin-top:12px}
+#lake-create input{flex:1; min-width:0; background:rgba(13,7,22,.6); border:1px solid rgba(184,166,217,.35); border-radius:10px; padding:9px 12px; color:var(--cream); font-family:var(--serif); font-size:14.5px; outline:none}
+#lake-create input:focus{border-color:var(--gold)}
 
 /* ============ HUB ============ */
 .hub-inner{padding:52px 0 70px}
@@ -1298,14 +1310,16 @@ html.kint-lock{overflow:hidden !important}
     <div class="sea-grid">
             <div class="feed">
         <div class="sea-note"><b>Share, save, and react to each other's files</b> — save SFX, images, PNGs, and GIFs to your own PC!<span class="sea-note-sign">— BW File Sharing Waves</span></div>
-        <div class="feed-chips"><button class="chip active" id="chip-all" type="button">The Sea</button><button class="chip" id="chip-saved" type="button">🔖 Saved by me</button></div>
+        <div class="feed-chips" id="lake-chips"><button class="chip active" id="chip-all" type="button">The Sea</button><button class="chip" id="chip-saved" type="button">🔖 Saved by me</button></div>
+<div class="river-bar" id="river-bar"><span class="rv-label">Rivers</span><button class="chip river-chip" id="river-new-btn" type="button">+ New river</button></div>
+        <form id="river-create"><input type="text" id="river-name" maxlength="40" placeholder="Name your river…" aria-label="Name your river"><span id="river-pick"></span><button class="join-btn" type="submit">Dig the river</button></form>
         <div class="post-composer">
           <div class="avatar">B</div>
           <div class="composer-main">
             <textarea id="sea-post-text" rows="3" placeholder="Share something with the Sea…" aria-label="Write a post"></textarea>
             <div class="media-row"><input type="url" class="media-link" placeholder="GIF / image / video link (optional)" aria-label="Media link"><label class="media-up">⬆ Upload<input type="file" class="media-file" accept="image/*,video/*" hidden></label><span class="media-name"></span></div>
             <div class="up-bar" hidden><div class="up-track"><div class="up-fill"></div></div><span class="up-pct">0%</span></div>
-            <div class="composer-actions"><span class="composer-note">Open to read — join or log in to post</span><button class="post-btn" id="sea-post-btn">Post</button></div>
+            <div class="composer-actions"><span class="composer-note">Open to read — join or log in to post</span><select id="sea-lake-sel" class="media-link" style="max-width:210px" hidden aria-label="Post into a lake"><option value="">Post to: The Sea</option></select><button class="post-btn" id="sea-post-btn">Post</button></div>
           </div>
         </div>
         <div id="sea-feed"></div>
@@ -1315,12 +1329,15 @@ html.kint-lock{overflow:hidden !important}
         <div class="side-panel">
           <h4>Search</h4>
           <input class="search-box" type="search" placeholder="Search the Sea..." aria-label="Search posts">
-          <h4>Suggested Groups</h4>
+          <h4>Lakes</h4>
           <div class="group-line">
             <div class="avatar">BW</div>
             <div class="meta"><b>BW Hub</b><span>Public · brand new</span></div>
             <button class="join-btn" id="hub-join-btn">Join</button>
           </div>
+          <div id="lake-list"></div>
+          <form id="lake-create"><input id="lake-name" type="text" maxlength="40" placeholder="Name your lake…" aria-label="Name your lake"><button class="join-btn" type="submit">+ Lake</button></form>
+          <p class="meta" style="font-family:var(--mono); font-size:11.5px; color:var(--muted); margin-top:10px">Your own little corner of the Sea — friends can join your lake, you can join theirs, and every post still flows into the Sea.</p>
         </div>
       </aside>
     </div>
@@ -2395,14 +2412,15 @@ function bwApplyAuth(){
 }
 
 function bwFetchPosts(){
-  return BW.sb.from('posts').select('id, body, author, author_name, media_url, media_type, created_at')
+  return BW.sb.from('posts').select('id, body, author, author_name, media_url, media_type, created_at, lake_id')
     .order('created_at', {ascending:false}).limit(100)
     .then(function(r){
       if(r.error) return;
       BW.posts = (r.data || []).map(function(row){
         return { id: row.id, text: row.body, ts: new Date(row.created_at).getTime(),
                  author: row.author_name || 'member', author_id: row.author,
-                 media_url: row.media_url || null, media_type: row.media_type || null };
+                 media_url: row.media_url || null, media_type: row.media_type || null,
+                 lake_id: row.lake_id || null };
       });
       renderPosts();
       bwFetchSocial();
@@ -2461,8 +2479,11 @@ function liveMakePost(textareaId){
   if(!text && !link && !file){ toast('Write something, or drop a link or a file — the Sea is listening.'); return; }
   if(!BW.user){ toast('Join or log in to post — reading is open to everyone.'); bwOpenModal(); return; }
   var finish = function(mediaUrl, mediaType){
+    var lakeSel = (textareaId === 'sea-post-text') ? document.getElementById('sea-lake-sel') : null;
+    var lakeId = (BW.lakeFilter && BW.lakes && BW.lakes[BW.lakeFilter]) ? BW.lakeFilter
+               : (lakeSel && lakeSel.value ? lakeSel.value : null);
     BW.sb.from('posts').insert({ body: text, author: BW.user.id, author_name: BW.name,
-      media_url: mediaUrl || null, media_type: mediaType || null })
+      media_url: mediaUrl || null, media_type: mediaType || null, lake_id: lakeId })
       .then(function(r){
         if(r.error){ toast('The Sea refused that one: ' + r.error.message); return; }
         ta.value = ''; if(linkEl) linkEl.value = ''; if(fileEl) fileEl.value = '';
@@ -2726,6 +2747,12 @@ function bwDecorate(){
       var post = BW.posts[i];
       if(!post || typeof post.id !== 'string') return;
       if(pair[1] && BW.showSaved && !BW.saves[post.id]){ card.style.display = 'none'; return; }
+      if(pair[1] && BW.lakeFilter && post.lake_id !== BW.lakeFilter){ card.style.display = 'none'; return; }
+      if(pair[1] && BW.riverFilter && BW.rivers && BW.rivers[BW.riverFilter] && BW.rivers[BW.riverFilter].lakes.indexOf(post.lake_id) < 0){ card.style.display = 'none'; return; }
+      if(pair[1] && post.lake_id && BW.lakes && BW.lakes[post.lake_id] && !card.querySelector('.lake-badge')){
+        var spEl = card.querySelector('.post-head .who span');
+        if(spEl){ var bd = document.createElement('span'); bd.className = 'lake-badge'; bd.textContent = BW.lakes[post.lake_id].name; spEl.appendChild(bd); }
+      }
       card.style.display = '';
       var firstPaint = card.dataset.bwSoc !== post.id;
       if(firstPaint){
@@ -2932,18 +2959,206 @@ window.__bwAuth = function(form){
   var chipAll = document.getElementById('chip-all'), chipSaved = document.getElementById('chip-saved');
   if(chipAll && chipSaved){
     chipAll.addEventListener('click', function(){
-      BW.showSaved = false;
+      BW.showSaved = false; BW.lakeFilter = null; BW.riverFilter = null;
+      document.querySelectorAll('#river-bar .chip.river-chip[data-river]').forEach(function(c){ c.classList.remove('active'); });
+      document.querySelectorAll('#lake-chips .chip.lake-chip').forEach(function(c){ c.classList.remove('active'); });
       chipAll.classList.add('active'); chipSaved.classList.remove('active');
       bwDecorate();
     });
     chipSaved.addEventListener('click', function(){
       if(!BW.user){ toast('Log in to see your saved posts.'); bwOpenModal(); return; }
-      BW.showSaved = true;
+      BW.showSaved = true; BW.lakeFilter = null; BW.riverFilter = null;
+      document.querySelectorAll('#river-bar .chip.river-chip[data-river]').forEach(function(c){ c.classList.remove('active'); });
+      document.querySelectorAll('#lake-chips .chip.lake-chip').forEach(function(c){ c.classList.remove('active'); });
       chipSaved.classList.add('active'); chipAll.classList.remove('active');
       bwDecorate();
       toast('Your saved posts — your shelf of the Sea. 🔖');
     });
   }
+  /* ---------- LAKES (build 97, his design Nov 7) ----------
+     Members make lakes; anyone joins or leaves; posts wear their
+     lake's badge; the Sea shows all of it. */
+  BW.lakes = {}; BW.lakeJoins = {}; BW.lakeFilter = null;
+  function bwRenderLakes(){
+    var bar = document.getElementById('lake-chips');
+    if(bar){
+      bar.querySelectorAll('.chip.lake-chip').forEach(function(c){ c.remove(); });
+      Object.keys(BW.lakes).forEach(function(id){
+        var L = BW.lakes[id];
+        var ch = document.createElement('button');
+        ch.type = 'button'; ch.className = 'chip lake-chip' + (BW.lakeFilter === id ? ' active' : '');
+        ch.textContent = L.name;
+        ch.addEventListener('click', function(){
+          BW.lakeFilter = id; BW.showSaved = false; BW.riverFilter = null;
+          document.querySelectorAll('#river-bar .chip.river-chip[data-river]').forEach(function(c){ c.classList.remove('active'); });
+          var ca = document.getElementById('chip-all'), cs = document.getElementById('chip-saved');
+          if(ca) ca.classList.remove('active'); if(cs) cs.classList.remove('active');
+          bar.querySelectorAll('.chip.lake-chip').forEach(function(c){ c.classList.toggle('active', c === ch); });
+          var sel = document.getElementById('sea-lake-sel'); if(sel) sel.value = id;
+          bwDecorate();
+          toast('One lake at a time — ' + L.name + '. The Sea chip brings back everything.');
+        });
+        bar.appendChild(ch);
+      });
+    }
+    var list = document.getElementById('lake-list');
+    if(list){
+      list.innerHTML = '';
+      Object.keys(BW.lakes).forEach(function(id){
+        var L = BW.lakes[id];
+        var row = document.createElement('div'); row.className = 'group-line'; row.style.marginTop = '12px';
+        var av = document.createElement('div'); av.className = 'avatar'; av.textContent = (L.name || 'L').charAt(0).toUpperCase();
+        var meta = document.createElement('div'); meta.className = 'meta';
+        var bb = document.createElement('b'); bb.textContent = L.name;
+        var ss = document.createElement('span');
+        var n = Object.keys(BW.lakeCounts || {}).filter(function(u){ return (BW.lakeCounts[u] || []).indexOf(id) >= 0; }).length;
+        ss.textContent = 'Lake · by ' + (L.owner_name || 'member') + ' · ' + n + (n === 1 ? ' member' : ' members');
+        meta.appendChild(bb); meta.appendChild(ss);
+        row.appendChild(av); row.appendChild(meta);
+        var mine = BW.user && (BW.lakeCounts && (BW.lakeCounts[BW.user.id] || []).indexOf(id) >= 0);
+        var jb = document.createElement('button'); jb.type = 'button'; jb.className = 'join-btn';
+        jb.textContent = mine ? 'Leave' : 'Join';
+        jb.addEventListener('click', function(){
+          if(!BW.user){ toast('Join or log in first — then the lakes open up.'); bwOpenModal(); return; }
+          var q = mine
+            ? BW.sb.from('lake_members').delete().eq('lake_id', id).eq('user_id', BW.user.id)
+            : BW.sb.from('lake_members').insert({ lake_id: id, user_id: BW.user.id });
+          q.then(function(r){ if(r.error){ toast(r.error.message); return; } toast(mine ? ('Left ' + L.name + '.') : ('You joined ' + L.name + ' — welcome to the lake.')); bwFetchLakes(); });
+        });
+        row.appendChild(jb);
+        list.appendChild(row);
+      });
+    }
+    var sel = document.getElementById('sea-lake-sel');
+    if(sel){
+      var cur = sel.value;
+      sel.innerHTML = '';
+      var o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'Post to: The Sea'; sel.appendChild(o0);
+      Object.keys(BW.lakes).forEach(function(id){
+        var o = document.createElement('option'); o.value = id; o.textContent = 'Post to: ' + BW.lakes[id].name; sel.appendChild(o);
+      });
+      sel.value = BW.lakeFilter || cur || '';
+      sel.hidden = !Object.keys(BW.lakes).length;
+    }
+  }
+  function bwFetchLakes(){
+    if(!BW.sb) return;
+    Promise.all([
+      BW.sb.from('lakes').select('id, name, owner, owner_name, created_at').order('created_at', { ascending: true }).limit(100),
+      BW.sb.from('lake_members').select('lake_id, user_id').limit(2000)
+    ]).then(function(res){
+      if(res[0].error) return; /* lakes.sql not run yet — the Sea sails on without them */
+      BW.lakes = {};
+      (res[0].data || []).forEach(function(L){ BW.lakes[L.id] = L; });
+      BW.lakeCounts = {};
+      ((res[1] && res[1].data) || []).forEach(function(m){ (BW.lakeCounts[m.user_id] = BW.lakeCounts[m.user_id] || []).push(m.lake_id); });
+      bwRenderLakes();
+      bwDecorate();
+    }).catch(function(){});
+  }
+  var lakeForm = document.getElementById('lake-create');
+  if(lakeForm) lakeForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!BW.user){ toast('Join or log in first — then you can dig a lake.'); bwOpenModal(); return; }
+    if(!BW.sb){ toast('The notebook is still waking — one moment…'); return; }
+    var inp = document.getElementById('lake-name');
+    var nm = (inp.value || '').trim();
+    if(!nm){ toast('Give your lake a name first.'); return; }
+    BW.sb.from('lakes').insert({ name: nm, owner: BW.user.id, owner_name: BW.name }).select('id').single()
+      .then(function(r){
+        if(r.error){ toast('The lake refused: ' + r.error.message + ' (if lakes are brand new, Lux may still be digging the lakebeds — check back in a minute.)'); return; }
+        inp.value = '';
+        toast('Lake dug: ' + nm + ' — it is on the Sea now, and you are its first member.');
+        if(r.data && r.data.id) BW.sb.from('lake_members').insert({ lake_id: r.data.id, user_id: BW.user.id }).then(function(){ bwFetchLakes(); });
+        else bwFetchLakes();
+      });
+  });
+  bwFetchLakes();
+
+  /* ---------- RIVERS (build 97b, his design Nov 7) ----------
+     A river is a bubble holding multiple lakes. One tap runs the
+     Sea through just those lakes. Anyone can dig one. */
+  BW.rivers = {}; BW.riverFilter = null;
+  function bwRenderRivers(){
+    var bar = document.getElementById('river-bar');
+    if(bar){
+      bar.querySelectorAll('.chip.river-chip[data-river]').forEach(function(c){ c.remove(); });
+      var nb = document.getElementById('river-new-btn');
+      Object.keys(BW.rivers).forEach(function(id){
+        var R = BW.rivers[id];
+        var ch = document.createElement('button');
+        ch.type = 'button'; ch.className = 'chip river-chip' + (BW.riverFilter === id ? ' active' : '');
+        ch.setAttribute('data-river', id);
+        ch.textContent = R.name;
+        ch.title = 'A river of ' + R.lakes.length + (R.lakes.length === 1 ? ' lake' : ' lakes') + ' · by ' + (R.owner_name || 'member');
+        ch.addEventListener('click', function(){
+          BW.riverFilter = id; BW.lakeFilter = null; BW.showSaved = false;
+          var ca = document.getElementById('chip-all'), cs = document.getElementById('chip-saved');
+          if(ca) ca.classList.remove('active'); if(cs) cs.classList.remove('active');
+          document.querySelectorAll('#lake-chips .chip.lake-chip').forEach(function(c){ c.classList.remove('active'); });
+          bar.querySelectorAll('.chip.river-chip[data-river]').forEach(function(c){ c.classList.toggle('active', c === ch); });
+          bwDecorate();
+          toast('The river ' + R.name + ' is running — ' + R.lakes.length + (R.lakes.length === 1 ? ' lake' : ' lakes') + ' flowing through it. The Sea chip brings back the whole ocean.');
+        });
+        bar.insertBefore(ch, nb);
+      });
+    }
+    var pick = document.getElementById('river-pick');
+    if(pick){
+      pick.innerHTML = '';
+      Object.keys(BW.lakes || {}).forEach(function(id){
+        var lb = document.createElement('label');
+        var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = id;
+        lb.appendChild(cb); lb.appendChild(document.createTextNode(BW.lakes[id].name));
+        pick.appendChild(lb);
+      });
+    }
+  }
+  function bwFetchRivers(){
+    if(!BW.sb) return;
+    Promise.all([
+      BW.sb.from('rivers').select('id, name, owner, owner_name, created_at').order('created_at', { ascending: true }).limit(100),
+      BW.sb.from('river_lakes').select('river_id, lake_id').limit(2000)
+    ]).then(function(res){
+      if(res[0].error) return; /* river tables not dug yet — lakes sail on */
+      BW.rivers = {};
+      (res[0].data || []).forEach(function(R){ BW.rivers[R.id] = { id: R.id, name: R.name, owner: R.owner, owner_name: R.owner_name, lakes: [] }; });
+      ((res[1] && res[1].data) || []).forEach(function(m){ if(BW.rivers[m.river_id]) BW.rivers[m.river_id].lakes.push(m.lake_id); });
+      bwRenderRivers();
+      bwDecorate();
+    }).catch(function(){});
+  }
+  var rNew = document.getElementById('river-new-btn');
+  if(rNew) rNew.addEventListener('click', function(){
+    if(!BW.user){ toast('Join or log in first — then you can dig rivers.'); bwOpenModal(); return; }
+    var f = document.getElementById('river-create');
+    if(f) f.classList.toggle('open');
+    bwRenderRivers();
+  });
+  var rForm = document.getElementById('river-create');
+  if(rForm) rForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!BW.user){ toast('Join or log in first — then you can dig rivers.'); bwOpenModal(); return; }
+    var inp = document.getElementById('river-name');
+    var nm = (inp.value || '').trim();
+    var picked = [];
+    rForm.querySelectorAll('#river-pick input[type="checkbox"]:checked').forEach(function(cb){ picked.push(cb.value); });
+    if(!nm){ toast('Give your river a name first.'); return; }
+    if(!picked.length){ toast('A river needs at least one lake flowing into it — tick a lake.'); return; }
+    BW.sb.from('rivers').insert({ name: nm, owner: BW.user.id, owner_name: BW.name }).select('id').single()
+      .then(function(r){
+        if(r.error){ toast('The river refused: ' + r.error.message); return; }
+        var rows = picked.map(function(lid){ return { river_id: r.data.id, lake_id: lid }; });
+        BW.sb.from('river_lakes').insert(rows).then(function(){
+          inp.value = '';
+          rForm.classList.remove('open');
+          toast('River dug: ' + nm + ' — ' + picked.length + (picked.length === 1 ? ' lake' : ' lakes') + ' flowing into it.');
+          bwFetchRivers();
+        });
+      });
+  });
+  bwFetchRivers();
+
   bwFetchPosts();
   bwFetchFiles();
 })();
@@ -5759,22 +5974,48 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       actx = actx || new (window.AudioContext || window.webkitAudioContext)();
       if(actx.state === 'suspended') actx.resume();
       var t = actx.currentTime;
-      var dur = 0.26 + Math.random()*0.16;
+      var V = big ? 1.25 : 1;
+      var master = actx.createGain(); master.gain.value = 0.9; master.connect(actx.destination);
+      /* 1) THE DIVE — a sawtooth arc plunging high to low. That falling
+         pitch IS the zap. (Nov 7: his ear caught the old recipe — noise
+         burst + low thump — as a drum snare. He was right. Thump deleted.) */
+      var f0 = 2300 + Math.random()*900;
+      var o = actx.createOscillator(); o.type = 'sawtooth';
+      o.frequency.setValueAtTime(f0, t);
+      o.frequency.exponentialRampToValueAtTime(110 + Math.random()*40, t + 0.16);
+      var o2 = actx.createOscillator(); o2.type = 'square';
+      o2.frequency.setValueAtTime(f0*1.5, t);
+      o2.frequency.exponentialRampToValueAtTime(170, t + 0.13);
+      var lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 2;
+      lp.frequency.setValueAtTime(6500, t);
+      lp.frequency.exponentialRampToValueAtTime(500, t + 0.2);
+      var og = actx.createGain();
+      og.gain.setValueAtTime(0.30*V, t);
+      og.gain.exponentialRampToValueAtTime(0.001, t + 0.21);
+      o.connect(lp); o2.connect(lp); lp.connect(og); og.connect(master);
+      o.start(t); o.stop(t + 0.22); o2.start(t); o2.stop(t + 0.22);
+      /* 2) THE CRACKLE — arc sputter: noise chopped into random sparks by
+         a jittery gate, kept bright with a highpass so it sizzles like a
+         live wire instead of whooshing like a drum skin. */
+      var dur = (big ? 0.4 : 0.3) + Math.random()*0.1;
       var buf = actx.createBuffer(1, Math.floor(actx.sampleRate*dur), actx.sampleRate);
-      var d = buf.getChannelData(0), i;
-      for(i=0;i<d.length;i++){ d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 1.7); }
+      var d = buf.getChannelData(0), i, gate = 0, hold = 0;
+      for(i=0;i<d.length;i++){
+        if(hold-- <= 0){ gate = Math.random() < 0.42 ? 0 : (0.35 + Math.random()*0.65); hold = 90 + (Math.random()*260|0); }
+        d[i] = (Math.random()*2-1) * gate * Math.pow(1 - i/d.length, 1.25);
+      }
       var src = actx.createBufferSource(); src.buffer = buf;
-      var bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.9;
-      bp.frequency.setValueAtTime(3600 + Math.random()*1400, t);
-      bp.frequency.exponentialRampToValueAtTime(220, t + dur);
-      var g = actx.createGain(); g.gain.setValueAtTime(0.5, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-      src.connect(bp); bp.connect(g); g.connect(actx.destination); src.start(t);
-      var o = actx.createOscillator(); o.type = 'sine';
-      o.frequency.setValueAtTime(118, t); o.frequency.exponentialRampToValueAtTime(36, t + 0.22);
-      var g2 = actx.createGain(); g2.gain.setValueAtTime(0.22, t);
-      g2.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
-      o.connect(g2); g2.connect(actx.destination); o.start(t); o.stop(t + 0.26);
+      var hp = actx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1400;
+      var g = actx.createGain(); g.gain.value = 0.5*V;
+      src.connect(hp); hp.connect(g); g.connect(master); src.start(t);
+      /* 3) THE SNAP — the first spark: 15ms of pure bright click. */
+      var sbuf = actx.createBuffer(1, Math.floor(actx.sampleRate*0.015), actx.sampleRate);
+      var sd = sbuf.getChannelData(0);
+      for(i=0;i<sd.length;i++){ sd[i] = (Math.random()*2-1) * (1 - i/sd.length); }
+      var ssrc = actx.createBufferSource(); ssrc.buffer = sbuf;
+      var shp = actx.createBiquadFilter(); shp.type = 'highpass'; shp.frequency.value = 4000;
+      var sg = actx.createGain(); sg.gain.value = 0.6*V;
+      ssrc.connect(shp); shp.connect(sg); sg.connect(master); ssrc.start(t);
     }catch(e){}
   }
   function boltD(x0){

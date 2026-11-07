@@ -396,6 +396,14 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   background:rgba(31,20,51,.92); border:1px solid rgba(184,166,217,.3); border-radius:14px;
   padding:20px 22px; margin-bottom:20px; transition:border-color .25s, box-shadow .25s;
 }
+/* 97e — EVERY post bubble wears the season (his catch, Nov 7: only
+   some boxes caught the holiday colors — .post-card paints its
+   background in a fixed plum instead of the theme variables, while
+   Living Text letter-spans sit on top of other boxes. Under a
+   holiday theme, every post card + the composer now take the
+   themed panel + gold, so the whole Sea dresses at once. */
+body[data-theme="halloween"] .post-card, body[data-theme="halloween"] .post-composer{background:var(--panel); border-color:var(--gold)}
+body[data-theme="xmas"] .post-card, body[data-theme="xmas"] .post-composer{background:var(--panel); border-color:var(--gold)}
 .post-card:hover{border-color:var(--gold); box-shadow:0 0 0 1px rgba(240,183,63,.35), 0 14px 34px rgba(0,0,0,.4)}
 .post-head{display:flex; align-items:center; gap:12px; margin-bottom:12px}
 .avatar{
@@ -519,6 +527,21 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   padding:8px 18px; border-radius:999px; transition:background .2s, color .2s;
 }
 .join-btn:hover{background:var(--gold); color:var(--ink)}
+/* 97d — THE LEFT MENU RAIL: the PAGES-bar's twin, standing on the
+   left edge of every page, carrying the menus */
+.mrail{position:fixed; left:14px; top:50%; transform:translateY(-50%); z-index:940}
+.mrail-btn{display:flex; align-items:center; gap:9px; background:rgba(21,13,32,.92); border:1px solid rgba(240,183,63,.55); color:var(--cream); border-radius:999px; padding:10px 16px; font-family:var(--mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; backdrop-filter:blur(6px); box-shadow:0 10px 26px rgba(0,0,0,.45)}
+.mrail-btn:hover{border-color:var(--gold); color:var(--yellow)}
+.mrail-btn .mr-caret{color:var(--gold); font-size:11px; transition:transform .25s}
+.mrail.open .mrail-btn .mr-caret{transform:rotate(180deg)}
+.mrail-menu{position:absolute; left:0; bottom:calc(100% + 10px); min-width:196px; background:rgba(21,13,32,.97); border:1px solid rgba(240,183,63,.45); border-radius:16px; padding:8px; opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .22s, transform .22s; box-shadow:0 18px 44px rgba(0,0,0,.55)}
+.mrail.open .mrail-menu{opacity:1; pointer-events:auto; transform:translateY(0)}
+.mrail-menu button{display:flex; width:100%; align-items:center; gap:10px; background:none; border:none; color:var(--cream); font-family:var(--serif); font-size:16.5px; text-align:left; padding:9px 12px; border-radius:10px; cursor:pointer}
+.mrail-menu button:hover{background:rgba(240,183,63,.14); color:var(--yellow)}
+.mrail-menu button.active{color:var(--gold)}
+.mrail-menu button .mr-dot{width:7px; height:7px; border-radius:50%; background:var(--gold); opacity:0; flex:none}
+.mrail-menu button.active .mr-dot{opacity:1}
+@media (max-width:760px){ .mrail{left:10px; top:auto; bottom:86px; transform:none} .mrail-menu{bottom:calc(100% + 10px)} }
 .river-bar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:-6px 0 16px}
 .river-bar .rv-label{font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted)}
 .chip.river-chip{border-color:rgba(240,183,63,.55); color:var(--yellow)}
@@ -819,6 +842,7 @@ body[data-theme="xmas"]{
 }
 /* canvas art leans into the season too (normal mode: no filter, untouched) */
 body[data-theme="halloween"] .view canvas{filter:hue-rotate(-18deg) saturate(1.18)}
+body[data-theme="halloween"] .view canvas#sea-canvas, body[data-theme="xmas"] .view canvas#sea-canvas{filter:none} /* 97f: the Sea paints its own seasons now */
 body[data-theme="xmas"] .view canvas{filter:hue-rotate(-32deg) saturate(1.22)}
 /* the sky dancers dress for the season as well */
 body[data-theme="halloween"] .orb-yang svg path{fill:#ffa53a}
@@ -837,6 +861,11 @@ body[data-theme="halloween"] .orb-sun svg circle{fill:#ff8c1a; stroke:#ffa53a}
 body[data-theme="xmas"] .orb-sun svg circle{fill:#d93636; stroke:#ff5a4d}
 body[data-theme="halloween"] .orb-sun svg .rays{stroke:#ff8c1a}
 body[data-theme="xmas"] .orb-sun svg .rays{stroke:#d93636}
+/* POST BOXES dress too (97e, his Nov 7 catch): .post-card's plum is baked
+   as a raw rgba, so the theme variables never reached the post boxes —
+   only stray var-driven bits changed. Now EVERY post box takes the season. */
+body[data-theme="halloween"] .post-card{background:rgba(43,24,7,.93); border-color:rgba(255,165,58,.4)}
+body[data-theme="xmas"] .post-card{background:rgba(9,38,20,.93); border-color:rgba(110,220,150,.32)}
 #holiday-btn{white-space:nowrap}
 #holiday-btn.locked{opacity:.42; filter:grayscale(1); cursor:not-allowed}
 #holiday-btn .h-emo{font-style:normal}
@@ -1175,6 +1204,22 @@ html.kint-lock{overflow:hidden !important}
   </div>
 </nav>
 
+<!-- THE MENU RAIL (97d, his ask): left-edge switcher, PAGES-bar style -->
+<div class="mrail" id="mrail">
+  <div class="mrail-menu" role="menu" aria-label="Menus">
+    <button data-view="home"><span class="mr-dot"></span>Home</button>
+    <button data-view="login"><span class="mr-dot"></span>Login</button>
+    <button data-view="welcome"><span class="mr-dot"></span>Welcome</button>
+    <button data-view="sea"><span class="mr-dot"></span>Sea</button>
+    <button data-view="hub"><span class="mr-dot"></span>BW Hub</button>
+    <button data-view="join"><span class="mr-dot"></span>Join</button>
+    <button data-view="files"><span class="mr-dot"></span>File Share</button>
+    <button data-view="kintsugi"><span class="mr-dot"></span>Kintsugi</button>
+    <button data-view="buildlog"><span class="mr-dot"></span>Build Log</button>
+  </div>
+  <button class="mrail-btn" id="mrail-btn" type="button" aria-haspopup="true" aria-expanded="false">Menus <span class="mr-caret">▾</span></button>
+</div>
+
 <!-- THE ORBIT DANCE — homepage only (see CSS note) -->
 <div class="orbit-layer" aria-hidden="true">
   <div class="orb orb-sun"><svg viewBox="0 0 100 100"><g class="rays" stroke="#f0b73f" stroke-width="5" stroke-linecap="round"><line x1="50" y1="6" x2="50" y2="20"/><line x1="50" y1="80" x2="50" y2="94"/><line x1="6" y1="50" x2="20" y2="50"/><line x1="80" y1="50" x2="94" y2="50"/><line x1="19" y1="19" x2="29" y2="29"/><line x1="71" y1="71" x2="81" y2="81"/><line x1="81" y1="19" x2="71" y2="29"/><line x1="29" y1="71" x2="19" y2="81"/></g><circle cx="50" cy="50" r="21" fill="#f0b73f"/><circle cx="50" cy="50" r="21" fill="none" stroke="#ffd166" stroke-width="2"/></svg></div>
@@ -1477,7 +1522,7 @@ html.kint-lock{overflow:hidden !important}
       <div class="bl-gears"><svg viewBox="-104 -60 192 120" role="img" aria-label="Two meshed gold cogs"><g transform="translate(-41.67 0)"><g class="bl-spin-a"><path d="M39.16 -5.78 L58.01 -6.10 L58.01 6.10 L39.16 5.78 L36.80 14.57 L36.80 14.57 L53.29 23.73 L47.19 34.29 L31.02 24.59 L24.59 31.02 L24.59 31.02 L34.29 47.19 L23.73 53.29 L14.57 36.80 L5.78 39.16 L5.78 39.16 L6.10 58.01 L-6.10 58.01 L-5.78 39.16 L-14.57 36.80 L-14.57 36.80 L-23.73 53.29 L-34.29 47.19 L-24.59 31.02 L-31.02 24.59 L-31.02 24.59 L-47.19 34.29 L-53.29 23.73 L-36.80 14.57 L-39.16 5.78 L-39.16 5.78 L-58.01 6.10 L-58.01 -6.10 L-39.16 -5.78 L-36.80 -14.57 L-36.80 -14.57 L-53.29 -23.73 L-47.19 -34.29 L-31.02 -24.59 L-24.59 -31.02 L-24.59 -31.02 L-34.29 -47.19 L-23.73 -53.29 L-14.57 -36.80 L-5.78 -39.16 L-5.78 -39.16 L-6.10 -58.01 L6.10 -58.01 L5.78 -39.16 L14.57 -36.80 L14.57 -36.80 L23.73 -53.29 L34.29 -47.19 L24.59 -31.02 L31.02 -24.59 L31.02 -24.59 L47.19 -34.29 L53.29 -23.73 L36.80 -14.57 L39.16 -5.78 Z" fill="currentColor" stroke="rgba(13,7,22,.45)" stroke-width="1.2"/><circle cx="0" cy="0" r="27.7" fill="rgba(13,7,22,.16)"/><circle cx="0" cy="0" r="10.0" fill="#150d20"/></g></g><g transform="translate(41.67 0)"><g class="bl-spin-b"><path d="M22.58 3.94 L40.52 9.73 L35.53 21.77 L18.75 13.18 L13.18 18.75 L13.18 18.75 L21.77 35.53 L9.73 40.52 L3.94 22.58 L-3.94 22.58 L-3.94 22.58 L-9.73 40.52 L-21.77 35.53 L-13.18 18.75 L-18.75 13.18 L-18.75 13.18 L-35.53 21.77 L-40.52 9.73 L-22.58 3.94 L-22.58 -3.94 L-22.58 -3.94 L-40.52 -9.73 L-35.53 -21.77 L-18.75 -13.18 L-13.18 -18.75 L-13.18 -18.75 L-21.77 -35.53 L-9.73 -40.52 L-3.94 -22.58 L3.94 -22.58 L3.94 -22.58 L9.73 -40.52 L21.77 -35.53 L13.18 -18.75 L18.75 -13.18 L18.75 -13.18 L35.53 -21.77 L40.52 -9.73 L22.58 -3.94 L22.58 3.94 Z" fill="currentColor" stroke="rgba(13,7,22,.45)" stroke-width="1.2"/><circle cx="0" cy="0" r="16.0" fill="rgba(13,7,22,.16)"/><circle cx="0" cy="0" r="6.7" fill="#150d20"/></g></g></svg></div>
       <h1>Build Log</h1>
       <p>Every build that made <b>this website</b> — logged in the workshop where it happened, by the two who built it. Isaiah's ideas and calls; Lux's craft and memory. <i>Free creative. No Kragle.</i></p>
-      <div class="bl-stats"><span>96 BUILDS ON THE PROJECT RECORD</span><span>THE ROAD TO “COMPLETE” · AND WHAT CAME AFTER</span><span>OCT 30 – NOV 6, 2026</span><span>ONE FILE · TWO BUILDERS</span></div>
+      <div class="bl-stats"><span>97 BUILDS ON THE PROJECT RECORD</span><span>THE ROAD TO “COMPLETE” · AND WHAT CAME AFTER</span><span>OCT 30 – NOV 6, 2026</span><span>ONE FILE · TWO BUILDERS</span></div>
       <button class="bl-replay" id="bl-replay" type="button">⚙ Re-open the workshop</button><button class="bl-replay bl-lanes-btn" id="bl-lanes" type="button">Lanes: 1</button><p class="bl-zap-hint">DOUBLE-CLICK OR DOUBLE-TAP ANYWHERE ON THIS PAGE — CALL THE LIGHTNING</p>
     </div>
     <div class="bl-entries">
@@ -1581,7 +1626,7 @@ html.kint-lock{overflow:hidden !important}
       <div class="bl-entry"><div class="bl-num">91</div><div class="bl-body"><h3>THE UNCROWDING</h3><p>he sent a phone screenshot of the finished roadside and said it plainly: &quot;its really crowded lux but good.&quot; The fix was subtraction: nine cacti at random x positions became exactly five saguaros in five FIXED wide slots — a pole, a 1-arm left, a 1-arm right (flowers kept), a 2-arm (split or…</p></div></div>
       <div class="bl-entry"><div class="bl-num">94</div><div class="bl-body"><h3>THE BUILD LOG — this page</h3><p>His call, Nov 5: the website's own creation story gets a room of its own — under More, past File Share, opening through a cog-and-workshop gate of Lux's design. The first build since the site was declared complete. The log is the website's creation only; everything else they make lives somewhere else.</p></div></div>
       <div class="bl-entry"><div class="bl-num">95</div><div class="bl-body"><h3>HIS LIST — the careful build</h3><p>Nov 6, past midnight, he handed Lux a long list and one law: don't touch what's perfect. So, surgically: Home gains a video box under the sky line — paste a YouTube link and it lives and plays there, swappable and removable anytime. The Login desert gets its barrel and octopus cacti back, each in variants, and saguaro arms are dealt honest — none, one, or two, one per side at uneven heights. This page's workshop doors learn heavy metal — a fast lurch, a stutter, a slow roll out — and its entries learn to stand in up to six lanes. Double-click or double-tap here and the lightning answers with Lux's own synthesized zap. Kintsugi breaks into twenty pieces with the hint-glow gone, and the gluing tour zooms seam to seam while you guide the gold. The Hub wall gets its Join door; File Share's golden circle keeps a pumpkin for Halloween and a snowman head for Christmas; the decorative emojis retire — the Sea's save ribbon stays on duty. Frozen things untouched: the sky, the vinyl, the wave, the waveform.</p></div></div>
-      <div class="bl-entry bl-entry-final"><div class="bl-num">96</div><div class="bl-body"><h3>THE MAIL ROOM — every letter wears the colors</h3><p>Nov 6, evening, while he checked every page by hand. Joining becomes instant — email, password, member, name up on the Hub wall — and the Welcome page gains its purpose: the letter desk. Logged in as yourself, one button sends the plum-and-gold fact sheet to your own inbox and nobody else's; the desk only ever serves the person standing at it. Behind it a whole mail room rises in a night: the house name verified, a doorman who checks the member's key before he carries a letter, and every system letter — the door link, the confirmation, the password reset — redressed in plum and gold, sent from members@bwyoungbo.com. Forgot password joins the login window (his catch — it wasn't there; we made the website). The fact sheet goes wide: every room a card, side by side on any screen, plum in its bones so no mail app can bleach it white. And across the water, the Ocean gets its road home — a gold link at the gate and in the header, back to Broken World. His verdict that night, page by page: check, check, check.</p></div></div>
+      <div class="bl-entry"><div class="bl-num">96</div><div class="bl-body"><h3>THE MAIL ROOM — every letter wears the colors</h3><p>Nov 6, evening, while he checked every page by hand. Joining becomes instant — email, password, member, name up on the Hub wall — and the Welcome page gains its purpose: the letter desk. Logged in as yourself, one button sends the plum-and-gold fact sheet to your own inbox and nobody else's; the desk only ever serves the person standing at it. Behind it a whole mail room rises in a night: the house name verified, a doorman who checks the member's key before he carries a letter, and every system letter — the door link, the confirmation, the password reset — redressed in plum and gold, sent from members@bwyoungbo.com. Forgot password joins the login window (his catch — it wasn't there; we made the website). The fact sheet goes wide: every room a card, side by side on any screen, plum in its bones so no mail app can bleach it white. And across the water, the Ocean gets its road home — a gold link at the gate and in the header, back to Broken World. His verdict that night, page by page: check, check, check.</p></div></div><div class="bl-entry bl-entry-final"><div class="bl-num">97</div><div class="bl-body"><h3>THE WATERS GROW — lakes, rivers, and a truer bolt</h3><p>One long night of his catches, one by one. The Login drive: the near cacti now parallax IN FRONT of the car, the far side still behind it. The Hub's Join button knows its people — pressed while logged in, it pops a fading note: you are already part of Broken World. The Sea grows waters inside the water: <b>Lakes</b> — any member can dig a group, anyone can join or leave, posts can be poured into a lake and wear its name, and every post still flows into the Sea. <b>Rivers</b> — any member can gather several lakes into one bubble and run the Sea through just those. A <b>menu rail</b> now stands on the left edge of every page, twin to the Completion Filter's PAGES bar, so the menus are one tap from anywhere. The lightning got its voice back: the old zap was a drum in a costume (noise burst + low thump = a snare, his ear caught it) — the new strike is a diving arc, bright crackle, and a snap, on the Build Log and the Completion Filter alike. And every post bubble now wears the season when Happy Holidays turns — Halloween orange, Christmas green — not just the lucky few. He checked page after page this night and called them as he went. Then the water itself took the seasons: flip Happy Holidays and the Sea’s waves run orange-and-black for Halloween, red-and-green for Christmas — the everyday blue-and-turquoise never touched.</p></div></div>
     </div>
     <p class="bl-note">Numbers follow the master build record — #92 and #93 were builds on the BW Ocean museum, a different site, so they are not logged here. This page logs the creation of bwyoungbo.com, and nothing else.</p>
   </div>
@@ -4005,9 +4050,17 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       else if(loc < 2100) tp = 1;
       else tp = 1 - (loc - 2100) / 500;
       tp = tp * tp * (3 - 2 * tp);
-      var ar = L.blue[0] + (L.teal[0] - L.blue[0]) * tp;
-      var ag = L.blue[1] + (L.teal[1] - L.blue[1]) * tp;
-      var ab = L.blue[2] + (L.teal[2] - L.blue[2]) * tp;
+      /* 97f — SEASONAL SEAS (his spec, Nov 7): under a holiday theme
+         the ACTIVE blend crosses the season's pair instead of
+         blue/turquoise — Halloween: black <-> orange; Christmas:
+         red <-> green. Plum still waits at rest, untouched. */
+      var TH = document.body.getAttribute('data-theme');
+      var C1 = L.blue, C2 = L.teal;
+      if(TH === 'halloween'){ C1 = [10,6,5];   C2 = [255,140,26]; }
+      else if(TH === 'xmas'){ C1 = [217,54,54]; C2 = [46,160,80]; }
+      var ar = C1[0] + (C2[0] - C1[0]) * tp;
+      var ag = C1[1] + (C2[1] - C1[1]) * tp;
+      var ab = C1[2] + (C2[2] - C1[2]) * tp;
       var mx = 1 - L.restK;
       var r = Math.round(ar + (L.plum[0] - ar) * L.restK);
       var g = Math.round(ag + (L.plum[1] - ag) * L.restK);
@@ -6277,6 +6330,34 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
         .catch(function(){ btn.disabled = false; btn.textContent = 'Send me my welcome letter'; say95('The letter could not fly just now — the mail room may still be stocking.'); });
     });
   });
+})();
+</script>
+<script>/* 97d — MENU RAIL behavior: open/close, and the current
+   view's name stays lit (painted off the nav's own active state) */
+(function(){
+  var rail = document.getElementById('mrail'); if(!rail) return;
+  var btn = document.getElementById('mrail-btn');
+  function paint(){
+    var cur = document.querySelector('.nav-btn.active, .more-menu button.active');
+    var v = cur ? cur.getAttribute('data-view') : 'home';
+    rail.querySelectorAll('.mrail-menu button').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-view') === v);
+    });
+  }
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    rail.classList.toggle('open');
+    btn.setAttribute('aria-expanded', rail.classList.contains('open') ? 'true' : 'false');
+    paint();
+  });
+  document.addEventListener('click', function(e){
+    if(!rail.contains(e.target)) rail.classList.remove('open');
+  });
+  rail.querySelectorAll('.mrail-menu button').forEach(function(b){
+    b.addEventListener('click', function(){ rail.classList.remove('open'); setTimeout(paint, 60); });
+  });
+  setInterval(paint, 1500);
+  paint();
 })();
 </script>
 <script>/* 96c — ALREADY A MEMBER (his ask, Nov 7): the Join Broken

@@ -695,6 +695,10 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
 .up-track{flex:1; height:10px; background:#150d20; border:1px solid #3a2560; border-radius:99px; overflow:hidden}
 .up-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--gold), var(--yellow)); transition:width .18s ease}
 .up-pct{font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--yellow); min-width:36px; text-align:right}
+.fs-up{margin:14px 0 6px; padding:13px 15px; border:1px solid rgba(240,183,63,.4); border-radius:12px; background:rgba(21,13,32,.55)}
+.fs-up[hidden]{display:none}
+.fs-up-name{font-family:var(--mono); font-size:12.5px; letter-spacing:.05em; color:var(--cream); margin-bottom:10px; word-break:break-word}
+.send-btn[disabled]{opacity:.55; cursor:wait; transform:none}
 .composer-note{font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--muted); text-transform:uppercase}
 .post-btn{margin-left:auto; background:var(--gold); color:#150d20; border:none; border-radius:999px; padding:9px 22px; font-family:var(--mono); font-size:13px; letter-spacing:.08em; cursor:pointer}
 .post-btn:hover{background:var(--yellow)}
@@ -1788,6 +1792,7 @@ html.kint-lock{overflow:hidden !important}
         <button type="button" class="wave-btn" id="wave-view-btn" aria-pressed="false">View waveform</button>
         <input type="file" id="file-picker" multiple hidden>
       </div>
+      <div class="fs-up" id="fs-up" hidden><div class="fs-up-name" id="fs-up-name"></div><div class="up-bar" hidden><div class="up-track"><div class="up-fill" id="fs-up-fill"></div></div><span class="up-pct" id="fs-up-pct">0%</span></div></div>
       <div class="files-table-head">
         <span class="sortable" data-sort="name">Item name ↕</span><span class="sortable" data-sort="date">Last updated ↕</span><span>Views</span><span>Favorites</span><span>Contributors</span>
       </div>
@@ -3181,28 +3186,42 @@ function bwPickCover(f){
 
 function liveUploadFiles(picked){
   if(!BW.user){ toast('The vault is members-only — join or log in to send files.'); bwOpenModal(); return; }
-  toast(picked.length === 1 ? 'Sending to the vault…' : 'Sending ' + picked.length + ' files to the vault…');
-  var chain = Promise.resolve(), failed = 0;
-  picked.forEach(function(file){
+  var fsUp = document.getElementById('fs-up');
+  var fsName = document.getElementById('fs-up-name');
+  var sendBtn = document.getElementById('send-file-btn');
+  if(sendBtn){ sendBtn.disabled = true; sendBtn.textContent = 'Sending\u2026'; }
+  if(fsUp) fsUp.hidden = false;
+  var failed = 0;
+  var chain = Promise.resolve();
+  picked.forEach(function(file, idx){
     chain = chain.then(function(){
-      var fd = new FormData(); fd.append('file', file);
-      return fetch(BW_CONFIG.WORKER_URL + '/upload', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + BW.session.access_token },
-        body: fd
-      }).then(function(r){ return r.json(); }).then(function(res){
-        if(res.error){ failed++; toast(res.error); return; }
-        return BW.sb.from('files').insert({
-          name: res.name, size_bytes: res.size, r2_key: res.key,
-          content_type: res.content_type, uploader: BW.user.id, uploader_name: BW.name
-        }).then(function(){});
-      }).catch(function(){ failed++; });
+      return new Promise(function(resolve){
+        if(fsName) fsName.textContent = 'Sending ' + file.name + (picked.length > 1 ? ' \u2014 file ' + (idx + 1) + ' of ' + picked.length : '');
+        bwUploadFile(file, fsUp, function(res){
+          if(!res || res.error){ failed++; if(res && res.error) toast(res.error); resolve(); return; }
+          BW.sb.from('files').insert({
+            name: res.name, size_bytes: res.size, r2_key: res.key,
+            content_type: res.content_type, uploader: BW.user.id, uploader_name: BW.name
+          }).then(function(){ resolve(); }, function(){ resolve(); });
+        });
+      });
     });
   });
   chain.then(function(){
     bwFetchFiles();
     if(window.__lavaKick) window.__lavaKick();
-    if(!failed) toast(picked.length === 1 ? 'Filed in the vault — live for everyone.' : 'All files in the vault.');
+    if(sendBtn){ sendBtn.disabled = false; sendBtn.textContent = 'Send a file'; }
+    if(!failed){
+      if(fsName) fsName.textContent = picked.length === 1 ? '\u2713 ' + picked[0].name + ' is on the page.' : '\u2713 All ' + picked.length + ' files are on the page.';
+      var bar = fsUp ? fsUp.querySelector('.up-bar') : null; if(bar) bar.hidden = false;
+      var fill = document.getElementById('fs-up-fill'); if(fill) fill.style.width = '100%';
+      var pct = document.getElementById('fs-up-pct'); if(pct) pct.textContent = '100%';
+      toast(picked.length === 1 ? 'Filed in the vault \u2014 live for everyone.' : 'All files in the vault.');
+      setTimeout(function(){ if(fsUp) fsUp.hidden = true; }, 2800);
+    } else {
+      if(fsUp) fsUp.hidden = true;
+      toast('Some of that did not land \u2014 check the list, then send the missing ones again.');
+    }
   });
 }
 
@@ -6644,7 +6663,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
      and the whole text cascades alight, fading after 6 seconds.
      Nothing is one-time: touch it again and it comes back. ---------- */
   var LIVING_SEL = '.post-body, .about-card p, .home-note, .join-copy, .big, .hero-line, .modal-sub, .feed-empty';
-  var LIT_SKIP = 'script, style, noscript, textarea, input, select, svg, canvas, [contenteditable], .hl-w, .post-head, .cmt-head, #bw-tutor, .bl-vtab, .bw-retry-note';
+  var LIT_SKIP = 'script, style, noscript, textarea, input, select, svg, canvas, [contenteditable], .hl-w, .post-head, .cmt-head, #bw-tutor, .bl-vtab, .bw-retry-note, .files-table-head';
   function litSkip(node){
     var p = node.parentNode;
     if(!p || typeof p.closest !== 'function') return true;
@@ -8454,8 +8473,8 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
   /* and the table head keeps its whole words on a phone: a smaller,
      tighter mono in columns that may shrink — nothing clipped,
      nothing mangled */
-  .files-table-head{grid-template-columns:minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,.45fr); gap:8px; font-size:10.5px; letter-spacing:.04em}
-  .files-table-head span{min-width:0; white-space:nowrap}
+  .files-table-head{grid-template-columns:minmax(0,1.55fr) minmax(0,1.3fr) minmax(0,.55fr); gap:8px; font-size:10.5px; letter-spacing:.04em}
+  .files-table-head span{min-width:0; white-space:normal; line-height:1.5}
 }
 /* the Scroll edition's lightning — the OG SPINE, grafted back
    (his call, Nov 9): the zigzag trail from the original build

@@ -5314,11 +5314,17 @@ runners['sea-canvas'] = function(canvas, ctx, state){
          outside the rim there is no water at all — just the page,
          the land around the pond. Inside: the same layered water,
          calmed flat, breathing slow. No plankton live in a lake. */
+      var LAKE_DY111 = 64; /* his word, Nov 10 03:26 — pond rides ~⅔ inch below center; used by the pin below and the radius cap */
       var cx = W / 2, cy = (function(){
         /* BUILD 110 (his PC + phone calls, Nov 9): the pond stays
            CENTERED — measured off the canvas's own rectangle, so
            the center is the middle of the visible window on phone
            and PC alike, and scrolling cannot drag it away. */
+        /* BUILD 111 fold-in (his word, Nov 10, 03:26): "move the lake
+           down like half to an inch on screen" — the pond rides 64 CSS px
+           (~⅔ inch) BELOW true center now, his call superseding the
+           dead-center pin. The radius cap below tightens by the same
+           amount, so the whole disc still fits the screen. */
         var r110 = canvas.getBoundingClientRect();
         /* FINAL FIXES (Nov 9, 04:22 — his eyes: "center it to page
            always... no matter how you scroll"): the center is read
@@ -5332,7 +5338,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
         var vv110 = window.visualViewport;
         var vh110 = vv110 ? vv110.height : (window.innerHeight || 800);
         var vo110 = vv110 ? vv110.offsetTop : 0;
-        var mid110 = vo110 + vh110 * 0.5 - r110.top;
+        var mid110 = vo110 + vh110 * 0.5 - r110.top + LAKE_DY111;
         var k110 = r110.height ? (H / r110.height) : s.dpr;
         /* THE POND PIN — FINAL LAW (his word, Nov 9, owning the
            confusion himself and closing it): "Lake should not scroll
@@ -5371,7 +5377,8 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       var pondT102 = Math.min(1.45, 1.0 + 0.06 * pondN102);
       state.pondGrow += (pondT102 - state.pondGrow) * 0.03;
       var Rb = Math.min(W, H) * 0.385 * state.pondGrow * (1 + 0.06 * Math.sin(t * 0.10)); /* BUILD 110: the warp — bigger and smaller, very very slow (~63s a breath). The rim wiggle above is untouched. */
-      Rb = Math.min(Rb, W * 0.47, (window.visualViewport ? window.visualViewport.height : (window.innerHeight || 800)) * s.dpr * 0.47); /* FINAL FIXES: this cap is device px, like Rb — CSS px here quietly halved the pond on retina screens */
+      var vhCap111 = (window.visualViewport ? window.visualViewport.height : (window.innerHeight || 800));
+      Rb = Math.min(Rb, W * 0.47, vhCap111 * s.dpr * Math.max(0.30, (0.5 - LAKE_DY111 / vhCap111) * 0.94)); /* FINAL FIXES: this cap is device px, like Rb — CSS px here quietly halved the pond on retina screens. Nov 10: the fraction is (0.5 − LAKE_DY/vh) × 0.94 — the drop, plus headroom for the wavy rim's swell, so the lowered pond still fits rim to rim (rig-measured: bottom margin −5px before the 0.94, ≥0 after). */
       /* the rim itself is wavy — the waveform circle with the music
          off, way slower: three lazy swells travelling around the edge */
       var pondR = function(a){ return Rb * (1 + 0.028 * Math.sin(a * 3 + t * 0.22) + 0.018 * Math.sin(a * 5 - t * 0.16) + 0.012 * Math.sin(a * 8 + t * 0.10)); };

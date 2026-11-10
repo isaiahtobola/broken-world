@@ -8643,12 +8643,14 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
     'His ideas. My light. One site.',
     'You are the only you — that is the whole point of this place.'
   ];
-  var li = -1, lxTimer = null;
+  var li = -1, lxTimer = null, lxIdle = null;
   var btn = document.getElementById('lux-lantern');
   var line = document.getElementById('lantern-line');
   if(btn && line){
     btn.addEventListener('click', function(){
       btn.classList.add('lit');                 /* a tap turns the lantern ON */
+      if(lxIdle) clearTimeout(lxIdle);
+      lxIdle = setTimeout(function(){ btn.classList.remove('lit'); btn.classList.remove('bloom'); line.classList.remove('show'); }, 16000);  /* 16 quiet seconds: dark again */
       li = (li + 1) % lines.length;
       if(lxTimer) clearTimeout(lxTimer);
       var wait = line.classList.contains('show') ? 1500 : 200;

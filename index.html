@@ -6503,6 +6503,19 @@ runners['lava-canvas'] = function(canvas, ctx, state){
      xEnv/pEnv are the two families' fast-attack/slow-release
      envelopes; spikeAt() shapes them around the rim. */
   var xEnv = 0, pEnv = 0;
+  /* KICK & CLAP EARS (his 2026-11-11 tune): two onset detectors fed
+     by the same log bands __bwLevels already hands over. They touch
+     ONLY the pupil's pump and the glow's breath — never the rim, its
+     bands, or the analyser. Kick = a sharp rise in the low bands
+     (~55–160 Hz) over those bands' own slow average, so EVERY
+     distinct kick swells the circle a little (the old feed's beat
+     watched a wide bass average and let soft kicks slip by). Clap =
+     a sharp transient in the clap bands (~1.1–2.3 kHz) that
+     out-shouts the very top bands (so hats don't count): the glow
+     dips a tiny bit, then recovers. Refractories: one hit, one move. */
+  var kickPulse = 0, clapDip = 0;
+  var kickAvg = 0, kickPrev = 0, lastKickT = -1e9;
+  var clapAvg = 0, clapPrev = 0, lastClapT = -1e9;
   var X_C = [Math.PI/4, 3*Math.PI/4, 5*Math.PI/4, 7*Math.PI/4];
   var P_C = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
   function spikeAt(th){
@@ -6529,10 +6542,10 @@ runners['lava-canvas'] = function(canvas, ctx, state){
   function drawLava(W, H, s){
     var cx = W/2, cy = H*0.44, R = Math.min(W, H) * 0.36;
     var lt = lava.lt, sw = lava.swell;
-    var pump = 1 + 0.10*bassNow*aEnv + 0.05*lava.kick + 0.07*beatNow*aEnv;
-    /* soft halo — bass and kicks feed the glow */
-    var halo = ctx.createRadialGradient(cx, cy, R*0.4, cx, cy, R*1.9);
-    halo.addColorStop(0, 'rgba(240,183,63,'+(0.12 + 0.14*sw + 0.22*bassNow*aEnv + 0.10*lava.kick + 0.16*beatNow*aEnv)+')');
+    var pump = 1 + 0.10*bassNow*aEnv + 0.05*lava.kick + 0.07*beatNow*aEnv + 0.06*kickPulse*aEnv;
+    /* soft halo — bass and kicks feed the glow; a clap shrinks it a breath */
+    var halo = ctx.createRadialGradient(cx, cy, R*0.4, cx, cy, R*1.9*(1 - 0.10*clapDip));
+    halo.addColorStop(0, 'rgba(240,183,63,'+((0.12 + 0.14*sw + 0.22*bassNow*aEnv + 0.10*lava.kick + 0.16*beatNow*aEnv) * (1 - 0.12*clapDip))+')');
     halo.addColorStop(1, 'rgba(240,183,63,0)');
     ctx.fillStyle = halo;
     ctx.fillRect(cx - R*1.9, cy - R*1.9, R*3.8, R*3.8);
@@ -6551,7 +6564,7 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     g.addColorStop(0.85, '#c97b2d'); g.addColorStop(1, '#8a4b1d');
     ctx.fillStyle = g;
     ctx.shadowColor = 'rgba(255,170,60,.8)';
-    ctx.shadowBlur = (26 + 48*sw + 60*highNow*aEnv) * s.dpr;
+    ctx.shadowBlur = (26 + 48*sw + 60*highNow*aEnv*(1 - clapDip)) * s.dpr * (1 - 0.15*clapDip);
     ctx.fill();
     ctx.shadowBlur = 0;
     /* hollow core — the dark pupil */
@@ -6633,9 +6646,26 @@ runners['lava-canvas'] = function(canvas, ctx, state){
       var pTgt = Math.min(1, Math.max(L.high*1.9, hiE*g*1.15));
       xEnv += (xTgt - xEnv) * (xTgt > xEnv ? 0.85 : 0.22);
       pEnv += (pTgt - pEnv) * (pTgt > pEnv ? 0.9 : 0.3);
+      /* --- the kick & clap ears listen on the same bands --- */
+      var kE = (bands[3]+bands[5]+bands[7]+bands[9]+bands[11]+bands[12]) / 6;
+      var cE = 0; for(bi=35; bi<=43; bi++) cE = Math.max(cE, bands[bi]);
+      var tE = 0; for(bi=50; bi<=60; bi++) tE = Math.max(tE, bands[bi]);
+      kickAvg += (kE - kickAvg) * 0.07;
+      clapAvg += (cE - clapAvg) * 0.12;
+      kickPulse *= 0.88; clapDip *= 0.80;
+      if(kE - kickAvg > 0.16 && kE > kickPrev && kE > 0.25 && now - lastKickT > 140){
+        kickPulse = Math.max(kickPulse, Math.min(1, 0.45 + (kE - kickAvg)*1.4));
+        lastKickT = now;
+      }
+      if(cE - clapAvg > 0.20 && cE > clapPrev && cE > 0.30 && cE >= tE*0.75 && now - lastClapT > 150){
+        clapDip = 1;
+        lastClapT = now;
+      }
+      kickPrev = kE; clapPrev = cE;
     } else {
       aEnv *= 0.94; bassNow *= 0.92; highNow *= 0.92; beatNow *= 0.9;
       xEnv *= 0.92; pEnv *= 0.9;
+      kickPulse *= 0.88; clapDip *= 0.80;
       for(var j=0;j<=96;j++) spec[j] *= 0.96;
     }
     /* --- lava life cycle: pulse -> stagnant -> random move --- */

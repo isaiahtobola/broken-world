@@ -1022,6 +1022,10 @@ body.wave-on .mrail{opacity:0; pointer-events:none}
   #lake-list .lr-row, #river-bar .river-row{flex-wrap:wrap}
   .doors{flex-direction:column; gap:14px}
   .door-2,.door-3{margin-left:0}
+  /* Sea doors hug their words on phones: in the column stack the
+     desktop row's 350px flex-basis would otherwise become a 350px
+     HEIGHT per door, with the words parked at the bottom. */
+  .door{flex:none; min-height:0; justify-content:flex-start; padding:20px 20px 18px}
   .media-grid{grid-template-columns:repeat(2,1fr)}
   .files-table-head{grid-template-columns:2fr 1fr .7fr}
   .files-table-head span:nth-child(4), .files-table-head span:nth-child(5){display:none}

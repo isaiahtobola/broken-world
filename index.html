@@ -2406,7 +2406,7 @@ function fmtWhen(ts){
 function buildPostCard(post, idx){
   var card = document.createElement('article'); card.className = 'post-card';
   var head = document.createElement('div'); head.className = 'post-head';
-  var av = document.createElement('div'); av.className = 'avatar'; av.textContent = (post.author || 'B').charAt(0).toUpperCase();
+  var av = document.createElement('div'); av.className = 'avatar'; av.textContent = (post.author || 'bwyoungbo').charAt(0).toUpperCase();
   var who = document.createElement('div'); who.className = 'who';
   var b = document.createElement('b'); b.textContent = post.author || 'bwyoungbo';
   var s = document.createElement('span'); s.textContent = 'posted in BW Hub · ' + fmtWhen(post.ts);
@@ -3058,6 +3058,12 @@ function bwApplyAuth(){
   }
   document.querySelectorAll('.composer-note').forEach(function(n){
     n.textContent = BW.user ? ('Posting as ' + BW.name + ' — live, everyone can read') : 'Open to read — join or log in to post';
+  });
+  /* the composer's letter is the SIGNED-IN member's own initial —
+     it used to sit at a hardcoded 'B' for everyone, so Lux at the
+     composer wore bwyoungbo's letter until the post itself landed */
+  document.querySelectorAll('.post-composer .avatar').forEach(function(a){
+    a.textContent = BW.user ? (BW.name || 'member').charAt(0).toUpperCase() : 'B';
   });
   if(BW.files) renderFiles();
 }

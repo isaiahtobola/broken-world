@@ -523,6 +523,14 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
 .file-cover{width:54px; height:54px; object-fit:cover; border-radius:10px; border:1px solid rgba(240,183,63,.45); margin-right:14px; align-self:center; flex:0 0 auto}
 .art-btn{background:none; border:1px solid rgba(184,166,217,.35); color:var(--cream); border-radius:8px; padding:4px 10px; font-size:12.5px; font-family:var(--mono); white-space:nowrap; cursor:pointer}
 .art-btn:hover{border-color:var(--gold); color:var(--gold)}
+/* HOTFIX — RENAME (his 2026-11-12 call): the owner's pen for the
+   name on their own song. Button wears the Art button's clothes;
+   the editor and its gentle note ride inside the name cell. */
+.rename-btn{background:none; border:1px solid rgba(184,166,217,.35); color:var(--cream); border-radius:8px; padding:4px 10px; font-size:12.5px; font-family:var(--mono); white-space:nowrap; cursor:pointer}
+.rename-btn:hover{border-color:var(--gold); color:var(--gold)}
+.rename-btn:disabled{opacity:.55; cursor:default}
+.rename-inp{width:100%; max-width:340px; background:rgba(13,7,22,.6); border:1px solid var(--gold); border-radius:8px; padding:5px 9px; color:var(--cream); font-family:inherit; font-size:14px; outline:none}
+.rename-note{display:block; font-size:12px; color:var(--yellow); margin-top:5px}
 .reactions button .cnt{font-family:var(--mono); font-size:13px; margin-left:2px}
 .reactions button.mine{background:rgba(240,183,63,.28); border-color:var(--gold); color:var(--yellow)}
 .reactions .img-rx{padding:3px 8px 3px 3px}
@@ -2743,6 +2751,18 @@ function renderFiles(){
         acts.appendChild(noArt);
       }
     }
+    /* HOTFIX — RENAME belongs to the file's owner alone too: the
+       button rides only on your own rows (the notebook's files
+       update rule is owner-only, so the write can only ever land
+       on your own song). The editor opens inside the name cell —
+       bwRenameFile lives beside bwSetCover. */
+    if(f.mine && typeof BW !== 'undefined' && BW && BW.sb){
+      var ren = document.createElement('button'); ren.className = 'rename-btn'; ren.type = 'button';
+      ren.textContent = 'Rename';
+      ren.title = 'Rename your song — only the name changes; the file itself stays exactly where it is';
+      ren.addEventListener('click', function(e){ e.stopPropagation(); bwRenameFile(f, nameCell); });
+      acts.appendChild(ren);
+    }
     var contrib = document.createElement('span'); contrib.className = 'fmeta'; contrib.textContent = f.contrib || 'bwyoungbo';
     row.appendChild(nameCell); row.appendChild(date); row.appendChild(views); row.appendChild(fav);
     var last = document.createElement('span'); last.className = 'fcell-last'; last.style.display = 'flex'; last.style.gap = '14px'; last.style.alignItems = 'center';
@@ -3349,6 +3369,83 @@ function bwPickCover(f){
   }
   inp.__bwTarget = f;
   inp.click();
+}
+
+/* HOTFIX — RENAME YOUR OWN SONGS (his 2026-11-12 call): a file's
+   name is only its label in the notebook (files.name). The file
+   itself — its vault key, its URL, its bytes — never moves; only
+   the words change, so the player, the per-track studies (keyed
+   by file id + size, never by name) and every link keep working.
+   Own-stuff law, same as Art: the button rides only on the
+   owner's rows, and the notebook's files update rule is
+   owner-only too. The extension stays out of the typing — you
+   rename the song, not its format; ".wav" and friends ride
+   along untouched and are re-attached on save. */
+function bwRenameFile(f, cell){
+  if(!BW.user || !f.mine){ toast('Renaming is the owner\u2019s pen — only your own songs take your new titles.'); return; }
+  if(!BW.sb || !f.id || !cell) return;
+  if(cell.querySelector('.rename-inp')) return; /* one editor per song */
+  var nm = cell.querySelector('.fname');
+  var oldName = f.name || '';
+  var dot = oldName.lastIndexOf('.');
+  var ext = (dot > 0 && dot >= oldName.length - 6) ? oldName.slice(dot) : '';
+  var base = ext ? oldName.slice(0, dot) : oldName;
+  var inp = document.createElement('input');
+  inp.type = 'text'; inp.className = 'rename-inp'; inp.value = base;
+  inp.maxLength = 120; inp.setAttribute('aria-label', 'New name for your song');
+  var bar = document.createElement('span'); bar.className = 'row-actions'; bar.style.display = 'flex'; bar.style.marginTop = '6px';
+  var save = document.createElement('button'); save.type = 'button'; save.className = 'rename-btn'; save.textContent = 'Save name';
+  var cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'rename-btn'; cancel.textContent = 'Cancel';
+  bar.appendChild(save); bar.appendChild(cancel);
+  var note = document.createElement('span'); note.className = 'rename-note'; note.hidden = true;
+  var stop = function(e){ e.stopPropagation(); };
+  inp.addEventListener('click', stop); bar.addEventListener('click', stop);
+  if(nm) nm.style.display = 'none';
+  cell.appendChild(inp); cell.appendChild(bar); cell.appendChild(note);
+  try{ inp.focus(); inp.select(); }catch(e){}
+  var noteTimer = null;
+  var showNote = function(msg, hold){
+    note.textContent = msg; note.hidden = false;
+    if(noteTimer) clearTimeout(noteTimer);
+    if(!hold) noteTimer = setTimeout(function(){ note.hidden = true; if(note.parentNode) note.parentNode.removeChild(note); }, 3200);
+  };
+  var closeEditor = function(){
+    if(inp.parentNode) inp.parentNode.removeChild(inp);
+    if(bar.parentNode) bar.parentNode.removeChild(bar);
+    if(nm) nm.style.display = '';
+  };
+  var revert = function(msg){
+    closeEditor();
+    if(msg) showNote(msg);
+    else if(note.parentNode) note.parentNode.removeChild(note);
+  };
+  cancel.addEventListener('click', function(e){ e.stopPropagation(); revert(null); });
+  inp.addEventListener('keydown', function(e){
+    e.stopPropagation();
+    if(e.key === 'Enter'){ e.preventDefault(); save.click(); }
+    else if(e.key === 'Escape'){ e.preventDefault(); revert(null); }
+  });
+  save.addEventListener('click', function(e){
+    e.stopPropagation();
+    var v = (inp.value || '').trim();
+    if(!v){ revert('A song still needs a name — the old title stays.'); return; }
+    var newName = v + ext;
+    if(newName === oldName){ revert(null); return; }
+    save.disabled = true; cancel.disabled = true; note.hidden = true;
+    BW.sb.from('files').update({ name: newName }).eq('id', f.id).select('id')
+      .then(function(r){
+        if(r.error){ save.disabled = false; cancel.disabled = false; showNote('The notebook refused that name: ' + r.error.message, true); return; }
+        if(!r.data || !r.data.length){ save.disabled = false; cancel.disabled = false; showNote('The notebook kept the old name — a rename only lands on your own songs.', true); return; }
+        (BW.files || []).forEach(function(x){ if(x.id === f.id) x.name = newName; });
+        f.name = newName;
+        try{ localStorage.setItem('bw108.files', JSON.stringify(BW.files)); }catch(e2){}
+        renderFiles();
+        toast('Renamed — \u201C' + newName + '\u201D rides the page now.');
+      }, function(){
+        save.disabled = false; cancel.disabled = false;
+        showNote('The road to the notebook cut out — the old name stays.', true);
+      });
+  });
 }
 
 function liveUploadFiles(picked){

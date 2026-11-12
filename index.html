@@ -531,6 +531,27 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
 .rename-btn:disabled{opacity:.55; cursor:default}
 .rename-inp{width:100%; max-width:340px; background:rgba(13,7,22,.6); border:1px solid var(--gold); border-radius:8px; padding:5px 9px; color:var(--cream); font-family:inherit; font-size:14px; outline:none}
 .rename-note{display:block; font-size:12px; color:var(--yellow); margin-top:5px}
+/* HOTFIX — SQUARE CROP FOR COVER ART (his 2026-11-12 call): art
+   wears a square frame beside the file (54×54, object-fit cover),
+   so a wide or tall picture gets a square-fitting step — drag the
+   part you love into the frame, pinch or scroll to zoom — and only
+   the cropped square ever rides to the vault. */
+.crop-backdrop{position:fixed; inset:0; z-index:1300; background:rgba(13,7,22,.82); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:18px}
+.crop-card{background:var(--panel); border:1px solid rgba(240,183,63,.45); border-radius:14px; padding:18px; width:min(92vw,430px); box-shadow:0 18px 50px rgba(0,0,0,.55)}
+.crop-title{font-family:var(--mono); font-size:12px; letter-spacing:.12em; color:var(--gold); margin:0 0 4px}
+.crop-sub{font-size:13px; color:var(--cream); margin:0 0 12px; opacity:.85}
+.crop-stage{position:relative; width:min(78vw,340px); aspect-ratio:1/1; margin:0 auto; overflow:hidden; border-radius:10px; border:1px solid var(--gold); background:#0d0817; touch-action:none; cursor:grab}
+.crop-stage:active{cursor:grabbing}
+.crop-stage img{position:absolute; left:0; top:0; transform-origin:0 0; -webkit-user-drag:none; user-select:none; pointer-events:none; max-width:none}
+.crop-thirds{position:absolute; inset:0; pointer-events:none; background:linear-gradient(to right, transparent calc(33.33% - 1px), rgba(247,234,209,.22) 33.33%, transparent calc(33.33% + 1px), transparent calc(66.66% - 1px), rgba(247,234,209,.22) 66.66%, transparent calc(66.66% + 1px)), linear-gradient(to bottom, transparent calc(33.33% - 1px), rgba(247,234,209,.22) 33.33%, transparent calc(33.33% + 1px), transparent calc(66.66% - 1px), rgba(247,234,209,.22) 66.66%, transparent calc(66.66% + 1px))}
+.crop-zoom{display:flex; align-items:center; gap:10px; margin:14px auto 4px; width:min(78vw,340px)}
+.crop-zoom span{font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--muted)}
+.crop-zoom input[type=range]{flex:1; accent-color:var(--gold)}
+.crop-btns{display:flex; gap:10px; justify-content:center; margin-top:14px}
+.crop-btn{background:none; border:1px solid rgba(184,166,217,.35); color:var(--cream); border-radius:8px; padding:8px 16px; font-size:13.5px; font-family:var(--mono); cursor:pointer}
+.crop-btn:hover{border-color:var(--gold); color:var(--gold)}
+.crop-btn.go{border-color:var(--gold); color:var(--yellow); background:rgba(240,183,63,.14)}
+.crop-btn:disabled{opacity:.55; cursor:default}
 .reactions button .cnt{font-family:var(--mono); font-size:13px; margin-left:2px}
 .reactions button.mine{background:rgba(240,183,63,.28); border-color:var(--gold); color:var(--yellow)}
 .reactions .img-rx{padding:3px 8px 3px 3px}
@@ -3359,16 +3380,176 @@ function bwPickCover(f){
       var target = inp.__bwTarget; inp.__bwTarget = null;
       if(!file || !target) return;
       if(bwTypeOf(file.name, file.type) !== 'image'){ toast('Cover art takes a picture — PNG, JPG, GIF or WebP.'); return; }
-      toast('Sending your art to the vault…');
-      bwUploadFile(file, null, function(res){
-        if(!res){ toast('That upload got lost in the waves — try again.'); return; }
-        if(res.error){ toast(res.error); return; }
-        bwSetCover(target, BW_CONFIG.WORKER_URL + '/f/' + bwKey(res.key));
-      });
+      bwCoverGot(target, file);
     });
   }
   inp.__bwTarget = f;
   inp.click();
+}
+
+/* HOTFIX — SQUARE CROP FOR COVER ART (his 2026-11-12 call): "add a
+   crop option for art and images if they are not square for our
+   site — so users can drag the part of the image they want into
+   the square fit." Art displays in a square frame beside the file,
+   so a non-square picture now opens a one-screen cropper: drag to
+   position, pinch / scroll / slider to zoom, and the picked square
+   (900×900 JPEG) is what uploads, through the same vault road and
+   the same cover_url write as always. Square pictures skip the
+   step entirely and attach exactly as before; GIFs keep their
+   motion and pass through untouched; anything the cropper cannot
+   read falls back to the plain upload — the crop never blocks art.
+   Scope note: this step belongs to File Share cover art, whose
+   frame is square. Sea post photos keep their own shape in the
+   feed (natural aspect, contain-fit carousels), so they are
+   deliberately NOT square-cropped. */
+function bwCoverUpload(f, file){
+  toast('Sending your art to the vault…');
+  bwUploadFile(file, null, function(res){
+    if(!res){ toast('That upload got lost in the waves — try again.'); return; }
+    if(res.error){ toast(res.error); return; }
+    bwSetCover(f, BW_CONFIG.WORKER_URL + '/f/' + bwKey(res.key));
+  });
+}
+function bwCoverGot(f, file){
+  if(!file) return;
+  if(/\.gif$/i.test(file.name || '') || file.type === 'image/gif'){ bwCoverUpload(f, file); return; }
+  var url = URL.createObjectURL(file);
+  var done = function(bmp, w, h){
+    if(!bmp){ bwCoverUpload(f, file); return; }
+    var near = Math.min(w, h) / Math.max(w, h);
+    if(near >= 0.98){ if(bmp.close) bmp.close(); URL.revokeObjectURL(url); bwCoverUpload(f, file); return; }
+    bwOpenCropper(f, file, bmp, url, w, h);
+  };
+  if(window.createImageBitmap){
+    createImageBitmap(file).then(function(bmp){ done(bmp, bmp.width, bmp.height); }, function(){
+      var im = new Image();
+      im.onload = function(){ done(im, im.naturalWidth, im.naturalHeight); };
+      im.onerror = function(){ URL.revokeObjectURL(url); done(null, 0, 0); };
+      im.src = url;
+    });
+  } else {
+    var im2 = new Image();
+    im2.onload = function(){ done(im2, im2.naturalWidth, im2.naturalHeight); };
+    im2.onerror = function(){ URL.revokeObjectURL(url); done(null, 0, 0); };
+    im2.src = url;
+  }
+}
+function bwOpenCropper(f, file, bmp, url, W, H){
+  if(document.querySelector('.crop-backdrop')){ if(bmp.close) bmp.close(); URL.revokeObjectURL(url); return; }
+  var bd = document.createElement('div'); bd.className = 'crop-backdrop';
+  var card = document.createElement('div'); card.className = 'crop-card';
+  card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.setAttribute('aria-label', 'Crop your cover art into a square');
+  var title = document.createElement('p'); title.className = 'crop-title'; title.textContent = 'FIT IT IN THE SQUARE';
+  var sub = document.createElement('p'); sub.className = 'crop-sub';
+  sub.textContent = 'Art rides in a square frame — drag the picture to keep the part you love. Pinch or scroll to zoom.';
+  var stage = document.createElement('div'); stage.className = 'crop-stage';
+  var img = document.createElement('img'); img.alt = ''; img.src = url; img.draggable = false;
+  var thirds = document.createElement('div'); thirds.className = 'crop-thirds';
+  stage.appendChild(img); stage.appendChild(thirds);
+  var zoomRow = document.createElement('div'); zoomRow.className = 'crop-zoom';
+  var zLab = document.createElement('span'); zLab.textContent = 'ZOOM';
+  var slider = document.createElement('input'); slider.type = 'range'; slider.min = '0'; slider.max = '1000'; slider.value = '0';
+  slider.setAttribute('aria-label', 'Zoom the picture');
+  zoomRow.appendChild(zLab); zoomRow.appendChild(slider);
+  var btns = document.createElement('div'); btns.className = 'crop-btns';
+  var cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'crop-btn'; cancel.textContent = 'Cancel';
+  var go = document.createElement('button'); go.type = 'button'; go.className = 'crop-btn go'; go.textContent = 'Use this crop';
+  btns.appendChild(cancel); btns.appendChild(go);
+  card.appendChild(title); card.appendChild(sub); card.appendChild(stage); card.appendChild(zoomRow); card.appendChild(btns);
+  bd.appendChild(card); document.body.appendChild(bd);
+
+  var S = stage.clientWidth || 300;               /* the square, in screen px */
+  var minScale = S / Math.min(W, H);               /* scale that exactly covers the square */
+  var scale = minScale, tx = (S - W * scale) / 2, ty = (S - H * scale) / 2;
+  var MAXZ = 4;
+  var closed = false;
+  var clampPos = function(){
+    tx = Math.min(0, Math.max(S - W * scale, tx));
+    ty = Math.min(0, Math.max(S - H * scale, ty));
+  };
+  var apply = function(){
+    img.style.width = (W * scale) + 'px'; img.style.height = (H * scale) + 'px';
+    img.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+  };
+  var setZoom = function(ns, cx, cy){
+    ns = Math.min(minScale * MAXZ, Math.max(minScale, ns));
+    var r = ns / scale;
+    tx = cx - (cx - tx) * r; ty = cy - (cy - ty) * r;
+    scale = ns; clampPos(); apply();
+    slider.value = String(Math.round(1000 * Math.log(scale / minScale) / Math.log(MAXZ)));
+  };
+  clampPos(); apply();
+  slider.addEventListener('input', function(){
+    var t = parseInt(slider.value, 10) / 1000;
+    setZoom(minScale * Math.pow(MAXZ, t), S / 2, S / 2);
+  });
+  var ptrs = new Map(); var pinchD = 0;
+  stage.addEventListener('pointerdown', function(e){
+    try{ stage.setPointerCapture(e.pointerId); }catch(err){}
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if(ptrs.size === 2){ var a = Array.from(ptrs.values()); pinchD = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); }
+    e.preventDefault();
+  });
+  stage.addEventListener('pointermove', function(e){
+    if(!ptrs.has(e.pointerId)) return;
+    var prev = ptrs.get(e.pointerId);
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if(ptrs.size === 1){ tx += e.clientX - prev.x; ty += e.clientY - prev.y; clampPos(); apply(); }
+    else if(ptrs.size === 2){
+      var a = Array.from(ptrs.values());
+      var d = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y);
+      var rect = stage.getBoundingClientRect();
+      var mx = (a[0].x + a[1].x) / 2 - rect.left, my = (a[0].y + a[1].y) / 2 - rect.top;
+      if(pinchD > 0) setZoom(scale * d / pinchD, mx, my);
+      pinchD = d;
+    }
+    e.preventDefault();
+  });
+  var endPtr = function(e){ ptrs.delete(e.pointerId); if(ptrs.size < 2) pinchD = 0; };
+  stage.addEventListener('pointerup', endPtr);
+  stage.addEventListener('pointercancel', endPtr);
+  stage.addEventListener('wheel', function(e){
+    e.preventDefault();
+    var rect = stage.getBoundingClientRect();
+    setZoom(scale * (e.deltaY < 0 ? 1.12 : 1 / 1.12), e.clientX - rect.left, e.clientY - rect.top);
+  }, { passive: false });
+  stage.addEventListener('dblclick', function(e){
+    var rect = stage.getBoundingClientRect();
+    if(scale > minScale * 1.05) setZoom(minScale, S / 2, S / 2);
+    else setZoom(minScale * 2, e.clientX - rect.left, e.clientY - rect.top);
+  });
+  var close = function(){
+    if(closed) return; closed = true;
+    document.removeEventListener('keydown', onKey, true);
+    if(bd.parentNode) bd.parentNode.removeChild(bd);
+    if(bmp.close) bmp.close();
+    URL.revokeObjectURL(url);
+  };
+  var onKey = function(e){ if(e.key === 'Escape'){ e.stopPropagation(); close(); } };
+  document.addEventListener('keydown', onKey, true);
+  cancel.addEventListener('click', close);
+  bd.addEventListener('pointerdown', function(e){ if(e.target === bd) close(); });
+  go.addEventListener('click', function(){
+    go.disabled = true; cancel.disabled = true; go.textContent = 'Cropping…';
+    var OUT = 900;
+    var cv = document.createElement('canvas'); cv.width = OUT; cv.height = OUT;
+    var cx2 = cv.getContext('2d');
+    cx2.fillStyle = '#0d0817'; cx2.fillRect(0, 0, OUT, OUT);
+    var k = OUT / S;
+    cx2.drawImage(bmp, tx * k, ty * k, W * scale * k, H * scale * k);
+    var finishBlob = function(blob){
+      close();
+      if(!blob){ bwCoverUpload(f, file); return; }
+      var base = (file.name || 'art').replace(/\.[a-z0-9]+$/i, '');
+      var outFile;
+      try{ outFile = new File([blob], base + '-square.jpg', { type: 'image/jpeg' }); }
+      catch(e){ blob.name = base + '-square.jpg'; outFile = blob; }
+      bwCoverUpload(f, outFile);
+    };
+    if(cv.toBlob) cv.toBlob(function(b){ if(b) finishBlob(b); else finishBlob(null); }, 'image/jpeg', 0.88);
+    else { try{ finishBlob(null); }catch(e){ close(); } }
+  });
+  try{ go.focus(); }catch(e){}
 }
 
 /* HOTFIX — RENAME YOUR OWN SONGS (his 2026-11-12 call): a file's

@@ -792,6 +792,11 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
   font-size:13px; letter-spacing:.1em; text-transform:uppercase; padding:12px 22px; border-radius:10px; cursor:pointer;
   transition:background .2s, transform .2s, color .2s;
 }
+/* BUILD STAMP — tiny player version in the File Share header + wave mode, so a
+   screenshot settles the cache question (which build is this tab running?). */
+.fs-stamp{font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:rgba(240,183,63,.6); white-space:nowrap}
+#wave-stamp{position:fixed; left:50%; bottom:88px; transform:translate(-50%,0); z-index:900; font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:rgba(240,183,63,.55); pointer-events:none; opacity:0; transition:opacity .4s ease}
+#view-files.wave-focus #wave-stamp{opacity:1}
 .wave-btn:hover{background:rgba(240,183,63,.22); color:var(--yellow); transform:translateY(-2px)}
 #wave-exit{
   position:fixed; left:50%; bottom:26px; transform:translate(-50%,18px); z-index:900;
@@ -1909,6 +1914,7 @@ html.kint-lock{overflow:hidden !important}
         <input class="search-box" id="files-search" type="search" placeholder="Search files..." aria-label="Search files">
         <button class="send-btn" id="send-file-btn">Send a file</button>
         <button type="button" class="wave-btn" id="wave-view-btn" aria-pressed="false">View waveform</button>
+        <span class="fs-stamp" title="Player build v4 — clap ear (pattern detector), 2026-11-11">player v4</span>
         <input type="file" id="file-picker" multiple hidden>
       </div>
       <div class="fs-up" id="fs-up" hidden><div class="fs-up-name" id="fs-up-name"></div><div class="up-bar" hidden><div class="up-track"><div class="up-fill" id="fs-up-fill"></div></div><span class="up-pct" id="fs-up-pct">0%</span></div></div>
@@ -1923,6 +1929,7 @@ html.kint-lock{overflow:hidden !important}
     </div>
   </div>
   <button type="button" id="wave-exit">Back to files</button>
+  <span id="wave-stamp" aria-hidden="true">player v4</span>
 </section>
 <!-- ================= KINTSUGI (his 2026-10-31 order: Lux's idea, his game spec) ================= -->
 <section class="view" id="view-kintsugi">
@@ -6688,13 +6695,16 @@ runners['lava-canvas'] = function(canvas, ctx, state){
          step so the math is identical at any frame rate. A
          candidate must be crack-LED (its rise beats the top's
          rise; hats are top-led and cannot pass) and stand over
-         its average. Two ways to fire: STRONG — a crack onset
+         its average. Three ways to fire: STRONG — a crack onset
          towering over its average (a featured clap/snare hit);
          or PATTERN — a moderate onset that confirms a seed pair
          at a steady 340–2800 ms spacing, or lands where the
          locked interval predicted the next clap — and even then
          only if it stands at clap height in the crack (timing
-         alone never fires: the kick grid is just as steady).
+         alone never fires: the kick grid is just as steady);
+         or LONE — a credible crack with no pattern yet (a song's
+         first clap) fires at 0.75x depth and seeds the pattern —
+         no dead zone.
          (his spacing
          law: steadier than kicks wander, sparser than hats
          swarm; candidates denser than 340 ms never even seed).
@@ -6723,12 +6733,13 @@ runners['lava-canvas'] = function(canvas, ctx, state){
           var spacing = now - seedT;
           var confirms = (seedT > 0 && spacing >= 340 && spacing <= 2800
                           && (patI === 0 || Math.abs(spacing - patI) <= patI*0.30));
-          if(strong || ((inWin || confirms) && crackE > 0.55)){
+          var lone = (!strong && !inWin && !confirms && crackE > 0.55); // a credible lone crack fires soft and seeds the pattern — no dead zone for a song's first clap
+          if(strong || ((inWin || confirms) && crackE > 0.55) || lone){
             if(confirms && !strong && !inWin){
               patI = patI ? patI + (spacing - patI)*0.35 : spacing;
               patConf = Math.min(1, patConf + 0.5);
             }
-            clapDip = Math.max(clapDip, Math.min(1, Math.max(0.6, 0.35 + over*1.5)));
+            clapDip = Math.max(clapDip, Math.min(1, Math.max(0.6, 0.35 + over*1.5)) * (lone ? 0.75 : 1));
             lastClapT = now;
             if(patI > 0){ patNext = now + patI; if(strong) patConf = Math.min(1, patConf + 0.34); }
             seedT = now;

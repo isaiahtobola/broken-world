@@ -6505,14 +6505,23 @@ runners['lava-canvas'] = function(canvas, ctx, state){
   var xEnv = 0, pEnv = 0;
   /* KICK & CLAP EARS (his 2026-11-11 tune): two onset detectors fed
      by the same log bands __bwLevels already hands over. They touch
-     ONLY the pupil's pump and the glow's breath — never the rim, its
+     ONLY the pupil's pump and the halo's breath — never the rim, its
      bands, or the analyser. Kick = a sharp rise in the low bands
      (~55–160 Hz) over those bands' own slow average, so EVERY
      distinct kick swells the circle a little (the old feed's beat
      watched a wide bass average and let soft kicks slip by). Clap =
      a sharp transient in the clap bands (~1.1–2.3 kHz) that
-     out-shouts the very top bands (so hats don't count): the glow
-     dips a tiny bit, then recovers. Refractories: one hit, one move. */
+     out-shouts the very top bands (so hats don't count): the
+     YELLOWISH HALO around the inner circle shrinks — and the dip's
+     depth is the hit itself, measured: how far the clap band jumped
+     over its own average, tempered by how clearly it out-shouts the
+     hat bands. A rim tick dents the glow; a full clap pulls its
+     reach and brightness right in, then it breathes back over
+     ~200 ms. One envelope breathes the whole glow — halo first,
+     the ring's shadow with it — because a clap's own flare would
+     otherwise mask the halo's shrink (proven in pixel checks; the
+     first draft's whisper of a dip never stood a chance).
+     Refractories: one hit, one move. */
   var kickPulse = 0, clapDip = 0;
   var kickAvg = 0, kickPrev = 0, lastKickT = -1e9;
   var clapAvg = 0, clapPrev = 0, lastClapT = -1e9;
@@ -6543,9 +6552,14 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     var cx = W/2, cy = H*0.44, R = Math.min(W, H) * 0.36;
     var lt = lava.lt, sw = lava.swell;
     var pump = 1 + 0.10*bassNow*aEnv + 0.05*lava.kick + 0.07*beatNow*aEnv + 0.06*kickPulse*aEnv;
-    /* soft halo — bass and kicks feed the glow; a clap shrinks it a breath */
-    var halo = ctx.createRadialGradient(cx, cy, R*0.4, cx, cy, R*1.9*(1 - 0.10*clapDip));
-    halo.addColorStop(0, 'rgba(240,183,63,'+((0.12 + 0.14*sw + 0.22*bassNow*aEnv + 0.10*lava.kick + 0.16*beatNow*aEnv) * (1 - 0.12*clapDip))+')');
+    /* soft halo — THE yellowish glow around the inner circle. Bass
+       and kicks feed it; a clap SHRINKS it, reach and brightness
+       together, by the clap's measured strength (clapDip 0..1).
+       The same envelope breathes the ring's shadow (below): one
+       glow, one shrink — pixel checks showed the clap's own shadow
+       flare otherwise masks the halo's shrink completely. */
+    var halo = ctx.createRadialGradient(cx, cy, R*0.4, cx, cy, R*1.9*(1 - 0.32*clapDip));
+    halo.addColorStop(0, 'rgba(240,183,63,'+((0.12 + 0.14*sw + 0.22*bassNow*aEnv + 0.10*lava.kick + 0.16*beatNow*aEnv) * (1 - 0.38*clapDip))+')');
     halo.addColorStop(1, 'rgba(240,183,63,0)');
     ctx.fillStyle = halo;
     ctx.fillRect(cx - R*1.9, cy - R*1.9, R*3.8, R*3.8);
@@ -6564,7 +6578,7 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     g.addColorStop(0.85, '#c97b2d'); g.addColorStop(1, '#8a4b1d');
     ctx.fillStyle = g;
     ctx.shadowColor = 'rgba(255,170,60,.8)';
-    ctx.shadowBlur = (26 + 48*sw + 60*highNow*aEnv*(1 - clapDip)) * s.dpr * (1 - 0.15*clapDip);
+    ctx.shadowBlur = (26 + 48*sw + 60*highNow*aEnv) * s.dpr * (1 - 0.30*clapDip);
     ctx.fill();
     ctx.shadowBlur = 0;
     /* hollow core — the dark pupil */
@@ -6652,20 +6666,28 @@ runners['lava-canvas'] = function(canvas, ctx, state){
       var tE = 0; for(bi=50; bi<=60; bi++) tE = Math.max(tE, bands[bi]);
       kickAvg += (kE - kickAvg) * 0.07;
       clapAvg += (cE - clapAvg) * 0.12;
-      kickPulse *= 0.88; clapDip *= 0.80;
+      kickPulse *= 0.88; clapDip *= Math.pow(0.90, dt/16.667);
       if(kE - kickAvg > 0.16 && kE > kickPrev && kE > 0.25 && now - lastKickT > 140){
         kickPulse = Math.max(kickPulse, Math.min(1, 0.45 + (kE - kickAvg)*1.4));
         lastKickT = now;
       }
       if(cE - clapAvg > 0.20 && cE > clapPrev && cE > 0.30 && cE >= tE*0.75 && now - lastClapT > 150){
-        clapDip = 1;
+        /* frequency math: the dip's depth IS the hit — how far the
+           clap band jumped over its own slow average, tempered by
+           how clearly it stands above the hat bands (a hit buried
+           in hats is no clap). Soft hit, soft dent; full clap,
+           full shrink. */
+        var cFlux = cE - clapAvg;
+        var cDom = Math.min(1, cE / Math.max(tE, 0.05));
+        var cStr = Math.min(1, Math.max(0.3, (cFlux - 0.12) / 0.30)) * (0.55 + 0.45*cDom);
+        clapDip = Math.max(clapDip, cStr);
         lastClapT = now;
       }
       kickPrev = kE; clapPrev = cE;
     } else {
       aEnv *= 0.94; bassNow *= 0.92; highNow *= 0.92; beatNow *= 0.9;
       xEnv *= 0.92; pEnv *= 0.9;
-      kickPulse *= 0.88; clapDip *= 0.80;
+      kickPulse *= 0.88; clapDip *= Math.pow(0.90, dt/16.667);
       for(var j=0;j<=96;j++) spec[j] *= 0.96;
     }
     /* --- lava life cycle: pulse -> stagnant -> random move --- */

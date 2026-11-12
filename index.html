@@ -1914,7 +1914,7 @@ html.kint-lock{overflow:hidden !important}
         <input class="search-box" id="files-search" type="search" placeholder="Search files..." aria-label="Search files">
         <button class="send-btn" id="send-file-btn">Send a file</button>
         <button type="button" class="wave-btn" id="wave-view-btn" aria-pressed="false">View waveform</button>
-        <span class="fs-stamp" title="Player build v4 — clap ear (pattern detector), 2026-11-11">player v4</span>
+        <span class="fs-stamp" title="Player build v5 — clap dip now breathes the molten body itself (the bright glow), 2026-11-11">player v5</span>
         <input type="file" id="file-picker" multiple hidden>
       </div>
       <div class="fs-up" id="fs-up" hidden><div class="fs-up-name" id="fs-up-name"></div><div class="up-bar" hidden><div class="up-track"><div class="up-fill" id="fs-up-fill"></div></div><span class="up-pct" id="fs-up-pct">0%</span></div></div>
@@ -1929,7 +1929,7 @@ html.kint-lock{overflow:hidden !important}
     </div>
   </div>
   <button type="button" id="wave-exit">Back to files</button>
-  <span id="wave-stamp" aria-hidden="true">player v4</span>
+  <span id="wave-stamp" aria-hidden="true">player v5</span>
 </section>
 <!-- ================= KINTSUGI (his 2026-10-31 order: Lux's idea, his game spec) ================= -->
 <section class="view" id="view-kintsugi">
@@ -2528,7 +2528,7 @@ function bwRoute(a){
     }
     var src = BW_ACTX.createMediaElementSource(a);
     src.connect(BW_AN);
-    if(window.__bwAudio) window.__bwAudio.routed = true;
+    if(window.__bwAudio && window.__bwAudio.a === a) window.__bwAudio.routed = true;
   }catch(e){ /* analysis unavailable for this element — playback goes on */ }
 }
 /* TRAP CITY FEED (build #72, his 2026-11-02 order — research in
@@ -2584,6 +2584,17 @@ function bwTogglePlay(f, sync){
     el.addEventListener('ended', function(){ if(sync) sync(); });
     el.addEventListener('pause', function(){ if(sync) sync(); });
     el.addEventListener('play', function(){ if(sync) sync(); });
+    /* ROUND 5 route hardening: the analysis tap used to be attempted
+       only on the first element's 'canplay'. Any element that ends up
+       actually playing — including the error fallbacks below, which
+       were never routed at all — gets its route attempt here, at the
+       moment playback truly starts. bwRoute swallows its own errors;
+       the routed flag keeps it one-and-done per element. */
+    el.addEventListener('playing', function(){
+      var c = window.__bwAudio;
+      if(c && c.a === el && !c.routed) bwRoute(el);
+      if(sync) sync();
+    });
   };
   var a = new Audio();
   a.crossOrigin = 'anonymous';
@@ -6578,16 +6589,28 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     ctx.fillStyle = halo;
     ctx.fillRect(cx - R*1.9, cy - R*1.9, R*3.8, R*3.8);
     /* the molten ring body — liquid wobble, plus every angle of
-       the rim reading its own frequency band while music plays */
+       the rim reading its own frequency band while music plays.
+       ROUND 5 (his photo, 2026-11-11 20:03): the bright-yellow
+       field his eye reads as "the glow" IS this body's fill —
+       the halo behind it is a faint wash the opaque body mostly
+       covers, so four rounds of halo dips landed where he could
+       not see them while the body itself surged on claps. Now
+       the same clapDip breathes the body too: the whole disc
+       pulls in a little (dipScale, shape untouched — every angle
+       keeps its own band) and its bright core contracts (the
+       gradient's radii), so the yellow visibly shrinks around
+       the dark pupil on a clap. At clapDip 0 both factors are 1
+       and the resting waveform is byte-identical. */
+    var dipScale = 1 - 0.16*clapDip;
     ctx.beginPath();
     for(var i=0; i<=96; i++){
       var th = (i/96) * Math.PI * 2;
-      var rr = R * pump * (1 + 0.13*sw) * wobAt(th, lt, sw) * (1 + spikeAt(th));
+      var rr = R * pump * dipScale * (1 + 0.13*sw) * wobAt(th, lt, sw) * (1 + spikeAt(th));
       var x = cx + Math.cos(th)*rr, y = cy + Math.sin(th)*rr;
       if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.closePath();
-    var g = ctx.createRadialGradient(cx, cy, R*0.55, cx, cy, R*1.25);
+    var g = ctx.createRadialGradient(cx, cy, R*0.55*(1 - 0.30*clapDip), cx, cy, R*1.25*(1 - 0.30*clapDip));
     g.addColorStop(0, '#ffd166'); g.addColorStop(0.55, '#f0b73f');
     g.addColorStop(0.85, '#c97b2d'); g.addColorStop(1, '#8a4b1d');
     ctx.fillStyle = g;
@@ -6639,7 +6662,7 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     ctx.beginPath();
     for(var j=0; j<=96; j++){
       var th2 = (j/96) * Math.PI * 2;
-      var rr2 = R * pump * (1 + 0.13*sw) * wobAt(th2, lt, sw) * (1 + spikeAt(th2));
+      var rr2 = R * pump * dipScale * (1 + 0.13*sw) * wobAt(th2, lt, sw) * (1 + spikeAt(th2));
       var x2 = cx + Math.cos(th2)*rr2, y2 = cy + Math.sin(th2)*rr2;
       if(j === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
     }

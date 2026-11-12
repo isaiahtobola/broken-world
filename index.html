@@ -1914,7 +1914,7 @@ html.kint-lock{overflow:hidden !important}
         <input class="search-box" id="files-search" type="search" placeholder="Search files..." aria-label="Search files">
         <button class="send-btn" id="send-file-btn">Send a file</button>
         <button type="button" class="wave-btn" id="wave-view-btn" aria-pressed="false">View waveform</button>
-        <span class="fs-stamp" title="Player build v5 — clap dip now breathes the molten body itself (the bright glow), 2026-11-11">player v5</span>
+        <span class="fs-stamp" title="Player build v5 — clap dip now breathes the molten body itself (the bright glow), 2026-11-11">player v6</span>
         <input type="file" id="file-picker" multiple hidden>
       </div>
       <div class="fs-up" id="fs-up" hidden><div class="fs-up-name" id="fs-up-name"></div><div class="up-bar" hidden><div class="up-track"><div class="up-fill" id="fs-up-fill"></div></div><span class="up-pct" id="fs-up-pct">0%</span></div></div>
@@ -1929,7 +1929,7 @@ html.kint-lock{overflow:hidden !important}
     </div>
   </div>
   <button type="button" id="wave-exit">Back to files</button>
-  <span id="wave-stamp" aria-hidden="true">player v5</span>
+  <span id="wave-stamp" aria-hidden="true">player v6</span>
 </section>
 <!-- ================= KINTSUGI (his 2026-10-31 order: Lux's idea, his game spec) ================= -->
 <section class="view" id="view-kintsugi">
@@ -6550,6 +6550,211 @@ runners['lava-canvas'] = function(canvas, ctx, state){
   var lastClapT = -1e9;
   var crackAvg = 0, evCrack = 0, evTop = 0, lastEvalT = -1e9, seedT = -1e9;
   var patI = 0, patNext = 0, patConf = 0;
+
+  /* --- CLAP EAR v6 LEARNER (round 6, his design steer 2026-11-11:
+     "takes an initial clap pattern from 8 bars and then does magic
+     for the song if it knows it repeats" — and "every song is
+     different... you will find and create a code that compensates
+     for it"). A LEARN-THEN-PREDICT layer rides on top of the v5
+     free ear below, which is untouched and keeps working alone
+     whenever no pattern is learnable. LEARN: the free ear's
+     confident hits (STRONG/LONE) collect per track; a repeating
+     UNIT — one or more slot offsets inside a cycle, so 2&4,
+     every-beat, offbeat, double-time and sparse patterns all fit
+     the same shape — is fitted by phase clustering + least
+     squares and must PREDICT held-out hits (cross-validation)
+     plus a final 3-hit validation before it locks. Tempo comes
+     from the audio itself (the kick ear's own hit spacing).
+     MAGIC: at each predicted slot a window opens (half-width
+     12% of the unit, clamped 120–180 ms) where the fire gate
+     drops to this song's own statistics — crack level above a
+     floor set between the song's crack median and its clap
+     median, a small rise, a relaxed crack-led test — so weak
+     buried repeats fire at their measured onset, depth scaled
+     by their actual strength. ANTI-GHOST: a slot that passes
+     with essentially no crack energy counts a dropout; phantom
+     slots mute themselves after two silent visits, three silent
+     slots in a row (or every slot muted) suspends prediction
+     until free detection re-seeds; confirmed hits drift each
+     slot slowly; a run of confident hits that disagree with the
+     grid can re-teach it mid-song. Everything resets when the
+     track changes. --- */
+  var gHits = [], gLock = false, gU = 0, gAnchor = 0, gSlots = [], gK = 0, gIdx = 0;
+  var gWinPeak = 0, gDone = false, gSilent = 0, gMisfits = [], gLastTry = -1e9, gLastReTry = -1e9;
+  var gSamp = [], gLastStat = -1e9, gMed = 0, gHitMed = 0, gTrack = null, gIdleT = 0, gKickTs = [];
+  var gLastHitT = -1e9;
+  function gMedian(a){ if(!a.length) return 0; var c = a.slice().sort(function(x,y){return x-y;}); return c[Math.floor(c.length/2)]; }
+  function gHalfWOf(U){ return Math.min(180, Math.max(120, U*0.12)); }
+  function gHalfW(){ return gHalfWOf(gU || 1000); }
+  function gPhaseResid(t, anchor, U, offs){
+    var ph = (((t - anchor) % U) + U) % U, m = Infinity, i, d;
+    for(i=0;i<offs.length;i++){ d = Math.abs(ph - offs[i]); m = Math.min(m, d, U - d); }
+    return m;
+  }
+  function gBeatEst(){
+    var src = gKickTs.length >= 6 ? gKickTs : gHits.map(function(h){ return h.t; });
+    if(src.length < 4) return 0;
+    var ivs = [], i, d;
+    for(i=1;i<src.length;i++){ d = src[i] - src[i-1]; if(d >= 240 && d <= 1200) ivs.push(d); }
+    if(ivs.length < 3) return 0;
+    var m = gMedian(ivs);
+    return gMedian(ivs.map(function(x){ var y = x; while(y < m*0.7) y *= 2; while(y > m*1.4) y /= 2; return y; }));
+  }
+  function gFitAtU(ts, U0, minCl, freshMin){
+    var n = ts.length, t0 = ts[0];
+    if(ts[n-1] - t0 < 3.5*U0) return null;
+    var phases = ts.map(function(t){ return (t - t0) % U0; });
+    var sp = phases.slice().sort(function(a,b){ return a-b; });
+    var ext = sp.concat(sp.map(function(x){ return x + U0; }));
+    var raw = [], si, ei, cl;
+    for(si=0; si<sp.length; si++){
+      cl = [ext[si]]; ei = si + 1;
+      while(ei < si + sp.length && ext[ei] - ext[si] <= 170){ cl.push(ext[ei]); ei++; }
+      if(cl.length >= minCl) raw.push(cl);
+    }
+    if(!raw.length) return null;
+    raw.sort(function(a,b){ return b.length - a.length; });
+    var covered = {}, chosen = [], ci, cj;
+    for(ci=0; ci<raw.length; ci++){
+      cl = raw[ci];
+      var fresh = 0;
+      for(cj=0; cj<cl.length; cj++) if(!covered[((cl[cj] % U0) + U0) % U0]) fresh++;
+      if(fresh >= freshMin){
+        for(cj=0; cj<cl.length; cj++) covered[((cl[cj] % U0) + U0) % U0] = 1;
+        chosen.push(cl);
+        if(chosen.length > 6) break;
+      }
+    }
+    if(chosen.length > 6 || !chosen.length) return null;
+    var offs = chosen.map(function(c){ var m = 0, q; for(q=0;q<c.length;q++) m += c[q]; return (m / c.length) % U0; }).sort(function(a,b){ return a-b; });
+    var U2 = U0, anchor = t0, offs2 = offs, iter, rows, ri, bi, bd, sk, st, skk, skt, den, slope, icept, slotRes, shift, inl = 0, ti;
+    for(iter=0; iter<2; iter++){
+      rows = [];
+      for(ti=0; ti<ts.length; ti++){
+        var t = ts[ti], ph = (((t - anchor) % U2) + U2) % U2;
+        bi = -1; bd = Infinity;
+        offs2.forEach(function(o, oi){ var dd = Math.min(Math.abs(ph - o), U2 - Math.abs(ph - o)); if(dd < bd){ bd = dd; bi = oi; } });
+        if(bd <= 120) rows.push({ t: t, k: Math.round((t - anchor - offs2[bi]) / U2), s: bi });
+      }
+      if(rows.length < 6) return null;
+      sk = 0; st = 0; skk = 0; skt = 0;
+      for(ri=0; ri<rows.length; ri++){ sk += rows[ri].k; st += rows[ri].t; skk += rows[ri].k * rows[ri].k; skt += rows[ri].k * rows[ri].t; }
+      den = rows.length * skk - sk * sk;
+      if(Math.abs(den) < 1e-9) break;
+      slope = (rows.length * skt - sk * st) / den;
+      if(slope < 480 || slope > 9600) return null;
+      icept = (st - slope * sk) / rows.length;
+      slotRes = offs2.map(function(){ return []; });
+      for(ri=0; ri<rows.length; ri++) slotRes[rows[ri].s].push(rows[ri].t - (icept + slope * rows[ri].k));
+      offs2 = offs2.map(function(o, oi){ return slotRes[oi].length ? slotRes[oi].reduce(function(a,b){ return a+b; }, 0) / slotRes[oi].length : o; });
+      shift = Math.floor(icept / slope);
+      anchor = icept - shift * slope;
+      offs2 = offs2.map(function(o){ return ((o % slope) + slope) % slope; }).sort(function(a,b){ return a-b; });
+      U2 = slope;
+    }
+    var hw = gHalfWOf(U2);
+    for(ti=0; ti<ts.length; ti++) if(gPhaseResid(ts[ti], anchor, U2, offs2) <= hw) inl++;
+    return { U: U2, offs: offs2, anchor: anchor, inliers: inl };
+  }
+  function gDutyOK(U, offs){
+    var hw = gHalfWOf(U);
+    var ivs = offs.map(function(o){ return [o - hw, o + hw]; }).sort(function(a,b){ return a[0] - b[0]; });
+    var union = 0, cs = ivs[0][0], ce = ivs[0][1], i;
+    for(i=1;i<ivs.length;i++){ if(ivs[i][0] <= ce) ce = Math.max(ce, ivs[i][1]); else { union += ce - cs; cs = ivs[i][0]; ce = ivs[i][1]; } }
+    union += ce - cs;
+    return union / U <= 0.40;
+  }
+  function gFitModel(hits, beat){
+    var ts = hits.map(function(h){ return h.t; });
+    var n = ts.length;
+    if(n < 6) return null;
+    var minCl = n >= 12 ? 3 : 2;
+    var split = Math.max(6, Math.floor(n * 0.65));
+    var train = ts.slice(0, split), test = ts.slice(split);
+    var candU = {}, i, j, U;
+    for(i=0;i<n;i++) for(j=i+1;j<n;j++){ U = ts[j] - ts[i]; if(U >= 480 && U <= 9600) candU[Math.round(U)] = 1; }
+    var best = null, keys = Object.keys(candU), ki, m, hw, testIn;
+    for(ki=0; ki<keys.length; ki++){
+      U = +keys[ki];
+      m = gFitAtU(train, U, minCl, Math.max(minCl, Math.round(train.length * 0.10)));
+      if(!m) continue;
+      if(m.inliers < Math.max(6, Math.ceil(train.length * 0.45))) continue;
+      if(beat > 0 && m.offs.length * beat > 0.8 * m.U) continue;
+      if(!gDutyOK(m.U, m.offs)) continue;
+      hw = gHalfWOf(m.U); testIn = 0;
+      for(i=0;i<test.length;i++) if(gPhaseResid(test[i], m.anchor, m.U, m.offs) <= hw) testIn++;
+      if(test.length >= 4 && testIn < Math.ceil(test.length * 0.5)) continue;
+      var score = testIn * 2 + m.inliers * 0.25 - 2 * m.offs.length;
+      if(!best || score > best.score + 0.001 || (Math.abs(score - best.score) <= 0.001 && m.U < best.U)) best = { U: m.U, score: score };
+    }
+    if(!best) return null;
+    return gFitAtU(ts, Math.round(best.U), minCl, Math.max(minCl, Math.round(n * 0.10)));
+  }
+  function gSlotTime(k, idx){ return gAnchor + gSlots[idx].off + k * gU; }
+  function gNextSlotT(){ return gSlots.length ? gSlotTime(gK, gIdx) : Infinity; }
+  function gStepSlot(){
+    var guard = 0;
+    do { gIdx++; if(gIdx >= gSlots.length){ gIdx = 0; gK++; } } while(guard++ < 1000 && gSlots.length && gSlots[gIdx].muted);
+  }
+  function gAdvancePtr(now){
+    var guard = 0;
+    while(guard++ < 100000 && gSlots.length){
+      if(gSlotTime(gK, gIdx) >= now - gHalfW() - 1) break;
+      gStepSlot();
+    }
+  }
+  function gResetGrid(){
+    gLock = false; gU = 0; gSlots = []; gSilent = 0; gMisfits = []; gWinPeak = 0; gDone = false; gLastHitT = -1e9;
+  }
+  function gTryLearn(now, isRelearn, hitList){
+    var hits = hitList || gHits;
+    if(hits.length < 8) return false;
+    var beat = gBeatEst();
+    var model = gFitModel(hits, beat);
+    if(!model) return false;
+    var hwM = gHalfWOf(model.U), i;
+    var inliers = hits.filter(function(h){ return gPhaseResid(h.t, model.anchor, model.U, model.offs) <= hwM; });
+    if(inliers.length < 8) return false;
+    var head = gFitModel(inliers.slice(0, -3), beat);
+    if(!head) return false;
+    var hw = gHalfWOf(head.U);
+    for(i = inliers.length - 3; i < inliers.length; i++){
+      if(gPhaseResid(inliers[i].t, head.anchor, head.U, head.offs) > hw) return false;
+    }
+    gLock = true; gU = model.U; gAnchor = model.anchor;
+    gSlots = model.offs.map(function(o){ return { off: o, drops: 0, muted: false }; });
+    gSilent = 0; gMisfits = []; gWinPeak = 0; gDone = false; gK = 0; gIdx = 0;
+    gAdvancePtr(now);
+    return true;
+  }
+  function gConfirmSlot(now){
+    var t = gNextSlotT();
+    var sl = gSlots[gIdx];
+    if(sl){ sl.off += (now - t) * 0.2; sl.drops = 0; }
+    if(gLastHitT > 0){
+      var span = now - gLastHitT;
+      if(span > gU * 0.7 && span < gU * 1.4) gU += (span - gU) * 0.10;
+    }
+    gLastHitT = now; gSilent = 0; gDone = true;
+  }
+  function gOnConf(now, crackE){
+    gHits.push({ t: now, crackE: crackE });
+    if(gHits.length > 96) gHits.splice(0, gHits.length - 96);
+    if(!gLock){ gTryLearn(now, false); return; }
+    if(Math.abs(now - gNextSlotT()) <= gHalfW()){ gConfirmSlot(now); return; }
+    gMisfits.push({ t: now, crackE: crackE });
+    gMisfits = gMisfits.filter(function(m){ return now - m.t <= 20000; });
+    if(gMisfits.length > 12) gMisfits.splice(0, gMisfits.length - 12);
+    if(gMisfits.length >= 6 && now - gLastReTry >= 2000){
+      gLastReTry = now;
+      var snap = { U: gU, anchor: gAnchor, slots: gSlots.map(function(x){ return { off: x.off, drops: x.drops, muted: x.muted }; }), k: gK, idx: gIdx };
+      if(gTryLearn(now, true, gMisfits.slice(-8))){
+        if(Math.abs(gU - snap.U) / snap.U <= 0.15 || Math.abs(gU - snap.U * 2) / (snap.U * 2) <= 0.08 || Math.abs(gU * 2 - snap.U) / snap.U <= 0.08){
+          gU = snap.U; gAnchor = snap.anchor; gSlots = snap.slots; gK = snap.k; gIdx = snap.idx;
+        }
+      }
+    }
+  }
   var X_C = [Math.PI/4, 3*Math.PI/4, 5*Math.PI/4, 7*Math.PI/4];
   var P_C = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
   function spikeAt(th){
@@ -6704,9 +6909,13 @@ runners['lava-canvas'] = function(canvas, ctx, state){
       if(kE - kickAvg > 0.16 && kE > kickPrev && kE > 0.25 && now - lastKickT > 140){
         kickPulse = Math.max(kickPulse, Math.min(1, 0.45 + (kE - kickAvg)*1.4));
         lastKickT = now;
+        gKickTs.push(now); if(gKickTs.length > 128) gKickTs.shift();
       }
       kickPrev = kE;
-      /* --- CLAP EAR v4: the HIGH-FREQUENCY PATTERN is the
+      /* --- CLAP EAR v6: the v4/v5 free ear below, PLUS the
+         LEARN-THEN-PREDICT layer above (his round-6 design:
+         learn the song's own clap pattern, then do magic in
+         its windows). The free ear's HIGH-FREQUENCY PATTERN is the
          detector (his steer, word for word: "listen to high
          frequency pattern — that is like the clap pattern you
          know?"). Bands by TRUE Hz off the feed's own log map
@@ -6745,6 +6954,35 @@ runners['lava-canvas'] = function(canvas, ctx, state){
         patConf *= 0.5; patNext += patI;
         if(patConf < 0.25){ patConf = 0; patI = 0; }
       }
+      /* --- v6 learner, per frame: per-track reset, this song's
+         crack statistics, timed re-tries, slot bookkeeping --- */
+      gIdleT = 0;
+      var gTid = (window.__bwAudio && window.__bwAudio.id) || null;
+      if(gTid !== gTrack){ gTrack = gTid; gHits = []; gKickTs = []; gSamp = []; gResetGrid(); }
+      gSamp.push(crackE); if(gSamp.length > 2048) gSamp.splice(0, gSamp.length - 2048);
+      if(!(gLastStat > 0 && now - gLastStat < 500)){
+        gLastStat = now;
+        if(gSamp.length >= 16) gMed = gMedian(gSamp);
+        var gHl = gHits.slice(-32).map(function(h){ return h.crackE; });
+        if(gHl.length >= 3) gHitMed = gMedian(gHl);
+      }
+      if(!gLock && gHits.length >= 8 && now - gLastTry >= 1000){ gLastTry = now; gTryLearn(now, false); }
+      if(gLock){
+        var gT = gNextSlotT();
+        if(Math.abs(now - gT) <= gHalfW() && crackE > gWinPeak) gWinPeak = crackE;
+        if(now > gT + gHalfW()){
+          if(!gDone){
+            var gSil = gHitMed > 0 ? gMed + 0.15 * (gHitMed - gMed) : 0.30;
+            var gSl = gSlots[gIdx];
+            if(gWinPeak < gSil){
+              gSilent++;
+              if(gSl){ gSl.drops++; if(gSl.drops >= 2) gSl.muted = true; }
+            } else { gSilent = 0; if(gSl) gSl.drops = 0; }
+            if(gSilent >= 3 || (gSlots.length && gSlots.every(function(x){ return x.muted; }))) gResetGrid();
+          }
+          if(gLock){ gStepSlot(); gWinPeak = 0; gDone = false; }
+        }
+      }
       if(lastEvalT < 0){ evCrack = crackE; evTop = topE; lastEvalT = now; }
       else if(now - lastEvalT >= 28){
         var cRise = crackE - evCrack, tRise = topE - evTop;
@@ -6766,7 +7004,22 @@ runners['lava-canvas'] = function(canvas, ctx, state){
             lastClapT = now;
             if(patI > 0){ patNext = now + patI; if(strong) patConf = Math.min(1, patConf + 0.34); }
             seedT = now;
+            if(strong || lone) gOnConf(now, crackE);
+            else if(gLock && Math.abs(now - gNextSlotT()) <= gHalfW()) gConfirmSlot(now);
           } else if(spacing >= 340){ seedT = now; }
+        }
+        /* MAGIC (v6): a predicted slot's window drops the gate to
+           this song's own statistics — any credible crack-led rise
+           fires at its measured onset, full depth by its strength.
+           Silence never fires: the slot's peak is judged at close
+           (dropout discipline in the frame block above). */
+        if(gLock && !gDone && Math.abs(now - gNextSlotT()) <= gHalfW() && now - lastClapT > 100){
+          var gFloorC = gHitMed > 0 ? Math.max(0.22, gMed + 0.30 * (gHitMed - gMed)) : 0.40;
+          if(crackE > gFloorC && over > 0.05 && cRise > 0.008 && cRise > tRise * 0.40){
+            clapDip = Math.max(clapDip, Math.min(1, Math.max(0.55, 0.45 + over * 1.6 + Math.max(0, crackE - gFloorC) * 0.6)));
+            lastClapT = now;
+            gConfirmSlot(now);
+          }
         }
         evCrack = crackE; evTop = topE; lastEvalT = now;
       }
@@ -6775,6 +7028,8 @@ runners['lava-canvas'] = function(canvas, ctx, state){
       xEnv *= 0.92; pEnv *= 0.9;
       kickPulse *= 0.88; clapDip *= Math.pow(0.926, dt/16.667);
       crackAvg *= 0.98; patConf = 0; patI = 0; seedT = -1e9; lastEvalT = -1e9;
+      if(!gIdleT) gIdleT = now;
+      if(gLock && now - gIdleT > 2500){ gResetGrid(); gHits = []; }
       for(var j=0;j<=96;j++) spec[j] *= 0.96;
     }
     /* --- lava life cycle: pulse -> stagnant -> random move --- */

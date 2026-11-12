@@ -6503,28 +6503,30 @@ runners['lava-canvas'] = function(canvas, ctx, state){
      xEnv/pEnv are the two families' fast-attack/slow-release
      envelopes; spikeAt() shapes them around the rim. */
   var xEnv = 0, pEnv = 0;
-  /* KICK & CLAP EARS (his 2026-11-11 tune): two onset detectors fed
+  /* KICK & CLAP EARS (his 2026-11-11 tunes): two onset detectors fed
      by the same log bands __bwLevels already hands over. They touch
      ONLY the pupil's pump and the halo's breath — never the rim, its
      bands, or the analyser. Kick = a sharp rise in the low bands
      (~55–160 Hz) over those bands' own slow average, so EVERY
      distinct kick swells the circle a little (the old feed's beat
-     watched a wide bass average and let soft kicks slip by). Clap =
-     a sharp transient in the clap bands (~1.1–2.3 kHz) that
-     out-shouts the very top bands (so hats don't count): the
-     YELLOWISH HALO around the inner circle shrinks — and the dip's
-     depth is the hit itself, measured: how far the clap band jumped
-     over its own average, tempered by how clearly it out-shouts the
-     hat bands. A rim tick dents the glow; a full clap pulls its
-     reach and brightness right in, then it breathes back over
-     ~200 ms. One envelope breathes the whole glow — halo first,
-     the ring's shadow with it — because a clap's own flare would
-     otherwise mask the halo's shrink (proven in pixel checks; the
-     first draft's whisper of a dip never stood a chance).
+     watched a wide bass average and let soft kicks slip by).
+     Clap = the v3 ear in frame() below, rebuilt on his own words:
+     "claps are high band, but repeat — so youll find them quick"
+     and "more repetitive than kicks, but not as frequent as hi
+     hats". (Round 2 listened to a 1.1–2.3 kHz MAX with absolute
+     gates; in a real mastered mix the region sits loud and flat and
+     nothing ever crossed — the halo never moved. v3 listens to the
+     snap window's SHARE of the frame's motion, weighted to the
+     high crack, and pattern-locks the repeats.) The dip breathes
+     the whole glow — halo first, the ring's shadow with it —
+     because a clap's own flare would otherwise mask the halo's
+     shrink (proven in pixel checks).
      Refractories: one hit, one move. */
   var kickPulse = 0, clapDip = 0;
   var kickAvg = 0, kickPrev = 0, lastKickT = -1e9;
-  var clapAvg = 0, clapPrev = 0, lastClapT = -1e9;
+  var lastClapT = -1e9;
+  var prevBands = null, snapAvg = 0, shareAvg = 0;
+  var patI = 0, patNext = 0, patHits = 0, patConf = 0;
   var X_C = [Math.PI/4, 3*Math.PI/4, 5*Math.PI/4, 7*Math.PI/4];
   var P_C = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
   function spikeAt(th){
@@ -6558,8 +6560,8 @@ runners['lava-canvas'] = function(canvas, ctx, state){
        The same envelope breathes the ring's shadow (below): one
        glow, one shrink — pixel checks showed the clap's own shadow
        flare otherwise masks the halo's shrink completely. */
-    var halo = ctx.createRadialGradient(cx, cy, R*0.4, cx, cy, R*1.9*(1 - 0.32*clapDip));
-    halo.addColorStop(0, 'rgba(240,183,63,'+((0.12 + 0.14*sw + 0.22*bassNow*aEnv + 0.10*lava.kick + 0.16*beatNow*aEnv) * (1 - 0.38*clapDip))+')');
+    var halo = ctx.createRadialGradient(cx, cy, R*0.4, cx, cy, R*1.9*(1 - 0.40*clapDip));
+    halo.addColorStop(0, 'rgba(240,183,63,'+((0.12 + 0.14*sw + 0.22*bassNow*aEnv + 0.10*lava.kick + 0.16*beatNow*aEnv) * (1 - 0.50*clapDip))+')');
     halo.addColorStop(1, 'rgba(240,183,63,0)');
     ctx.fillStyle = halo;
     ctx.fillRect(cx - R*1.9, cy - R*1.9, R*3.8, R*3.8);
@@ -6578,7 +6580,7 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     g.addColorStop(0.85, '#c97b2d'); g.addColorStop(1, '#8a4b1d');
     ctx.fillStyle = g;
     ctx.shadowColor = 'rgba(255,170,60,.8)';
-    ctx.shadowBlur = (26 + 48*sw + 60*highNow*aEnv) * s.dpr * (1 - 0.30*clapDip);
+    ctx.shadowBlur = (26 + 48*sw + 60*highNow*aEnv*(1 - clapDip)) * s.dpr * (1 - 0.45*clapDip);
     ctx.fill();
     ctx.shadowBlur = 0;
     /* hollow core — the dark pupil */
@@ -6660,34 +6662,88 @@ runners['lava-canvas'] = function(canvas, ctx, state){
       var pTgt = Math.min(1, Math.max(L.high*1.9, hiE*g*1.15));
       xEnv += (xTgt - xEnv) * (xTgt > xEnv ? 0.85 : 0.22);
       pEnv += (pTgt - pEnv) * (pTgt > pEnv ? 0.9 : 0.3);
-      /* --- the kick & clap ears listen on the same bands --- */
+      /* --- the kick ear (his approved tune — untouched) --- */
       var kE = (bands[3]+bands[5]+bands[7]+bands[9]+bands[11]+bands[12]) / 6;
-      var cE = 0; for(bi=35; bi<=43; bi++) cE = Math.max(cE, bands[bi]);
-      var tE = 0; for(bi=50; bi<=60; bi++) tE = Math.max(tE, bands[bi]);
       kickAvg += (kE - kickAvg) * 0.07;
-      clapAvg += (cE - clapAvg) * 0.12;
-      kickPulse *= 0.88; clapDip *= Math.pow(0.90, dt/16.667);
+      kickPulse *= 0.88; clapDip *= Math.pow(0.926, dt/16.667);
       if(kE - kickAvg > 0.16 && kE > kickPrev && kE > 0.25 && now - lastKickT > 140){
         kickPulse = Math.max(kickPulse, Math.min(1, 0.45 + (kE - kickAvg)*1.4));
         lastKickT = now;
       }
-      if(cE - clapAvg > 0.20 && cE > clapPrev && cE > 0.30 && cE >= tE*0.75 && now - lastClapT > 150){
-        /* frequency math: the dip's depth IS the hit — how far the
-           clap band jumped over its own slow average, tempered by
-           how clearly it stands above the hat bands (a hit buried
-           in hats is no clap). Soft hit, soft dent; full clap,
-           full shrink. */
-        var cFlux = cE - clapAvg;
-        var cDom = Math.min(1, cE / Math.max(tE, 0.05));
-        var cStr = Math.min(1, Math.max(0.3, (cFlux - 0.12) / 0.30)) * (0.55 + 0.45*cDom);
-        clapDip = Math.max(clapDip, cStr);
-        lastClapT = now;
+      kickPrev = kE;
+      /* --- CLAP EAR v3: bands by TRUE Hz off the feed's own log
+         map (bands b span 40·400^(b/64) Hz): the snap window is
+         bands 34–50 = ~0.96–4.7 kHz, weighted toward the HIGH
+         crack (bands 42–50 = ~2–4.7 kHz) where a clap's fast
+         attack lives; the hat-only top is bands 54–63 (~6.3–16
+         kHz); the kick body is bands 2–13 (~48–148 Hz).
+         The math is relative, not absolute: positive spectral
+         flux per window, and a clap is the snap window's SHARE of
+         the whole frame's flux spiking past its own rolling share
+         (mastering crushes absolute contrast; shares survive).
+         The pattern lock is his hint made code: claps repeat on a
+         steady mid-range interval — hits 360–2800 ms apart that
+         agree with the running interval build trust, and inside
+         the expected window the threshold halves, so a buried
+         repeat still pulses. Hits closer than 360 ms are hat
+         density: they may fire on raw strength but build no lock;
+         a lone transient never locks anything by itself. A plain
+         level gate stands guard over all of it: the snap window
+         must stand clearly above the hat-only top in LEVEL, not
+         just in flux — analyzer splatter from hats and bass
+         onsets can't jump that. On a hit, the halo shrinks IN
+         scaled by strength (full hit: ~0.60x reach, ~0.50x
+         brightness) and breathes back over ~300 ms. --- */
+      if(patI > 0 && now > patNext + patI*0.38){
+        patConf *= 0.5; patNext += patI;
+        if(patConf < 0.2){ patConf = 0; patHits = 0; patI = 0; }
       }
-      kickPrev = kE; clapPrev = cE;
+      if(!prevBands){
+        prevBands = new Float32Array(64);
+        for(bi=0; bi<64; bi++) prevBands[bi] = bands[bi];
+      } else {
+        var fLo = 0, fHi = 0, fLow = 0, fTop = 0, fAll = 0, dB;
+        for(bi=0; bi<64; bi++){
+          dB = bands[bi] - prevBands[bi]; prevBands[bi] = bands[bi];
+          if(dB <= 0) continue;
+          fAll += dB;
+          if(bi >= 42 && bi <= 50) fHi += dB;
+          else if(bi >= 34 && bi <= 41) fLo += dB;
+          if(bi >= 2 && bi <= 13) fLow += dB;
+          else if(bi >= 54) fTop += dB;
+        }
+        var snapE = 0; for(bi=34; bi<=50; bi++) snapE += bands[bi];
+        snapE /= 17;
+        var topE = 0; for(bi=54; bi<64; bi++) topE += bands[bi];
+        topE /= 10;
+        snapAvg += (snapE - snapAvg) * (1 - Math.pow(0.5, dt/900));
+        if(fAll > 0.02){
+          var snapFlux = fHi + 0.55*fLo;
+          var share = snapFlux / fAll;
+          var inWin = (patConf >= 0.5 && patI > 0 && Math.abs(now - patNext) <= patI*0.2);
+          var thr = Math.max(0.17, shareAvg*1.5 + 0.05) * (inWin ? 0.5 : 1);
+          var lvlGate = inWin ? (snapE > 0.32 && snapE > topE*1.15) : (snapE > 0.44 && snapE > topE*1.25);
+          if(share > thr && (snapE - snapAvg) > 0.02 && snapFlux > fTop*0.8 && lvlGate
+             && now - lastClapT > 160 && !(fLow > snapFlux*2.4 && share < thr*2)){
+            clapDip = Math.max(clapDip, Math.min(1, 0.5 + (share - thr)*2.2));
+            var iv = now - lastClapT;
+            if(lastClapT > 0){
+              if(iv >= 360 && iv <= 2800){
+                if(patI > 0 && Math.abs(iv - patI) <= patI*0.22){ patHits++; patI += (iv - patI)*0.35; }
+                else { patI = iv; patHits = 1; }
+                patConf = Math.min(1, patHits*0.34);
+                patNext = now + patI;
+              } else if(iv > 2800){ patConf = 0; patHits = 0; patI = 0; }
+            }
+            lastClapT = now;
+          }
+          shareAvg += (share - shareAvg) * (1 - Math.pow(0.5, dt/1200));
+        }
+      }
     } else {
       aEnv *= 0.94; bassNow *= 0.92; highNow *= 0.92; beatNow *= 0.9;
       xEnv *= 0.92; pEnv *= 0.9;
-      kickPulse *= 0.88; clapDip *= Math.pow(0.90, dt/16.667);
+      kickPulse *= 0.88; clapDip *= Math.pow(0.926, dt/16.667);
       for(var j=0;j<=96;j++) spec[j] *= 0.96;
     }
     /* --- lava life cycle: pulse -> stagnant -> random move --- */

@@ -1914,7 +1914,7 @@ html.kint-lock{overflow:hidden !important}
         <input class="search-box" id="files-search" type="search" placeholder="Search files..." aria-label="Search files">
         <button class="send-btn" id="send-file-btn">Send a file</button>
         <button type="button" class="wave-btn" id="wave-view-btn" aria-pressed="false">View waveform</button>
-        <span class="fs-stamp" title="Player build v5 — clap dip now breathes the molten body itself (the bright glow), 2026-11-11">player v6</span>
+        <span class="fs-stamp" title="Player build v7 — full-song clap map (per-track study) + count-aware slot completion, 2026-11-11">player v7</span>
         <input type="file" id="file-picker" multiple hidden>
       </div>
       <div class="fs-up" id="fs-up" hidden><div class="fs-up-name" id="fs-up-name"></div><div class="up-bar" hidden><div class="up-track"><div class="up-fill" id="fs-up-fill"></div></div><span class="up-pct" id="fs-up-pct">0%</span></div></div>
@@ -1929,7 +1929,7 @@ html.kint-lock{overflow:hidden !important}
     </div>
   </div>
   <button type="button" id="wave-exit">Back to files</button>
-  <span id="wave-stamp" aria-hidden="true">player v6</span>
+  <span id="wave-stamp" aria-hidden="true">player v7</span>
 </section>
 <!-- ================= KINTSUGI (his 2026-10-31 order: Lux's idea, his game spec) ================= -->
 <section class="view" id="view-kintsugi">
@@ -2568,6 +2568,16 @@ window.__bwLevels = function(){
   return { bins: BW_FREQ, bands: BW_BANDS, bass: bass, mid: mid, high: high,
            beat: beat, gain: gain,
            playing: !cur.a.paused && !cur.a.ended };
+};
+/* ROUND 7: the clap-map study (Part 2) reaches the file list
+   through these two hooks — the page's parts only ever talk
+   through window.__bw*, never into each other's pockets. */
+window.__bwFileRec = function(id){
+  try { var fs = loadFiles(); for(var i = 0; i < fs.length; i++) if(fs[i].id === id) return fs[i]; } catch(e){}
+  return null;
+};
+window.__bwFileUrl = function(f){
+  try { return fileUrls[f.id] || (f.key ? bwWorkerGet(f) : null); } catch(e){ return null; }
 };
 function bwTogglePlay(f, sync){
   var cur = window.__bwAudio;
@@ -6583,6 +6593,23 @@ runners['lava-canvas'] = function(canvas, ctx, state){
   var gWinPeak = 0, gDone = false, gSilent = 0, gMisfits = [], gLastTry = -1e9, gLastReTry = -1e9;
   var gSamp = [], gLastStat = -1e9, gMed = 0, gHitMed = 0, gTrack = null, gIdleT = 0, gKickTs = [];
   var gLastHitT = -1e9;
+  /* --- ROUND 7 (his steers, 2026-11-11): "if you know the clap
+     happens 4 times in the bars... make it to where it finds the
+     pattern too" + "the claps do deviate from the pattern". So:
+     SLOT COMPLETION hunts an unfired slot's window for its best
+     crack-led peak and fires it, scaled — the pattern certifies a
+     clap belongs in the slot; the bump proves it is there; silence
+     (below the dropout floor) still never fires. PER-SLOT floors
+     come from each slot's own strength history. DEVIATIONS are
+     counted, not punished: a clap within +-300 ms of a slot means
+     the slot was played off-mark, not dropped; only SYSTEMATIC
+     deviation (>=4 consecutive off-grid hits) re-teaches, and the
+     song's deviation rate tempers completion depth. Grid fires
+     keep their own refractory clock so they can never delay a
+     confident FREE fire — the free ear stays fully awake. --- */
+  var gLastGridT = -1e9, gWinBest = null, gDevHist = [], gMisfitRun = 0, gFireTs = [];
+  function gDevRate(){ if(!gDevHist.length) return 0; var s = 0, i; for(i=0;i<gDevHist.length;i++) s += gDevHist[i]; return s / gDevHist.length; }
+  function gDevPush(v){ gDevHist.push(v); if(gDevHist.length > 48) gDevHist.shift(); }
   function gMedian(a){ if(!a.length) return 0; var c = a.slice().sort(function(x,y){return x-y;}); return c[Math.floor(c.length/2)]; }
   function gHalfWOf(U){ return Math.min(180, Math.max(120, U*0.12)); }
   function gHalfW(){ return gHalfWOf(gU || 1000); }
@@ -6705,6 +6732,7 @@ runners['lava-canvas'] = function(canvas, ctx, state){
   }
   function gResetGrid(){
     gLock = false; gU = 0; gSlots = []; gSilent = 0; gMisfits = []; gWinPeak = 0; gDone = false; gLastHitT = -1e9;
+    gWinBest = null; gMisfitRun = 0;
   }
   function gTryLearn(now, isRelearn, hitList){
     var hits = hitList || gHits;
@@ -6722,37 +6750,633 @@ runners['lava-canvas'] = function(canvas, ctx, state){
       if(gPhaseResid(inliers[i].t, head.anchor, head.U, head.offs) > hw) return false;
     }
     gLock = true; gU = model.U; gAnchor = model.anchor;
-    gSlots = model.offs.map(function(o){ return { off: o, drops: 0, muted: false }; });
+    gSlots = model.offs.map(function(o){ return { off: o, offFit: o, drops: 0, muted: false, str: 0, jit: 0, devCnt: 0, devSum: 0 }; });
     gSilent = 0; gMisfits = []; gWinPeak = 0; gDone = false; gK = 0; gIdx = 0;
     gAdvancePtr(now);
     return true;
   }
-  function gConfirmSlot(now){
+  function gConfirmSlot(now, crackE){
     var t = gNextSlotT();
     var sl = gSlots[gIdx];
-    if(sl){ sl.off += (now - t) * 0.2; sl.drops = 0; }
+    if(sl){
+      sl.off += (now - t) * 0.2; sl.drops = 0;
+      /* per-slot learning: this slot's own typical strength and
+         timing jitter — the slots in a unit are not equal */
+      if(crackE > 0) sl.str = sl.str ? sl.str * 0.6 + crackE * 0.4 : crackE;
+      sl.jit = sl.jit ? sl.jit * 0.6 + Math.abs(now - t) * 0.4 : Math.abs(now - t);
+    }
     if(gLastHitT > 0){
       var span = now - gLastHitT;
       if(span > gU * 0.7 && span < gU * 1.4) gU += (span - gU) * 0.10;
     }
     gLastHitT = now; gSilent = 0; gDone = true;
+    gMisfitRun = 0; gDevPush(0);
+  }
+  /* Completion floor for one slot: just above the dropout (true
+     silence) floor, set against the SLOT's own typical strength,
+     and raised a little when the song has shown it deviates.
+     Returns {floor, ref} — ref is the strength a full-depth
+     completion is scaled against. */
+  function gCompFloorFor(sl){
+    var dropFloor = gHitMed > 0 ? gMed + 0.15 * (gHitMed - gMed) : 0.30;
+    var ref = (sl && sl.str > 0) ? sl.str : (gHitMed > 0 ? gHitMed : 0.55);
+    var f = gMed + (0.22 + 0.10 * gDevRate()) * (ref - gMed);
+    return { floor: Math.max(f, dropFloor + 0.02), ref: ref };
+  }
+  /* SLOT COMPLETION: hunt the current slot's best crack-led peak.
+     Fires the dip scaled by the peak against the slot's own
+     strength, tempered by the song's deviation rate; the pulse
+     is aimed at the peak's moment. NEVER fires on silence — the
+     peak must clear the completion floor, which always sits
+     above the dropout floor. */
+  function gTryComplete(now){
+    if(!gLock || gDone || !gWinBest) return false;
+    if(now - Math.max(lastClapT, gLastGridT) <= 100) return false;
+    var cf = gCompFloorFor(gSlots[gIdx]);
+    if(gWinBest.e < cf.floor) return false;
+    var span = Math.max(0.05, cf.ref - cf.floor);
+    var depth = 0.45 + 0.55 * Math.min(1, Math.max(0, (gWinBest.e - cf.floor) / span));
+    depth *= (1 - 0.35 * gDevRate());
+    depth = Math.min(1, Math.max(0.30, depth));
+    clapDip = Math.max(clapDip, depth);
+    gLastGridT = now;
+    gFireTs.push(now);
+    gConfirmSlot(gWinBest.t, gWinBest.e);
+    gWinBest = null;
+    return true;
+  }
+  function gSnapGrid(){
+    return { U: gU, anchor: gAnchor, slots: gSlots.map(function(x){ return { off: x.off, offFit: x.offFit, drops: x.drops, muted: x.muted, str: x.str, jit: x.jit, devCnt: x.devCnt, devSum: x.devSum }; }), k: gK, idx: gIdx };
+  }
+  function gRelearnGuard(snap){
+    /* a re-teach only stands when the song truly moved — if the
+       re-fit found (nearly) the same unit, restore the old grid */
+    if(Math.abs(gU - snap.U) / snap.U <= 0.15 || Math.abs(gU - snap.U * 2) / (snap.U * 2) <= 0.08 || Math.abs(gU * 2 - snap.U) / snap.U <= 0.08){
+      gU = snap.U; gAnchor = snap.anchor; gSlots = snap.slots; gK = snap.k; gIdx = snap.idx;
+    }
   }
   function gOnConf(now, crackE){
     gHits.push({ t: now, crackE: crackE });
     if(gHits.length > 96) gHits.splice(0, gHits.length - 96);
     if(!gLock){ gTryLearn(now, false); return; }
-    if(Math.abs(now - gNextSlotT()) <= gHalfW()){ gConfirmSlot(now); return; }
+    if(Math.abs(now - gNextSlotT()) <= gHalfW()){ gConfirmSlot(now, crackE); return; }
+    /* a DEVIATION: a real clap off its mark. Information, not an
+       error — it never breaks the lock, mutes a slot, or forces
+       a re-teach by itself. */
     gMisfits.push({ t: now, crackE: crackE });
     gMisfits = gMisfits.filter(function(m){ return now - m.t <= 20000; });
     if(gMisfits.length > 12) gMisfits.splice(0, gMisfits.length - 12);
-    if(gMisfits.length >= 6 && now - gLastReTry >= 2000){
+    gMisfitRun++;
+    gDevPush(1);
+    /* attribute it to its nearest slot when it lands just
+       outside the window (+-450 ms): evidence that slot's close
+       can spend on a bounded local shift */
+    var bi = -1, br = Infinity, si, rr;
+    for(si = 0; si < gSlots.length; si++){
+      rr = (((now - gAnchor - gSlots[si].off) % gU) + gU * 1.5) % gU - gU * 0.5;
+      if(Math.abs(rr) < Math.abs(br)){ br = rr; bi = si; }
+    }
+    if(bi >= 0 && Math.abs(br) > gHalfW() && Math.abs(br) <= 450){
+      gSlots[bi].devCnt++; gSlots[bi].devSum += br;
+    }
+    /* SYSTEMATIC deviation re-teaches promptly: >=4 consecutive
+       off-grid confident hits (a section change), or the v6 pool */
+    if(gMisfitRun >= 4 && now - gLastReTry >= 2000){
       gLastReTry = now;
-      var snap = { U: gU, anchor: gAnchor, slots: gSlots.map(function(x){ return { off: x.off, drops: x.drops, muted: x.muted }; }), k: gK, idx: gIdx };
-      if(gTryLearn(now, true, gMisfits.slice(-8))){
-        if(Math.abs(gU - snap.U) / snap.U <= 0.15 || Math.abs(gU - snap.U * 2) / (snap.U * 2) <= 0.08 || Math.abs(gU * 2 - snap.U) / snap.U <= 0.08){
-          gU = snap.U; gAnchor = snap.anchor; gSlots = snap.slots; gK = snap.k; gIdx = snap.idx;
-        }
+      var snap4 = gSnapGrid();
+      if(gTryLearn(now, true, gHits.slice(-12))) gRelearnGuard(snap4);
+    } else if(gMisfits.length >= 6 && now - gLastReTry >= 2000){
+      gLastReTry = now;
+      var snap6 = gSnapGrid();
+      if(gTryLearn(now, true, gMisfits.slice(-8))) gRelearnGuard(snap6);
+    }
+  }
+/* CLAP MAP core, ported 1:1 from the validated map_core.js — CLAP MAP core (player v7): pure math, shared by the
+   node validator and (ported, sm-prefixed) the bench page.
+   Two measurement sets from ONE FFT pass over the decoded song:
+   (a) LINEAR band-mean magnitudes in true-Hz ranges (crack 2-4.7k,
+       top 6.3-16k, mid 250-2k, low 40-250) — the detection series,
+       gated the way the validated STFT ground-truth pass gated
+       Pandora (percentile gates from the song itself, 700 ms
+       half-life slow average, crack-led test);
+   (b) BYTE-scale log bands (WebAudio analyser math: Blackman,
+       FFT 512, linear smoothing 0.30, -100..-30 dB -> byte,
+       per-band MAX, exactly like __bwLevels) — the study's band
+       statistics, in the same units the live ear breathes.
+   Then: two-tier candidates -> clustering -> a whole-track
+   pattern fit (the v6 unit fitter) certifies weak in-pattern
+   repeats; off-pattern strong hits stay in the map as the song's
+   deviations. Kicks come from the low band, same machinery. */
+
+
+/* ---------- FFT (radix-2, in place) ---------- */
+function smFFT(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      let t = re[i]; re[i] = re[j]; re[j] = t;
+      t = im[i]; im[i] = im[j]; im[j] = t;
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cwr = 1, cwi = 0;
+      for (let k = 0; k < len / 2; k++) {
+        const ur = re[i + k], ui = im[i + k];
+        const vr = re[i + k + len / 2] * cwr - im[i + k + len / 2] * cwi;
+        const vi = re[i + k + len / 2] * cwi + im[i + k + len / 2] * cwr;
+        re[i + k] = ur + vr; im[i + k] = ui + vi;
+        re[i + k + len / 2] = ur - vr; im[i + k + len / 2] = ui - vi;
+        const nwr = cwr * wr - cwi * wi; cwi = cwr * wi + cwi * wr; cwr = nwr;
       }
+    }
+  }
+}
+
+const SM_N = 512, SM_NB = 256, SM_HOP = 256;
+const SM_WIN = (() => {
+  const w = new Float32Array(SM_N);
+  for (let k = 0; k < SM_N; k++) w[k] = 0.42 - 0.5 * Math.cos(2 * Math.PI * k / SM_N) + 0.08 * Math.cos(4 * Math.PI * k / SM_N);
+  return w;
+})();
+function smPct(sortedAsc, p) {
+  if (!sortedAsc.length) return 0;
+  return sortedAsc[Math.min(sortedAsc.length - 1, Math.floor(p * sortedAsc.length))];
+}
+function smSorted(a) { return Array.from(a).sort((x, y) => x - y); }
+function smSlowAvg(v, hopMs, hlMs) {
+  const out = new Float32Array(v.length);
+  const k = 1 - Math.pow(0.5, hopMs / hlMs);
+  for (let i = 0; i < v.length; i++) out[i] = i ? out[i - 1] + (v[i] - out[i - 1]) * k : v[0];
+  return out;
+}
+
+/* ---------- pattern fitter (ported from the v6 learner) ---------- */
+function smMedian(a) { if (!a.length) return 0; const c = a.slice().sort((x, y) => x - y); return c[Math.floor(c.length / 2)]; }
+function smHalfWOf(U) { return Math.min(180, Math.max(120, U * 0.12)); }
+function smPhaseResid(t, anchor, U, offs) {
+  const ph = (((t - anchor) % U) + U) % U;
+  let m = Infinity;
+  for (const o of offs) { const d = Math.abs(ph - o); m = Math.min(m, d, U - d); }
+  return m;
+}
+function smFitAtU(ts, U0, minCl, freshMin) {
+  const n = ts.length, t0 = ts[0];
+  if (ts[n - 1] - t0 < 3.5 * U0) return null;
+  const phases = ts.map(t => (t - t0) % U0);
+  const sp = phases.slice().sort((a, b) => a - b);
+  const ext = sp.concat(sp.map(p => p + U0));
+  const raw = [];
+  for (let s = 0; s < sp.length; s++) {
+    const cl = [ext[s]]; let e = s + 1;
+    while (e < s + sp.length && ext[e] - ext[s] <= 170) { cl.push(ext[e]); e++; }
+    if (cl.length >= minCl) raw.push(cl);
+  }
+  if (!raw.length) return null;
+  raw.sort((a, b) => b.length - a.length);
+  const covered = new Set(); const chosen = [];
+  for (const cl of raw) {
+    const fresh = cl.filter(p => !covered.has(((p % U0) + U0) % U0));
+    if (fresh.length >= freshMin) {
+      cl.forEach(p => covered.add(((p % U0) + U0) % U0));
+      chosen.push(cl);
+      if (chosen.length > 6) break;
+    }
+  }
+  if (chosen.length > 6 || !chosen.length) return null;
+  let offs = chosen.map(cl => { let m = 0; for (const p of cl) m += p; return (m / cl.length) % U0; }).sort((a, b) => a - b);
+  let U2 = U0, anchor = t0, offs2 = offs;
+  for (let iter = 0; iter < 2; iter++) {
+    const rows = [];
+    for (const t of ts) {
+      const ph = (((t - anchor) % U2) + U2) % U2;
+      let bi = -1, bd = Infinity;
+      offs2.forEach((o, i) => { const d = Math.min(Math.abs(ph - o), U2 - Math.abs(ph - o)); if (d < bd) { bd = d; bi = i; } });
+      if (bd <= 120) rows.push({ t, k: Math.round((t - anchor - offs2[bi]) / U2), s: bi });
+    }
+    if (rows.length < 6) return null;
+    let sk = 0, st = 0, skk = 0, skt = 0;
+    for (const r of rows) { sk += r.k; st += r.t; skk += r.k * r.k; skt += r.k * r.t; }
+    const den = rows.length * skk - sk * sk;
+    if (Math.abs(den) < 1e-9) break;
+    const slope = (rows.length * skt - sk * st) / den;
+    if (slope < 480 || slope > 9600) return null;
+    const icept = (st - slope * sk) / rows.length;
+    const slotRes = offs2.map(() => []);
+    for (const r of rows) slotRes[r.s].push(r.t - (icept + slope * r.k));
+    offs2 = offs2.map((o, i) => slotRes[i].length ? slotRes[i].reduce((a, b) => a + b, 0) / slotRes[i].length : o);
+    const shift = Math.floor(icept / slope);
+    anchor = icept - shift * slope;
+    offs2 = offs2.map(o => ((o % slope) + slope) % slope).sort((a, b) => a - b);
+    U2 = slope;
+  }
+  let inliers = 0;
+  const hw = smHalfWOf(U2);
+  for (const t of ts) if (smPhaseResid(t, anchor, U2, offs2) <= hw) inliers++;
+  return { U: U2, offs: offs2, anchor, inliers };
+}
+function smDutyOK(U, offs) {
+  const hw = smHalfWOf(U);
+  const ivs = offs.map(o => [o - hw, o + hw]).sort((a, b) => a[0] - b[0]);
+  let union = 0, cs = ivs[0][0], ce = ivs[0][1];
+  for (let i = 1; i < ivs.length; i++) { if (ivs[i][0] <= ce) ce = Math.max(ce, ivs[i][1]); else { union += ce - cs; cs = ivs[i][0]; ce = ivs[i][1]; } }
+  union += ce - cs;
+  return union / U <= 0.40;
+}
+function smFitModel(tsIn, beat) {
+  const ts = tsIn.slice().sort((a, b) => a - b);
+  const n = ts.length;
+  if (n < 6) return null;
+  const minCl = n >= 12 ? 3 : 2;
+  const split = Math.max(6, Math.floor(n * 0.65));
+  const train = ts.slice(0, split), test = ts.slice(split);
+  const candU = new Set();
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    const U = ts[j] - ts[i];
+    if (U >= 480 && U <= 9600) candU.add(Math.round(U));
+  }
+  let best = null;
+  for (const U of candU) {
+    const m = smFitAtU(train, U, minCl, Math.max(minCl, Math.round(train.length * 0.10)));
+    if (!m) continue;
+    if (m.inliers < Math.max(6, Math.ceil(train.length * 0.45))) continue;
+    if (beat > 0 && m.offs.length * beat > 0.8 * m.U) continue;
+    if (!smDutyOK(m.U, m.offs)) continue;
+    const hw = smHalfWOf(m.U);
+    let testIn = 0;
+    for (const t of test) if (smPhaseResid(t, m.anchor, m.U, m.offs) <= hw) testIn++;
+    if (test.length >= 4 && testIn < Math.ceil(test.length * 0.5)) continue;
+    const score = testIn * 2 + m.inliers * 0.25 - 2 * m.offs.length;
+    if (!best || score > best.score + 0.001 || (Math.abs(score - best.score) <= 0.001 && m.U < best.U)) best = { U: m.U, score };
+  }
+  if (!best) return null;
+  return smFitAtU(ts, Math.round(best.U), minCl, Math.max(minCl, Math.round(n * 0.10)));
+}
+
+/* ---------- detection over the whole song ----------
+   Returns { claps: [[tSec, strength]...], kicks: [tSec...],
+             pat: {U, offs, dev} | null, bpm, diag } */
+function smDetect(S) {
+  const hopMs = S.hopSec * 1000, n = S.nFrames;
+  const crack = S.linCrack, top = S.linTop;
+  const avg = smSlowAvg(crack, hopMs, 700);
+  const over = new Float32Array(n);
+  for (let i = 0; i < n; i++) over[i] = crack[i] - avg[i];
+  const p75 = smPct(smSorted(crack), 0.75), p60 = smPct(smSorted(crack), 0.60);
+  const overPos = smSorted(Array.from(over).filter(v => v > 0));
+  const p95over = Math.max(1e-9, smPct(overPos, 0.95));
+  const risePos = [];
+  for (let i = 2; i < n; i++) { const r = crack[i] - crack[i - 2]; if (r > 0) risePos.push(r); }
+  const p99rise = Math.max(1e-9, smPct(smSorted(risePos), 0.99));
+  const ovGate = 0.35 * p95over, crGate = 0.30 * p99rise;
+  const frameSec = i => (i * SM_HOP + SM_N) / S.sr;
+  /* pass 1: strict candidates with a 150 ms refractory (the STFT
+     ground-truth recipe, mirrored) */
+  const strict = [];
+  let lastMs = -1e9;
+  for (let i = 2; i < n; i++) {
+    const crise = crack[i] - crack[i - 2], trise = top[i] - top[i - 2];
+    if (over[i] > ovGate && crise > crGate && crise > trise * 0.9 && crack[i] > p75) {
+      const tMs = i * hopMs;
+      if (tMs - lastMs > 150) { strict.push({ i, crack: crack[i], over: over[i] }); lastMs = tMs; }
+    }
+  }
+  /* pass 2: weak candidates (for pattern certification), 120 ms
+     clustering to the crack peak */
+  const weakRaw = [];
+  for (let i = 2; i < n; i++) {
+    const crise = crack[i] - crack[i - 2], trise = top[i] - top[i - 2];
+    if (over[i] > ovGate * 0.45 && crise > crGate * 0.5 && crise > trise * 0.40 && crack[i] > p60) {
+      weakRaw.push({ i, crack: crack[i], over: over[i] });
+    }
+  }
+  const weak = [];
+  for (const c of weakRaw) {
+    const tMs = c.i * hopMs, last = weak[weak.length - 1];
+    if (last && tMs - last.tMs < 120) { if (c.crack > last.crack) { last.i = c.i; last.tMs = tMs; last.crack = c.crack; last.over = c.over; } }
+    else weak.push({ i: c.i, tMs, crack: c.crack, over: c.over });
+  }
+  const strengthOf = o => Math.min(1, Math.max(0.42, 0.42 + 0.85 * (o / p95over)));
+  for (const c of strict) { c.tSec = frameSec(c.i); c.strength = strengthOf(c.over); }
+  for (const c of weak) { c.tSec = frameSec(c.i); c.strength = strengthOf(c.over); }
+  /* kicks + tempo */
+  const kicks = smDetectKicks(S);
+  let beat = 0;
+  if (kicks.length >= 4) {
+    const ivs = [];
+    for (let i = 1; i < kicks.length; i++) { const d = (kicks[i] - kicks[i - 1]) * 1000; if (d >= 240 && d <= 1200) ivs.push(d); }
+    if (ivs.length >= 3) { const m = smMedian(ivs); beat = smMedian(ivs.map(x => { let y = x; while (y < m * 0.7) y *= 2; while (y > m * 1.4) y /= 2; return y; })); }
+  }
+  /* whole-track pattern fit on strict times */
+  const strictTs = strict.map(c => c.tSec * 1000);
+  const model = strictTs.length >= 6 ? smFitModel(strictTs, beat) : null;
+  let pat = null, kept = [], fitQ = 0;
+  if (model) {
+    const hw0 = smHalfWOf(model.U);
+    fitQ = strict.length ? strict.filter(c => smPhaseResid(c.tSec * 1000, model.anchor, model.U, model.offs) <= hw0).length / strict.length : 0;
+  }
+  if (model && fitQ >= 0.5) {
+    /* pattern song: the grid certifies weak repeats; strong
+       off-grid hits are the song's deviations and stay mapped */
+    const hw = smHalfWOf(model.U);
+    let dev = 0;
+    for (const c of strict) {
+      const inGrid = smPhaseResid(c.tSec * 1000, model.anchor, model.U, model.offs) <= hw;
+      kept.push(c);
+      if (!inGrid) dev++;
+    }
+    for (const c of weak) {
+      if (strict.some(s => Math.abs(s.tSec - c.tSec) < 0.12)) continue;
+      const inGrid = smPhaseResid(c.tSec * 1000, model.anchor, model.U, model.offs) <= hw;
+      if (inGrid) kept.push(c);
+      else if (c.strength >= 0.62) { kept.push(c); dev++; }
+    }
+    pat = { U: Math.round(model.U), offs: model.offs.map(o => Math.round(o)), dev };
+  } else {
+    /* no trustworthy grid (through-composed / vocal-dense / no
+       claps): conservative map — strong hits only, spaced out,
+       so the glow never machine-guns on a song with no pattern */
+    kept = strict.filter(c => c.strength >= 0.55);
+    kept.sort((a, b) => a.tSec - b.tSec);
+    const spaced = [];
+    for (const c of kept) {
+      const last = spaced[spaced.length - 1];
+      if (last && c.tSec - last.tSec < 0.22) { if (c.strength > last.strength) spaced[spaced.length - 1] = c; }
+      else spaced.push(c);
+    }
+    kept = spaced;
+    if (model) pat = { U: Math.round(model.U), offs: model.offs.map(o => Math.round(o)), dev: -1 };
+  }
+  /* final dedupe: two pulses closer than 160 ms are one clap
+     (real doubles in the reference song sit ~190 ms apart) */
+  kept.sort((a, b) => a.tSec - b.tSec);
+  const ded = [];
+  for (const c of kept) {
+    const last = ded[ded.length - 1];
+    if (last && c.tSec - last.tSec < 0.16) { if (c.strength > last.strength) ded[ded.length - 1] = c; }
+    else ded.push(c);
+  }
+  kept = ded;
+  return {
+    claps: kept.map(c => [+c.tSec.toFixed(3), +c.strength.toFixed(3)]),
+    kicks: kicks.map(t => +t.toFixed(2)),
+    pat,
+    bpm: beat > 0 ? Math.round(60000 / beat) : 0,
+    diag: { strict: strict.length, weak: weak.length, kept: kept.length, fitQ: +fitQ.toFixed(2), ovGate: +ovGate.toExponential(2), crGate: +crGate.toExponential(2) }
+  };
+}
+function smDetectKicks(S) {
+  const hopMs = S.hopSec * 1000, n = S.nFrames, ks = S.linLow;
+  const avg = smSlowAvg(ks, hopMs, 700);
+  const overPos = smSorted(Array.from(ks).map((v, i) => v - avg[i]).filter(v => v > 0));
+  const gate = 0.35 * Math.max(1e-9, smPct(overPos, 0.95));
+  const p75 = smPct(smSorted(ks), 0.75);
+  const out = [];
+  let last = -1e9;
+  for (let i = 2; i < n; i++) {
+    const tMs = i * hopMs;
+    if (ks[i] - avg[i] > gate && ks[i] > ks[i - 2] && ks[i] > p75 && tMs - last > 160) {
+      let pk = i; for (let j = i + 1; j < Math.min(n, i + 4); j++) if (ks[j] > ks[pk]) pk = j;
+      out.push((pk * SM_HOP + SM_N) / S.sr);
+      last = pk * hopMs;
+      i = pk;
+    }
+  }
+  return out;
+}
+function smStats(S) {
+  const st = (arr) => { const s = smSorted(arr); return { med: +smPct(s, 0.5).toFixed(3), pk: +smPct(s, 0.95).toFixed(3) }; };
+  return { bass: st(S.bytBass), mid: st(S.bytMid), crack: st(S.bytCrack), top: st(S.bytTop) };
+}
+  /* ============================================================
+     CLAP MAP + PER-TRACK STUDY (round 7 — his charge: "find the
+     claps for all songs using math that detects them every time
+     a song gets uploaded... study every track metadata, sound,
+     and inside the file"). HOW IT WORKS: when a track starts,
+     in the background (playback is NEVER delayed), the player
+     fetches a copy of the file, decodes it off to the side, and
+     studies the whole song at once — global statistics, the
+     pattern fitted over the entire track, deviations included.
+     The result is a STUDY (study v1): metadata (name, format,
+     size, duration, sample rate, channels, bitrate), sound
+     (band medians/peaks, tempo, peak/RMS loudness, the learned
+     pattern + deviation count), and the inside of the file
+     (the CLAP MAP: every clap's time + strength, plus kick
+     times from the low band). Studies are cached per file
+     (key = file id + size) in IndexedDB — a song is studied
+     once ever per device; repeat plays read it instantly.
+     While a study exists, the map drives the dip, scheduled
+     against the audio clock so pulses land ON the hits. The
+     live ear + grid above remains the fallback until the map
+     is ready, and a sanity layer after: a confident live clap
+     the map missed still fires. Builds run one at a time
+     (a decoded song is tens of MB of transient RAM), and
+     EVERY failure — no readable bytes, a decode error, a
+     full cache — falls back silently: no study is
+     indistinguishable from a failed study, and the live ear
+     carries the song either way. File records reach this
+     part of the page only through Part 1's __bwFileRec /
+     __bwFileUrl hooks, the same window.__bw* courtesy the
+     parts have always used.
+     ============================================================ */
+  var STU = window.__bwStudy || (window.__bwStudy = { mem: {}, pend: {}, fail: {}, decodes: 0, building: false, queued: null });
+  if(STU.building === undefined){ STU.building = false; STU.queued = null; }
+  var mStudy = null, mKey = null, mIdx = 0, mLastCt = -1, mStuTry = -1e9;
+  var stuDbP = null;
+  function stuDb(){
+    if(stuDbP) return stuDbP;
+    stuDbP = new Promise(function(res){
+      try {
+        var rq = indexedDB.open('bw-studies', 1);
+        rq.onupgradeneeded = function(){ try { rq.result.createObjectStore('s'); } catch(e){} };
+        rq.onsuccess = function(){ res(rq.result); };
+        rq.onerror = function(){ res(null); };
+      } catch(e){ res(null); }
+    });
+    return stuDbP;
+  }
+  function stuGet(key){
+    return stuDb().then(function(db){
+      if(db) return new Promise(function(res){
+        try { var rq = db.transaction('s', 'readonly').objectStore('s').get(key); rq.onsuccess = function(){ res(rq.result || null); }; rq.onerror = function(){ res(null); }; }
+        catch(e){ res(null); }
+      });
+      try { var s = localStorage.getItem('bwstudy:' + key); return s ? JSON.parse(s) : null; } catch(e){ return null; }
+    });
+  }
+  function stuPut(key, val){
+    stuDb().then(function(db){
+      if(db){
+        try { var tx = db.transaction('s', 'readwrite'); tx.onerror = function(){}; tx.objectStore('s').put(val, key); } catch(e){}
+        return;
+      }
+      /* localStorage fallback: keep the cache tidy — a study is
+         a few KB; anything freakishly large stays session-only */
+      try { var s = JSON.stringify(val); if(s.length <= 1500000) localStorage.setItem('bwstudy:' + key, s); } catch(e){}
+    });
+  }
+  function stuFind(id){
+    try { if(typeof window.__bwFileRec === 'function') return window.__bwFileRec(id); } catch(e){}
+    return null;
+  }
+  function stuOnTrack(id){
+    mStudy = null; mKey = null; mIdx = 0; mLastCt = -1;
+    if(id) stuKickoff(id);
+  }
+  function stuKickoff(id){
+    var rec = stuFind(id); if(!rec) return;
+    var key = id + '|' + (rec.size || 0);
+    mKey = key;
+    if(STU.mem[key]){ if(mStudy !== STU.mem[key]){ mStudy = STU.mem[key]; mIdx = 0; mLastCt = -1; } return; }
+    if(STU.pend[key] || STU.fail[key]) return;
+    STU.pend[key] = true;
+    stuGet(key).then(function(v){
+      if(v && v.v === 1 && v.claps){ STU.mem[key] = v; delete STU.pend[key]; if(mKey === key && !mStudy){ mStudy = v; mIdx = 0; mLastCt = -1; } }
+      else stuBuild(id, key, rec);
+    });
+  }
+  function stuDecode(ab){
+    return new Promise(function(res, rej){
+      var done = false;
+      function ok(b){ if(!done){ done = true; res(b); } }
+      function bad(e){ if(!done){ done = true; rej(e); } }
+      try {
+        var OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        if(OC){ var oc = new OC(2, 44100, 44100); var p = oc.decodeAudioData(ab, ok, bad); if(p && p.catch) p.catch(bad); return; }
+      } catch(e){}
+      try {
+        if(typeof BW_ACTX !== 'undefined' && BW_ACTX){ var p2 = BW_ACTX.decodeAudioData(ab, ok, bad); if(p2 && p2.catch) p2.catch(bad); return; }
+      } catch(e){}
+      bad(new Error('no decoder'));
+    });
+  }
+  /* one build at a time: a second request waits its turn, and
+     only the newest waiting track is kept */
+  function stuBuild(id, key, rec){
+    if(STU.building){
+      if(STU.queued) delete STU.pend[STU.queued.key];
+      STU.queued = { id: id, key: key, rec: rec };
+      return;
+    }
+    stuBuildNow(id, key, rec);
+  }
+  function stuDrained(){
+    STU.building = false;
+    var q = STU.queued; STU.queued = null;
+    if(q) stuBuildNow(q.id, q.key, q.rec);
+  }
+  function stuBuildNow(id, key, rec){
+    STU.building = true;
+    var url = null;
+    try { if(typeof window.__bwFileUrl === 'function') url = window.__bwFileUrl(rec); } catch(e){}
+    if(!url){ STU.fail[key] = true; delete STU.pend[key]; stuDrained(); return; }
+    fetch(url).then(function(r){ if(!r.ok) throw new Error('http ' + r.status); return r.arrayBuffer(); })
+      .then(function(ab){ return stuDecode(ab); })
+      .then(function(buf){ stuAnalyze(id, key, rec, buf, stuDrained); })
+      .catch(function(){ STU.fail[key] = true; delete STU.pend[key]; stuDrained(); });
+  }
+  /* chunked series builder — the same math as the validated
+     bwSeries, sliced into macrotasks so analysis never freezes
+     the animation (Pandora = ~27k frames, ~1500 per tick) */
+  function smSeriesInit(mono, sr){
+    var nFrames = Math.max(0, Math.floor((mono.length - SM_N) / SM_HOP) + 1);
+    var S = { linCrack: new Float32Array(nFrames), linTop: new Float32Array(nFrames),
+              linLow: new Float32Array(nFrames), linMid: new Float32Array(nFrames),
+              bytCrack: new Float32Array(nFrames), bytTop: new Float32Array(nFrames),
+              bytBass: new Float32Array(nFrames), bytMid: new Float32Array(nFrames),
+              hopSec: SM_HOP / sr, nFrames: nFrames, sr: sr };
+    function hz(i){ return i * sr / SM_N; }
+    function rng(lo, hi){ var a = 0; while(a < SM_NB - 1 && hz(a) < lo) a++; var b = a; while(b < SM_NB - 1 && hz(b) < hi) b++; return [a, Math.max(a + 1, b)]; }
+    return { mono: mono, sr: sr, S: S, fi: 0, sm: new Float32Array(SM_NB), first: true,
+             re: new Float32Array(SM_N), im: new Float32Array(SM_N), hz: hz,
+             rCrack: rng(2000, 4700), rTop: rng(6300, 16000), rLow: rng(40, 250), rMid: rng(250, 2000) };
+  }
+  function smSeriesChunk(st, maxFrames){
+    var S = st.S, mono = st.mono;
+    var end = Math.min(S.nFrames, st.fi + maxFrames);
+    function meanR(arr, r){ var s = 0; for(var i = r[0]; i < r[1]; i++) s += arr[i]; return s / (r[1] - r[0]); }
+    for(; st.fi < end; st.fi++){
+      var fi = st.fi, off = fi * SM_HOP, k, bin;
+      for(k = 0; k < SM_N; k++){ st.re[k] = (mono[off + k] || 0) * SM_WIN[k]; st.im[k] = 0; }
+      smFFT(st.re, st.im);
+      var mag = new Float32Array(SM_NB);
+      for(bin = 0; bin < SM_NB; bin++){
+        mag[bin] = Math.sqrt(st.re[bin] * st.re[bin] + st.im[bin] * st.im[bin]) / SM_N;
+        st.sm[bin] = st.first ? mag[bin] : 0.30 * st.sm[bin] + 0.70 * mag[bin];
+      }
+      st.first = false;
+      S.linCrack[fi] = meanR(mag, st.rCrack); S.linTop[fi] = meanR(mag, st.rTop);
+      S.linLow[fi] = meanR(mag, st.rLow); S.linMid[fi] = meanR(mag, st.rMid);
+      var sB = 0, nB = 0, sM = 0, nM = 0, sC = 0, nC = 0, sT = 0, nT = 0, i2, f, v;
+      for(i2 = 1; i2 < SM_NB; i2++){
+        f = st.hz(i2);
+        v = Math.min(255, Math.max(0, (20 * Math.log10(Math.max(st.sm[i2], 1e-12)) + 100) / 70 * 255)) / 255;
+        if(f < 250){ sB += v; nB++; } else if(f < 2000){ sM += v; nM++; } else if(f < 4700){ sC += v; nC++; }
+        if(f >= 6300){ sT += v; nT++; }
+      }
+      S.bytBass[fi] = nB ? sB / nB : 0; S.bytMid[fi] = nM ? sM / nM : 0;
+      S.bytCrack[fi] = nC ? sC / nC : 0; S.bytTop[fi] = nT ? sT / nT : 0;
+    }
+    return st.fi >= S.nFrames;
+  }
+  function stuAnalyze(id, key, rec, buf, onDone){
+    function finish(){ if(onDone) onDone(); }
+    try {
+      var sr = buf.sampleRate, ch = buf.numberOfChannels, dur = buf.duration;
+      var len = buf.length, mono = new Float32Array(len), peak = 0, sq = 0, i, j;
+      var chans = [];
+      for(j = 0; j < ch; j++) chans.push(buf.getChannelData(j));
+      for(i = 0; i < len; i++){
+        var s = 0; for(j = 0; j < ch; j++) s += chans[j][i];
+        s /= ch; mono[i] = s;
+        var a = Math.abs(s); if(a > peak) peak = a; sq += s * s;
+      }
+      chans = null; buf = null; /* decoded buffer released — only the series + study survive */
+      var rms = Math.sqrt(sq / Math.max(1, len));
+      var st = smSeriesInit(mono, sr);
+      var stepChunk = function(){
+        try {
+          if(!smSeriesChunk(st, 1500)){ setTimeout(stepChunk, 0); return; }
+          var S = st.S; st = null;
+          var det = smDetect(S), stats = smStats(S);
+          /* sane caps: even a long, dense song's study stays a
+             few KB of times + strengths, never an archive */
+          if(det.claps.length > 4000) det.claps.length = 4000;
+          if(det.kicks.length > 8000) det.kicks.length = 8000;
+          var study = { v: 1, key: key, name: rec.name || '',
+            ext: (String(rec.name || '').split('.').pop() || '').toLowerCase(),
+            size: rec.size || 0, dur: +dur.toFixed(2), sr: sr, ch: ch,
+            bitrate: (dur > 0 && rec.size) ? Math.round(rec.size * 8 / dur) : 0,
+            snd: { bass: stats.bass, mid: stats.mid, crack: stats.crack, top: stats.top,
+                   bpm: det.bpm, peak: +peak.toFixed(3), rms: +rms.toFixed(4) },
+            pat: det.pat, claps: det.claps, kicks: det.kicks };
+          STU.mem[key] = study; STU.decodes++;
+          delete STU.pend[key];
+          stuPut(key, study);
+          if(mKey === key && !mStudy){ mStudy = study; mIdx = 0; mLastCt = -1; }
+          finish();
+        } catch(e){ STU.fail[key] = true; delete STU.pend[key]; finish(); }
+      };
+      setTimeout(stepChunk, 0);
+    } catch(e){ STU.fail[key] = true; delete STU.pend[key]; finish(); }
+  }
+  /* map playback: fire the dip from the study, scheduled against
+     the audio element's own clock with a small lookahead so the
+     pulse lands ON the hit; seeks resync by position */
+  function stuFireMap(now){
+    if(!mStudy || !mStudy.claps || !window.__bwAudio || !window.__bwAudio.a) return;
+    var a = window.__bwAudio.a, ct = a.currentTime, cl = mStudy.claps;
+    if(mLastCt < 0 || ct < mLastCt - 0.5 || ct > mLastCt + 2){
+      mIdx = 0; while(mIdx < cl.length && cl[mIdx][0] < ct - 0.05) mIdx++;
+    }
+    mLastCt = ct;
+    while(mIdx < cl.length && cl[mIdx][0] <= ct + 0.03){
+      if(cl[mIdx][0] >= ct - 0.35){ clapDip = Math.max(clapDip, cl[mIdx][1]); gFireTs.push(now); }
+      mIdx++;
     }
   }
   var X_C = [Math.PI/4, 3*Math.PI/4, 5*Math.PI/4, 7*Math.PI/4];
@@ -6958,7 +7582,8 @@ runners['lava-canvas'] = function(canvas, ctx, state){
          crack statistics, timed re-tries, slot bookkeeping --- */
       gIdleT = 0;
       var gTid = (window.__bwAudio && window.__bwAudio.id) || null;
-      if(gTid !== gTrack){ gTrack = gTid; gHits = []; gKickTs = []; gSamp = []; gResetGrid(); }
+      if(gTid !== gTrack){ gTrack = gTid; gHits = []; gKickTs = []; gSamp = []; gResetGrid(); gDevHist = []; gMisfitRun = 0; gLastGridT = -1e9; gFireTs = []; stuOnTrack(gTid); }
+      if(!mStudy && gTid && now - mStuTry > 2000){ mStuTry = now; stuKickoff(gTid); }
       gSamp.push(crackE); if(gSamp.length > 2048) gSamp.splice(0, gSamp.length - 2048);
       if(!(gLastStat > 0 && now - gLastStat < 500)){
         gLastStat = now;
@@ -6972,21 +7597,54 @@ runners['lava-canvas'] = function(canvas, ctx, state){
         if(Math.abs(now - gT) <= gHalfW() && crackE > gWinPeak) gWinPeak = crackE;
         if(now > gT + gHalfW()){
           if(!gDone){
-            var gSil = gHitMed > 0 ? gMed + 0.15 * (gHitMed - gMed) : 0.30;
             var gSl = gSlots[gIdx];
-            if(gWinPeak < gSil){
-              gSilent++;
-              if(gSl){ gSl.drops++; if(gSl.drops >= 2) gSl.muted = true; }
-            } else { gSilent = 0; if(gSl) gSl.drops = 0; }
-            if(gSilent >= 3 || (gSlots.length && gSlots.every(function(x){ return x.muted; }))) gResetGrid();
+            /* deviation visit? a fire (free/grid/map) within
+               +-300 ms of the slot means the clap came, just off
+               its mark — that is NOT a silent visit */
+            var gNear = false, gfi;
+            gFireTs = gFireTs.filter(function(x){ return now - x < 5000; });
+            for(gfi = 0; gfi < gFireTs.length; gfi++){ if(Math.abs(gFireTs[gfi] - gT) <= 300){ gNear = true; break; } }
+            if(gNear){
+              if(gSl) gSl.drops = 0;
+              gSilent = 0;
+            } else if(!gTryComplete(now)){
+              var gSil = gHitMed > 0 ? gMed + 0.15 * (gHitMed - gMed) : 0.30;
+              if(gWinPeak < gSil){
+                gSilent++;
+                if(gSl){ gSl.drops++; if(gSl.drops >= 2) gSl.muted = true; }
+              } else { gSilent = 0; if(gSl) gSl.drops = 0; }
+              if(gSilent >= 3 || (gSlots.length && gSlots.every(function(x){ return x.muted; }))) gResetGrid();
+            }
+            /* bounded local shift: if this slot's recent claps
+               consistently landed off its position, move the
+               slot itself (never more than +-120 ms from fit) */
+            if(gLock && gSl && gSlots[gIdx] === gSl){
+              if(gSl.devCnt >= 2){
+                var gMean = gSl.devSum / gSl.devCnt;
+                if(Math.abs(gMean) >= 40){
+                  var gNewOff = gSl.off + Math.max(-60, Math.min(60, gMean * 0.5));
+                  var gDFit = gNewOff - gSl.offFit;
+                  if(Math.abs(gDFit) > 120) gNewOff = gSl.offFit + (gDFit > 0 ? 120 : -120);
+                  gSl.off = gNewOff;
+                }
+              }
+              gSl.devCnt = 0; gSl.devSum = 0;
+            }
           }
-          if(gLock){ gStepSlot(); gWinPeak = 0; gDone = false; }
+          if(gLock){ gStepSlot(); gWinPeak = 0; gWinBest = null; gDone = false; }
         }
       }
       if(lastEvalT < 0){ evCrack = crackE; evTop = topE; lastEvalT = now; }
       else if(now - lastEvalT >= 28){
         var cRise = crackE - evCrack, tRise = topE - evTop;
         var over = crackE - crackAvg;
+        /* round 7: inside a slot window, remember the best
+           crack-led peak (completion's quarry); once it starts
+           falling, the hunt fires near the peak, not at close */
+        if(gLock && !gDone && Math.abs(now - gNextSlotT()) <= gHalfW()){
+          if(cRise > tRise * 0.40 && cRise > 0.008 && (!gWinBest || crackE > gWinBest.e)) gWinBest = { e: crackE, t: now };
+          if(gWinBest && now > gWinBest.t && crackE < gWinBest.e * 0.85) gTryComplete(now);
+        }
         var cand = (over > 0.11 && cRise > 0.02 && cRise > tRise*0.9 && crackE > 0.30);
         if(cand && now - lastClapT > 150){
           var inWin = (patConf >= 0.5 && patI > 0 && Math.abs(now - patNext) <= patI*0.28);
@@ -7002,10 +7660,11 @@ runners['lava-canvas'] = function(canvas, ctx, state){
             }
             clapDip = Math.max(clapDip, Math.min(1, Math.max(0.6, 0.35 + over*1.5)) * (lone ? 0.75 : 1));
             lastClapT = now;
+            gFireTs.push(now);
             if(patI > 0){ patNext = now + patI; if(strong) patConf = Math.min(1, patConf + 0.34); }
             seedT = now;
             if(strong || lone) gOnConf(now, crackE);
-            else if(gLock && Math.abs(now - gNextSlotT()) <= gHalfW()) gConfirmSlot(now);
+            else if(gLock && Math.abs(now - gNextSlotT()) <= gHalfW()) gConfirmSlot(now, crackE);
           } else if(spacing >= 340){ seedT = now; }
         }
         /* MAGIC (v6): a predicted slot's window drops the gate to
@@ -7013,16 +7672,18 @@ runners['lava-canvas'] = function(canvas, ctx, state){
            fires at its measured onset, full depth by its strength.
            Silence never fires: the slot's peak is judged at close
            (dropout discipline in the frame block above). */
-        if(gLock && !gDone && Math.abs(now - gNextSlotT()) <= gHalfW() && now - lastClapT > 100){
+        if(gLock && !gDone && Math.abs(now - gNextSlotT()) <= gHalfW() && now - Math.max(lastClapT, gLastGridT) > 100){
           var gFloorC = gHitMed > 0 ? Math.max(0.22, gMed + 0.30 * (gHitMed - gMed)) : 0.40;
           if(crackE > gFloorC && over > 0.05 && cRise > 0.008 && cRise > tRise * 0.40){
             clapDip = Math.max(clapDip, Math.min(1, Math.max(0.55, 0.45 + over * 1.6 + Math.max(0, crackE - gFloorC) * 0.6)));
-            lastClapT = now;
-            gConfirmSlot(now);
+            gLastGridT = now;   /* the grid keeps its OWN refractory — it must never delay the free ear */
+            gFireTs.push(now);
+            gConfirmSlot(now, crackE);
           }
         }
         evCrack = crackE; evTop = topE; lastEvalT = now;
       }
+      stuFireMap(now);
     } else {
       aEnv *= 0.94; bassNow *= 0.92; highNow *= 0.92; beatNow *= 0.9;
       xEnv *= 0.92; pEnv *= 0.9;

@@ -2457,6 +2457,24 @@ function beforeHide(id){
   if(id==='join')  stopRunner('anvil-canvas');
   if(id==='files') stopRunner('lava-canvas');
 }
+/* ---------- room URLs (Nov 13, his ask) ----------
+   Every room writes its name into the address bar as it opens —
+   ?room=sea, ?room=files, ?room=buildlog — so a copied link lands
+   on the room itself, and Back steps through the rooms visited.
+   Home keeps the clean front-door address (no ?room= at all).
+   If the address already says this room, nothing is written, so
+   deep-link arrivals and Back/Forward never stack duplicates. */
+function bwRoomUrlSync(id, push){
+  try{
+    var u = new URL(window.location.href);
+    if(!id || id === 'home') u.searchParams.delete('room');
+    else u.searchParams.set('room', id);
+    var next = u.toString();
+    if(next === window.location.href) return;
+    if(push) history.pushState(null, '', next);
+    else history.replaceState(null, '', next);
+  }catch(e){}
+}
 function switchView(name){
   var id = (name==='welcome') ? 'join' : name;      // Welcome = Join (his call 2026-10-30: joining has 2 doors — Welcome up top, Join under More)
   document.body.setAttribute('data-current', id);  // the Orbit Dance shows on Home only
@@ -2465,13 +2483,13 @@ function switchView(name){
   setActiveNav(name);
   closeMore();
   var curId = currentViewId();
-  if(curId===id || switching){ if(curId!==id) return; window.scrollTo({top:0}); return; }
+  if(curId===id || switching){ if(curId!==id) return; bwRoomUrlSync(id, false); window.scrollTo({top:0}); return; }
   beforeHide(curId);
   var current = document.querySelector('.view.active');
   if(!current || REDUCED){
     if(current) current.classList.remove('active');
     target.classList.add('active');
-    afterShow(id); window.scrollTo({top:0}); return;
+    afterShow(id); bwRoomUrlSync(id, true); window.scrollTo({top:0}); return;
   }
   switching = true;
   current.classList.add('fading-out');
@@ -2483,6 +2501,7 @@ function switchView(name){
     setTimeout(done, 750); // safety if animationend is missed
     switching = false;
     afterShow(id);
+    bwRoomUrlSync(id, true);
     window.scrollTo({top:0});
   }, 310);
 }
@@ -2514,6 +2533,20 @@ document.getElementById('get-started').addEventListener('click', function(){ swi
   if(document.readyState === 'complete') setTimeout(go, 50);
   else window.addEventListener('load', function(){ setTimeout(go, 50); });
 })();
+
+/* ---------- room URLs: Back and Forward walk the rooms ----------
+   The browser has already changed the address when this fires;
+   bwRoomUrlSync sees the address is right and writes nothing, so
+   history stays exactly the stack the visitor walked. */
+window.addEventListener('popstate', function(){
+  var room = 'home';
+  try{ room = (new URLSearchParams(window.location.search).get('room') || 'home').toLowerCase(); }catch(e){}
+  var ROOMS = ['home','login','welcome','sea','hub','join','files','kintsugi','buildlog'];
+  if(ROOMS.indexOf(room) < 0) room = 'home';
+  var targetId = (room === 'welcome') ? 'join' : room;
+  if(currentViewId() === targetId) return;
+  switchView(room);
+});
 
 /* ---------- demo toasts ---------- */
 /* Log In button opens the sign-up modal — wired in the modal block below. */

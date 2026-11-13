@@ -8421,10 +8421,21 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
      Filter opens dressed the way the visitor left the main site. */
   var cfDoor = document.querySelector('a.door-2[href*="completion-filter"]');
   var boardDoor = document.querySelector('a.door-3[href*="completion-filter/board"]');
+  var oceanDoor = document.querySelector('a.door-1[href*="bw-ocean"]');
   function syncCfDoor(){
     var t = theme === 'halloween' ? 'halloween' : theme === 'xmas' ? 'christmas' : 'normal';
     if(cfDoor) cfDoor.setAttribute('href', 'https://isaiahtobola.github.io/completion-filter/?theme=' + t);
     if(boardDoor) boardDoor.setAttribute('href', 'https://isaiahtobola.github.io/completion-filter/board/?theme=' + t);
+    /* the Ocean door rides the same sync (Nov 12): NORMAL is
+       handed over as the word 'normal', never as silence — a
+       missing ?theme= lets the Ocean fall back to whatever
+       season its own origin remembers, and a stale Halloween
+       there outlived the main site's return to plum. The Ocean's
+       own boot parser speaks 'xmas' (the word the click-time
+       pass below has always sent it), so Christmas keeps that
+       word here — 'christmas' is the Completion Filter dialect,
+       and the Ocean would not understand it. */
+    if(oceanDoor) oceanDoor.setAttribute('href', 'https://isaiahtobola.github.io/bw-ocean/?theme=' + (theme === 'halloween' ? 'halloween' : theme === 'xmas' ? 'xmas' : 'normal'));
   }
   function applyTheme(){
     var open = seasonOpen();
@@ -10493,13 +10504,20 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
      tapped — Halloween, Christmas, or plain plum-and-gold — ride
      across the link as ?theme=, and the Ocean dresses the same.
      Rewritten at click time (capture phase), so the toggle's
-     current word is always the one that travels. */
+     current word is always the one that travels.
+     NORMAL RIDES TOO (Nov 12): the door href also stays synced by
+     applyTheme() (see syncCfDoor), and this click-time pass now
+     speaks the same word for plum — ?theme=normal — instead of
+     stripping the link bare. A bare link let the Ocean fall back
+     to its own remembered season, which is how a stale Halloween
+     kept greeting a visitor whose main site had gone back to
+     plum. One word for every theme, from both passes. */
   document.addEventListener('click', function(e){
     var a = e.target && e.target.closest ? e.target.closest('a[href*="bw-ocean"]') : null;
     if(!a) return;
     var th = document.body.getAttribute('data-theme');
     var base = 'https://isaiahtobola.github.io/bw-ocean/';
-    a.setAttribute('href', (th === 'halloween' || th === 'xmas') ? (base + '?theme=' + th) : base);
+    a.setAttribute('href', base + '?theme=' + (th === 'halloween' ? 'halloween' : th === 'xmas' ? 'xmas' : 'normal'));
   }, true);
   /* ---------- waters polish: a quiet-lake note ---------- */
   function bwWatersEmptyNote(){

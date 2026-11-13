@@ -982,6 +982,10 @@ body.wave-on .mrail{opacity:0; pointer-events:none}
   #hub-feed.lanes-2{column-count:2; column-gap:22px}
   #hub-feed.lanes-2 .post-card{break-inside:avoid; -webkit-column-break-inside:avoid}
   #hub-feed.lanes-2 .bw-retry-note{break-inside:avoid}
+  /* Nov 12 fold-in (his order): the Hub pour is THREE lanes on PC now. */
+  #hub-feed.lanes-3{column-count:3; column-gap:22px}
+  #hub-feed.lanes-3 .post-card{break-inside:avoid; -webkit-column-break-inside:avoid}
+  #hub-feed.lanes-3 .bw-retry-note{break-inside:avoid}
 }
 .hub-panel{display:none}
 .hub-panel.active{display:block; animation:viewFadeIn .45s ease both}
@@ -1880,7 +1884,7 @@ html.kint-lock{overflow:hidden !important}
         <div class="composer-actions"><span class="composer-note">Open to read — join or log in to post</span><button class="post-btn" id="hub-post-btn">Post</button></div>
       </div>
     </div>
-    <div class="hub-lane-row"><button class="chip" id="hub-lane-toggle" type="button" aria-pressed="false" title="Pour the Hub into two lanes — wide screens only">2 LANES</button></div>
+    <div class="hub-lane-row"><button class="chip" id="hub-lane-toggle" type="button" aria-pressed="false" title="Pour the Hub into three lanes — wide screens only">3 LANES</button></div>
     <div id="hub-feed"></div>
     <p class="feed-empty" id="hub-empty">No posts yet — yours will be the first thing on the porch.</p>
     </div><!-- /hubpanel-discussion -->
@@ -4999,23 +5003,26 @@ document.querySelectorAll('.hub-tab-btn').forEach(function(btn){
     });
   });
 });
-/* ---------- HUB 2-LANE TOGGLE (Build 111 fold-in, PC only) ---------- */
+/* ---------- HUB LANE TOGGLE (Build 111 fold-in, PC only;
+   Nov 12 fold-in, his order: the pour is THREE lanes now.
+   A stored '2' from the two-lane days still counts as ON.) ---------- */
 (function(){
   var btn = document.getElementById('hub-lane-toggle');
   var feed = document.getElementById('hub-feed');
   if(!btn || !feed) return;
   function apply(on){
-    feed.classList.toggle('lanes-2', !!on);
+    feed.classList.toggle('lanes-3', !!on);
+    feed.classList.remove('lanes-2');
     btn.classList.toggle('active', !!on);
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
   }
   var on = false;
-  try{ on = window.localStorage.getItem('bw-hub-lanes') === '2'; }catch(e){ on = false; }
+  try{ var v = window.localStorage.getItem('bw-hub-lanes'); on = (v === '3' || v === '2'); }catch(e){ on = false; }
   apply(on);
   btn.addEventListener('click', function(){
-    on = !feed.classList.contains('lanes-2');
+    on = !feed.classList.contains('lanes-3');
     apply(on);
-    try{ window.localStorage.setItem('bw-hub-lanes', on ? '2' : '1'); }catch(e){}
+    try{ window.localStorage.setItem('bw-hub-lanes', on ? '3' : '1'); }catch(e){}
   });
 })();
 
@@ -10671,6 +10678,76 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
   });
   applyFilters();
   ogsUpdate();
+})();
+</script>
+<script>
+/* ---------- NOV 12 MINI-ROUND (his asks, from the Sea) ----------
+   1) The BW Hub door in the Sea: tapping the Hub's avatar or name
+      now sails to the BW Hub — it used to sit there doing nothing.
+   2) Already signed in? Any door that would open the Log In form
+      instead says so: "You are already signed in". Logged-out
+      visitors get the exact same doors as before. */
+(function(){
+  function signedIn(){
+    return !!((window.BW && BW.user) || window.__bwSignOut);
+  }
+  /* the prompt, in the site's own toast — the toast voice lives
+     inside the early rooms' walls, so this writes into the same
+     #toast element, with the same 3.4s of air */
+  var toastTimer = null;
+  function alreadyIn(){
+    var t = document.getElementById('toast');
+    if(!t) return;
+    t.textContent = 'You are already signed in';
+    t.classList.add('show');
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3400);
+  }
+  /* sail to the Hub the way every room is reached from out here:
+     tap the menu's own BW Hub button (switchView lives behind
+     the same walls as the toast) */
+  function goHub(){
+    var b = document.querySelector('.mrail-menu [data-view="hub"]')
+         || document.querySelector('.more-menu [data-view="hub"]')
+         || document.querySelector('[data-view="hub"]');
+    if(b) b.click();
+  }
+  /* (the form's other openers — the guarded bwOpenModal calls and
+     the Log In button's own handler — already turn members away:
+     every bwOpenModal call sits behind a !BW.user check, and the
+     Log In button only opens the form on its signed-out branch.
+     The Sea's Join button was the one unguarded door; it is
+     handled below.) */
+  /* the Sea's BW Hub door (picked out by its name — lake rows wear
+     the same class and are not this door) */
+  var sea = document.getElementById('view-sea');
+  var row = null;
+  if(sea){
+    var lines = sea.querySelectorAll('.group-line');
+    for(var i=0;i<lines.length;i++){
+      var b = lines[i].querySelector('.meta b');
+      if(b && (b.textContent || '').trim() === 'BW Hub'){ row = lines[i]; break; }
+    }
+  }
+  if(row){
+    var av = row.querySelector('.avatar');
+    var meta = row.querySelector('.meta');
+    if(av){ av.style.cursor = 'pointer'; av.addEventListener('click', goHub); }
+    if(meta){ meta.style.cursor = 'pointer'; meta.addEventListener('click', goHub); }
+  }
+  /* the Sea's Join button: signed in -> the prompt, and on to the
+     Hub (the door he actually wanted); logged out -> the modal,
+     as always. Capture phase, so the old handler never fires
+     for members; logged-out clicks fall straight through. */
+  document.addEventListener('click', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('#hub-join-btn') : null;
+    if(!t) return;
+    if(!signedIn()) return;
+    e.stopPropagation();
+    e.preventDefault();
+    alreadyIn();
+    goHub();
+  }, true);
 })();
 </script>
 </body>

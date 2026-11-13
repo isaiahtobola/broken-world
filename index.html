@@ -626,6 +626,9 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
 .river-bar .rv-label{font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted)}
 .river-members{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:-8px 0 16px; font-family:var(--mono); font-size:12px; color:var(--muted)}
 .river-members[hidden]{display:none}
+#river-bar .river-add{display:none; flex-wrap:wrap; gap:6px; width:100%; margin:2px 0 4px; background:var(--panel); border:1px solid rgba(240,183,63,.4); border-radius:14px; padding:10px 12px}
+#river-bar .river-add.open{display:flex}
+#river-bar .river-add .ra-note{width:100%; font-family:var(--mono); font-size:11.5px; color:var(--muted); line-height:1.5}
 /* BUILD 100 — THE TWO BANKS: Rivers hold the left bank under the Menus
    side, Lakes keep the right bank; both lists scroll in place. */
 .sea-grid aside .side-panel + .side-panel{margin-top:20px}
@@ -3216,6 +3219,7 @@ function bwFetchPostsRaw(){
                  lake_id: row.lake_id || null };
       });
       renderPosts();
+      if(window.__bwFetchLakePosts) window.__bwFetchLakePosts();
       try{ localStorage.setItem('bw108.posts', JSON.stringify(BW.posts)); }catch(e){}
       bwFetchSocial();
       bwHubSyncLive102();
@@ -3960,8 +3964,8 @@ function bwDecorate(){
       var post = BW.posts[i];
       if(!post || typeof post.id !== 'string') return;
       if(pair[1] && BW.showSaved && !BW.saves[post.id]){ card.style.display = 'none'; return; }
-      if(pair[1] && BW.lakeFilter && post.lake_id !== BW.lakeFilter){ card.style.display = 'none'; return; }
-      if(pair[1] && BW.riverFilter && BW.rivers && BW.rivers[BW.riverFilter] && BW.rivers[BW.riverFilter].lakes.indexOf(post.lake_id) < 0){ card.style.display = 'none'; return; }
+      if(pair[1] && BW.lakeFilter && !(window.__bwPostInLake ? window.__bwPostInLake(post, BW.lakeFilter) : post.lake_id === BW.lakeFilter)){ card.style.display = 'none'; return; }
+      if(pair[1] && BW.riverFilter && BW.rivers && BW.rivers[BW.riverFilter] && !BW.rivers[BW.riverFilter].lakes.some(function(lid){ return window.__bwPostInLake ? window.__bwPostInLake(post, lid) : post.lake_id === lid; })){ card.style.display = 'none'; return; }
       if(pair[1] && post.lake_id && BW.lakes && BW.lakes[post.lake_id] && !card.querySelector('.lake-badge')){
         var spEl = card.querySelector('.post-head .who span');
         if(spEl){ var bd = document.createElement('span'); bd.className = 'lake-badge'; bd.textContent = BW.lakes[post.lake_id].name; spEl.appendChild(bd); }
@@ -3991,6 +3995,29 @@ function bwDecorate(){
       }
       var svNow = head ? head.querySelector('.save-btn') : null;
       if(svNow){ svNow.className = 'save-btn' + (BW.saves[post.id] ? ' saved' : ''); svNow.textContent = BW.saves[post.id] ? 'Saved' : 'Save'; }
+      /* pour into a lake / take back out (his calls, Nov 12) */
+      if(head && BW.user && BW.lakePostsReady && !head.querySelector('.lake-add-btn')){
+        var lab = document.createElement('button');
+        lab.type = 'button'; lab.className = 'save-btn lake-add-btn'; lab.textContent = 'Add to a lake';
+        lab.title = 'Pour this post into one of your lakes \u2014 it stays on the Sea; the author gets a letter and can take it back out';
+        lab.addEventListener('click', function(){ if(window.__bwToggleLakePick) window.__bwToggleLakePick(card, post); });
+        var delRef = head.querySelector('.post-del');
+        if(delRef) head.insertBefore(lab, delRef); else head.appendChild(lab);
+      }
+      var oldOut = card.querySelector('.lake-out-btn');
+      var canOut = !!(pair[1] && BW.user && BW.lakeFilter && post.author_id === BW.user.id &&
+        BW.lakePosts && BW.lakePosts[BW.lakeFilter] && BW.lakePosts[BW.lakeFilter][post.id] &&
+        post.lake_id !== BW.lakeFilter);
+      if(canOut && !oldOut){
+        var ob = document.createElement('button');
+        ob.type = 'button'; ob.className = 'save-btn lake-out-btn'; ob.style.margin = '8px 12px 0';
+        ob.textContent = 'Take my post out of this lake';
+        ob.title = 'Close this lake\u2019s path to your post \u2014 the post itself stays on the Sea, untouched';
+        ob.addEventListener('click', function(){ if(window.__bwTakePostOut) window.__bwTakePostOut(post, BW.lakeFilter, ob); });
+        var rxRef = card.querySelector('.reactions');
+        if(rxRef && rxRef.parentNode) rxRef.parentNode.insertBefore(ob, rxRef); else card.appendChild(ob);
+      }
+      if(!canOut && oldOut) oldOut.remove();
       /* reactions — real now */
       var rxBox = card.querySelector('.reactions');
       if(rxBox){
@@ -4370,6 +4397,176 @@ window.__bwAuth = function(form){
         .catch(function(){ return 0; });
     }).catch(function(){ return 0; });
   }
+  /* ---------- RIVER CASCADE, DRY-UP, STOCKING + STEP-OUT MAIL (his calls, Nov 12) ----------
+     New laws of the waters, all worked through the letter desk
+     (bw-welcome), which checks the truth server-side:
+     · a lake that feeds a river is filled in -> everyone in each
+       of its rivers gets a letter (/river-cascade, called before
+       the row goes — the same before-you-delete pattern as the
+       build-98 farewells);
+     · a river left with NO lakes dries up by itself (/river-dry):
+       the desk re-counts its lakes, deletes the empty river, and
+       sends the dry-up letter. A leftover empty river found on a
+       whole, healthy load is swept the same way;
+     · a lake owner stepping out of a river (/river-left) writes
+       to BOTH shores — the river's creator and the lake's owner —
+       and if the step-out emptied the river, the dry-up follows;
+     · pouring a lake into a river (/river-add) writes to the
+       lake's owner, so they know — and know they can step out.
+     If the desk has not learned these routes yet, every call
+     quietly answers nothing and the waters behave as they did. */
+  function bwRiverMail(path, payload){
+    if(!BW.sb) return Promise.resolve(null);
+    return BW.sb.auth.getSession().then(function(r){
+      var tok = r && r.data && r.data.session && r.data.session.access_token;
+      if(!tok) return null;
+      return fetch('https://bw-welcome.isaiahtobola.workers.dev' + path, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload || {})
+      }).then(function(resp){ return resp.ok ? resp.json().catch(function(){ return {}; }) : null; })
+        .catch(function(){ return null; });
+    }).catch(function(){ return null; });
+  }
+  function bwRiverCascade(lakeId){
+    return bwRiverMail('/river-cascade', { lakeId: lakeId }).then(function(j){
+      return (j && j.ok) ? j : { notices: 0, rivers: 0, dry: [] };
+    });
+  }
+  function bwRiverDry(riverId, people){
+    return bwRiverMail('/river-dry', { riverId: riverId, people: people || [] }).then(function(j){ return j || {}; });
+  }
+  var bwSweptRivers = {};
+  function bwSweepDryRivers(){
+    if(!BW.user || !BW.sb) return;
+    Object.keys(BW.rivers || {}).forEach(function(rid){
+      var R = BW.rivers[rid];
+      if(!R || !R.lakes || R.lakes.length || bwSweptRivers[rid]) return;
+      bwSweptRivers[rid] = 1;
+      bwRiverDry(rid, []).then(function(j){
+        if(j && j.dried){
+          toast('The river "' + R.name + '" had no lakes left in it — it has dried up' + (j.sent ? ', and the letter went to its creator' : '') + '.');
+          bwFetchRivers();
+        }
+      });
+    });
+  }
+  var bwRiverAddOpen = null;
+  function bwAddLakeToRiver(riverId, lakeId, btn){
+    if(!BW.user || !BW.sb) return;
+    var R = BW.rivers[riverId], L = BW.lakes[lakeId];
+    if(!R || !L) return;
+    if(btn) btn.textContent = 'Pouring…';
+    BW.sb.from('river_lakes').insert({ river_id: riverId, lake_id: lakeId }).then(function(r){
+      if(r.error){ toast('That did not go through — ' + r.error.message); bwRenderRivers(); return; }
+      R.lakes.push(lakeId);
+      bwRiverMail('/river-add', { riverId: riverId, lakeId: lakeId }).then(function(){
+        toast(L.name + ' now flows in ' + R.name + '.' + (L.owner !== BW.user.id ? ' Its owner gets a letter — and can step out any time.' : ''));
+        bwRenderRivers(); bwDecorate();
+      });
+    });
+  }
+  /* ---------- POSTS POURED INTO LAKES (his call, Nov 12) ----------
+     A post lives on the Sea forever; a lake can hold a PATH to it
+     (lake_posts). The lake's owner pours any Sea post into their
+     lake from the post's own card; the author gets a letter, and
+     can take their post back out of any lake with one button.
+     The post itself is never moved, edited, or copied. */
+  BW.lakePosts = {}; BW.lakePostsReady = false;
+  function bwPostInLake(post, lakeId){
+    if(!post || !lakeId) return false;
+    if(post.lake_id === lakeId) return true;
+    var set = BW.lakePosts && BW.lakePosts[lakeId];
+    return !!(set && set[post.id]);
+  }
+  function bwFetchLakePosts(){
+    if(!BW.sb || BW.noLakePosts) return;
+    BW.sb.from('lake_posts').select('lake_id, post_id').limit(4000).then(function(r){
+      if(r.error){
+        if(/lake_posts/.test(r.error.message || '')){ BW.noLakePosts = true; BW.lakePostsReady = false; }
+        return;
+      }
+      var map = {};
+      (r.data || []).forEach(function(row){ (map[row.lake_id] = map[row.lake_id] || {})[row.post_id] = true; });
+      BW.lakePosts = map; BW.lakePostsReady = true;
+      bwDecorate();
+    });
+  }
+  function bwToggleLakePick(card, post){
+    var old = card.querySelector('.post-lake-pick');
+    if(old){ old.remove(); return; }
+    var panel = document.createElement('div'); panel.className = 'rx-bank post-lake-pick';
+    var head = document.createElement('div'); head.className = 'rx-bank-head';
+    var title = document.createElement('span'); title.textContent = 'POUR INTO YOUR LAKE';
+    var close = document.createElement('button'); close.type = 'button'; close.textContent = '\u2715'; close.title = 'Close';
+    close.addEventListener('click', function(){ panel.remove(); });
+    head.appendChild(title); head.appendChild(close); panel.appendChild(head);
+    var mine = Object.keys(BW.lakes || {}).filter(function(lid){ return BW.lakes[lid].owner === BW.user.id; });
+    var avail = mine.filter(function(lid){ return !bwPostInLake(post, lid); });
+    if(!mine.length){
+      var e1 = document.createElement('div'); e1.className = 'rx-bank-empty';
+      e1.textContent = 'You have no lakes yet \u2014 dig one from the Lakes panel, then you can pour posts into it.';
+      panel.appendChild(e1);
+    } else if(!avail.length){
+      var e2 = document.createElement('div'); e2.className = 'rx-bank-empty';
+      e2.textContent = 'This post already flows in every lake of yours.';
+      panel.appendChild(e2);
+    } else {
+      var grid = document.createElement('div'); grid.className = 'rx-bank-grid';
+      avail.forEach(function(lid){
+        var L = BW.lakes[lid];
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'chip';
+        b.textContent = L.name;
+        b.title = 'Pour this post into ' + L.name;
+        b.addEventListener('click', function(){ panel.remove(); bwAddPostToLake(post, lid); });
+        grid.appendChild(b);
+      });
+      panel.appendChild(grid);
+    }
+    var rxB = card.querySelector('.reactions');
+    if(rxB && rxB.parentNode) rxB.parentNode.insertBefore(panel, rxB.nextSibling); else card.appendChild(panel);
+  }
+  function bwAddPostToLake(post, lakeId){
+    if(!BW.user || !BW.sb) return;
+    var L = BW.lakes && BW.lakes[lakeId];
+    if(!L) return;
+    BW.sb.from('lake_posts').insert({ lake_id: lakeId, post_id: post.id, added_by: BW.user.id }).then(function(r){
+      if(r.error){
+        if(/lake_posts/.test(r.error.message || '')){ BW.noLakePosts = true; toast('Lake paths are still waking \u2014 one quick notebook step from Lux and they light up.'); }
+        else toast('That did not go through \u2014 ' + r.error.message);
+        return;
+      }
+      (BW.lakePosts[lakeId] = BW.lakePosts[lakeId] || {})[post.id] = true;
+      bwRiverMail('/post-add', { postId: post.id, lakeId: lakeId }).then(function(){
+        toast('Poured into ' + L.name + ' \u2014 the post still lives on the Sea.' + (post.author_id !== BW.user.id ? ' Its author gets a letter.' : ''));
+      });
+      bwDecorate();
+    });
+  }
+  function bwTakePostOut(post, lakeId, btn){
+    bwArm(btn, 'Sure? Tap again to take it out', function(){
+      var L = BW.lakes && BW.lakes[lakeId];
+      bwRiverMail('/post-left', { postId: post.id, lakeId: lakeId }).then(function(){
+        if(!BW.sb) return;
+        BW.sb.from('lake_posts').delete().eq('lake_id', lakeId).eq('post_id', post.id).select('id').then(function(r){
+          if(r.error || !(r.data && r.data.length)){ toast('That did not go through \u2014 the path is still open. Try again in a moment.'); return; }
+          if(BW.lakePosts[lakeId]) delete BW.lakePosts[lakeId][post.id];
+          toast('Your post is out of ' + ((L && L.name) || 'the lake') + ' \u2014 it still lives on the Sea.');
+          bwDecorate();
+        });
+      });
+    });
+  }
+  /* Bridges for part 1 (the Sea engine): it cannot see inside the
+     waters module, so the lake-post hands are published on window —
+     the same pattern as __bwRiverMembers. Part 1 calls these with
+     a baseline fallback, so the Sea behaves exactly as it did if
+     the waters module ever fails to load. */
+  window.__bwPostInLake = bwPostInLake;
+  window.__bwFetchLakePosts = bwFetchLakePosts;
+  window.__bwToggleLakePick = bwToggleLakePick;
+  window.__bwTakePostOut = bwTakePostOut;
+
   /* ROUND 2 (his call): icons ride the Cloudflare road now. The
      owner picks a picture (PNG, GIF, JPEG or WebP — the vault's
      own 100 MB door is the only cap, same as File Share), it
@@ -4438,13 +4635,28 @@ window.__bwAuth = function(form){
   function bwDeleteLake(id, name, btn){
     bwArm(btn, 'Sure? Posts stay in the Sea — tap again', function(){
       btn.textContent = 'Filling in…';
-      bwFarewell('lake', id).then(function(sent){
-        try { BW.sb.from('posts').update({ lake_id: null }).eq('lake_id', id).then(function(){}, function(){}); } catch(e){}
-        BW.sb.from('lakes').delete().eq('id', id).then(function(r){
-          if(r.error){ toast('The lake refused: ' + r.error.message); bwRenderLakes(); return; }
-          if(BW.lakeFilter === id) BW.lakeFilter = null;
-          toast('Lake filled in: ' + name + ' — every post in it still lives in the Sea.' + (sent ? ' The letter went to its ' + sent + (sent === 1 ? ' swimmer.' : ' swimmers.') : ''));
-          bwFetchLakes(); bwFetchRivers();
+      bwRiverCascade(id).then(function(casc){
+        bwFarewell('lake', id).then(function(sent){
+          try { BW.sb.from('posts').update({ lake_id: null }).eq('lake_id', id).then(function(){}, function(){}); } catch(e){}
+          BW.sb.from('lakes').delete().eq('id', id).then(function(r){
+            if(r.error){ toast('The lake refused: ' + r.error.message); bwRenderLakes(); return; }
+            if(BW.lakeFilter === id) BW.lakeFilter = null;
+            var finish = function(driedNames){
+              var parts = ['Lake filled in: ' + name + ' — every post in it still lives in the Sea.'];
+              if(sent) parts.push('The letter went to its ' + sent + (sent === 1 ? ' swimmer.' : ' swimmers.'));
+              if(casc.notices) parts.push(casc.rivers > 1 ? 'Its rivers were told.' : 'Its river was told.');
+              if(driedNames.length === 1) parts.push('The river "' + driedNames[0] + '" had no lakes left — it dried up, and its people got the letter.');
+              else if(driedNames.length > 1) parts.push(driedNames.length + ' rivers had no lakes left — they dried up, and their people got the letters.');
+              toast(parts.join(' '));
+              bwFetchLakes(); bwFetchRivers();
+            };
+            var dry = (casc && casc.dry) || [];
+            if(dry.length){
+              Promise.all(dry.map(function(d){ return bwRiverDry(d.riverId, d.people).then(function(j){ return (j && j.dried) ? (d.riverName || 'a river') : null; }); })).then(function(names){
+                finish(names.filter(Boolean));
+              });
+            } else finish([]);
+          });
         });
       });
     });
@@ -4525,6 +4737,27 @@ window.__bwAuth = function(form){
           rib.textContent = 'Icon'; rib.title = 'Give ' + R.name + ' a picture it wears in its circle — it uploads to the vault, so everyone sees it on every device';
           rib.addEventListener('click', function(){ bwIconPick('river', id, R.name); });
           row.appendChild(rib);
+          var rab = document.createElement('button');
+          rab.type = 'button'; rab.className = 'chip river-del'; rab.style.borderColor = 'rgba(240,183,63,.45)'; rab.style.color = 'var(--yellow)';
+          rab.textContent = '＋ Add lakes'; rab.title = 'Pour more lakes into ' + R.name + ' — any member’s lake can flow in; its owner gets a letter and can step out any time';
+          rab.addEventListener('click', function(){ bwRiverAddOpen = (bwRiverAddOpen === id) ? null : id; bwRenderRivers(); });
+          row.appendChild(rab);
+          if(bwRiverAddOpen === id){
+            var panel = document.createElement('div'); panel.className = 'river-add open';
+            var others = Object.keys(BW.lakes || {}).filter(function(lid){ return R.lakes.indexOf(lid) < 0; });
+            var note = document.createElement('span'); note.className = 'ra-note';
+            note.textContent = others.length ? 'Tap a lake to pour it into ' + R.name + '. Its owner gets a letter, and can step out any time — everything stays in the Sea either way.' : 'Every lake on the Sea already flows in ' + R.name + '.';
+            panel.appendChild(note);
+            others.forEach(function(lid){
+              var L2 = BW.lakes[lid];
+              var b = document.createElement('button'); b.type = 'button'; b.className = 'chip';
+              b.textContent = L2.name + ' · by ' + (L2.owner_name || 'member');
+              b.title = 'Pour ' + L2.name + ' into ' + R.name;
+              b.addEventListener('click', function(){ bwAddLakeToRiver(id, lid, b); });
+              panel.appendChild(b);
+            });
+            row.appendChild(panel);
+          }
         }
         bar.insertBefore(row, nb);
       });
@@ -4605,12 +4838,19 @@ window.__bwAuth = function(form){
     if(bwLeaveArm[lakeId] && bwLeaveArm[lakeId] > now){
       delete bwLeaveArm[lakeId];
       btn.textContent = 'Stepping out\u2026';
-      BW.sb.from('river_lakes').delete().eq('river_id', riverId).eq('lake_id', lakeId).then(function(res){
-        if(res.error){ toast('That did not go through \u2014 ' + res.error.message); if(btn.dataset.armed) delete btn.dataset.armed; btn.textContent = '\u2715 leave'; return; }
+      bwRiverMail('/river-left', { riverId: riverId, lakeId: lakeId }).then(function(left){
+      BW.sb.from('river_lakes').delete().eq('river_id', riverId).eq('lake_id', lakeId).select('id').then(function(res){
+        if(res.error || !(res.data && res.data.length)){ toast('That did not go through \u2014 the notebook kept the link. Try again in a moment.'); if(btn.dataset.armed) delete btn.dataset.armed; btn.textContent = '\u2715 leave'; return; }
         var R = BW.rivers[riverId];
         if(R) R.lakes = R.lakes.filter(function(x){ return x !== lakeId; });
-        bwRenderRivers(); bwDecorate();
-        toast('Your lake ' + lakeName + ' stepped out of the river ' + riverName + ' \u2014 every post is still in the Sea.');
+        var dry = (left && left.dry) || null;
+        var after = function(dried){
+          bwRenderRivers(); bwDecorate(); bwFetchRivers();
+          toast('Your lake ' + lakeName + ' stepped out of the river ' + riverName + ' \u2014 every post is still in the Sea.' + (left && left.sent ? ' The letter went to both shores.' : '') + (dried ? ' With no lakes left, the river dried up \u2014 its people got the letter.' : ''));
+        };
+        if(dry) bwRiverDry(dry.riverId, dry.people).then(function(j){ after(!!(j && j.dried)); });
+        else after(false);
+      });
       });
       return;
     }
@@ -4647,6 +4887,11 @@ window.__bwAuth = function(form){
       ((res[1] && res[1].data) || []).forEach(function(m){ if(BW.rivers[m.river_id]) BW.rivers[m.river_id].lakes.push(m.lake_id); });
       bwRenderRivers();
       bwDecorate();
+      /* A river with no lakes left in it dries up (his call,
+         Nov 12) — swept only on a load where the river-lake links
+         themselves arrived whole, and the letter desk re-counts
+         server-side before it dries anything. */
+      if(res[1] && !res[1].error && res[1].data) bwSweepDryRivers();
     });
   }
   var rNew = document.getElementById('river-new-btn');

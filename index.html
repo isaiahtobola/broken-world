@@ -3374,8 +3374,11 @@ function liveMakePost(textareaId){
   if(!BW.user){ toast('Join or log in to post — reading is open to everyone.'); bwOpenModal(); return; }
   var finish = function(mediaUrl, mediaType, mediaUrls){
     var lakeSel = (textareaId === 'sea-post-text') ? document.getElementById('sea-lake-sel') : null;
-    var lakeId = (BW.lakeFilter && BW.lakes && BW.lakes[BW.lakeFilter]) ? BW.lakeFilter
-               : (lakeSel && lakeSel.value ? lakeSel.value : null);
+    /* HOTFIX (his call, Nov 13): the composer's "Post to:" dropdown ALONE
+       decides where a post lands. The top chips are view-only — the lake
+       you happen to be viewing (BW.lakeFilter) must never override the
+       destination the poster picked in the dropdown. */
+    var lakeId = (lakeSel && lakeSel.value) ? lakeSel.value : null;
     var payload = { body: text, author: BW.user.id, author_name: BW.name,
       media_url: mediaUrl || null, media_type: mediaType || null, lake_id: lakeId };
     /* ROUND 2: a carousel post keeps its whole set in media_urls;
@@ -3386,6 +3389,19 @@ function liveMakePost(textareaId){
       ta.value = ''; if(linkEl) linkEl.value = ''; if(fileEl) fileEl.value = '';
       var nm = comp ? comp.querySelector('.media-name') : null; if(nm) nm.textContent = '';
       bwFetchPosts();
+      /* honesty (same Nov 13 hotfix): if the view the poster is standing
+         in filters this post out — a different lake, a river it does not
+         flow through, the saved shelf — say where it actually landed
+         instead of letting it silently vanish from their screen */
+      var hiddenHere = false;
+      if(BW.showSaved) hiddenHere = true;
+      else if(BW.lakeFilter) hiddenHere = (lakeId !== BW.lakeFilter);
+      else if(BW.riverFilter && BW.rivers && BW.rivers[BW.riverFilter])
+        hiddenHere = BW.rivers[BW.riverFilter].lakes.indexOf(lakeId) < 0;
+      if(hiddenHere){
+        var dest = (lakeId && BW.lakes && BW.lakes[lakeId]) ? ('into ' + BW.lakes[lakeId].name) : 'to The Sea';
+        msg = 'Posted ' + dest + ' — this view is filtered, so it is not showing here. The Sea chip shows everything.';
+      }
       toast(msg);
     };
     BW.sb.from('posts').insert(payload)
@@ -4333,7 +4349,6 @@ window.__bwAuth = function(form){
       riverChips.forEach(function(c){ c.classList.remove('active'); });
       lakeChips.forEach(function(c){ c.classList.remove('active'); });
       if(ca) ca.classList.add('active'); if(cs) cs.classList.remove('active');
-      var sel0 = document.getElementById('sea-lake-sel'); if(sel0) sel0.value = '';
       bwDecorate();
       toast('The whole Sea again.');
       return;
@@ -4342,7 +4357,6 @@ window.__bwAuth = function(form){
     riverChips.forEach(function(c){ c.classList.remove('active'); });
     if(ca) ca.classList.remove('active'); if(cs) cs.classList.remove('active');
     lakeChips.forEach(function(c){ c.classList.toggle('active', c.getAttribute('data-lake') === id); });
-    var sel = document.getElementById('sea-lake-sel'); if(sel) sel.value = id;
     bwDecorate();
     var feed = document.getElementById('sea-feed');
     if(feed) feed.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4364,7 +4378,6 @@ window.__bwAuth = function(form){
           var ca = document.getElementById('chip-all'), cs = document.getElementById('chip-saved');
           if(ca) ca.classList.remove('active'); if(cs) cs.classList.remove('active');
           bar.querySelectorAll('.chip.lake-chip').forEach(function(c){ c.classList.toggle('active', c === ch); });
-          var sel = document.getElementById('sea-lake-sel'); if(sel) sel.value = id;
           bwDecorate();
           toast('One lake at a time — ' + L.name + '. The Sea chip brings back everything.');
         });
@@ -4423,7 +4436,9 @@ window.__bwAuth = function(form){
       Object.keys(BW.lakes).forEach(function(id){
         var o = document.createElement('option'); o.value = id; o.textContent = 'Post to: ' + BW.lakes[id].name; sel.appendChild(o);
       });
-      sel.value = BW.lakeFilter || cur || '';
+      /* the dropdown keeps the POSTER's own chosen destination across
+         re-renders (Nov 13 hotfix) — the view filter never writes it */
+      sel.value = cur || '';
       sel.hidden = !Object.keys(BW.lakes).length;
     }
   }

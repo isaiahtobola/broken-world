@@ -606,6 +606,11 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
    left edge of every page, carrying the menus */
 .mrail{position:absolute; left:14px; top:232px; z-index:940} /* 97g: rail parks just under the header bar (header = 44+132+44+2 = 222px) so it never blocks the sun — his call, Nov 7 */
 .mrail-btn{display:flex; align-items:center; gap:9px; background:rgba(21,13,32,.92); border:1px solid rgba(240,183,63,.55); color:var(--cream); border-radius:999px; padding:10px 16px; font-family:var(--mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase; cursor:pointer; backdrop-filter:blur(6px); box-shadow:0 10px 26px rgba(0,0,0,.45)}
+/* MOBILE PERF PASS (Nov 12): the rail pill is fixed on screen, so its
+   backdrop blur repaints on every scroll frame of a phone. Its plum
+   is already 92% opaque — dropping the blur on small screens is
+   invisible and gives the scroll its frames back. */
+@media (max-width:760px){ .mrail-btn{backdrop-filter:none; -webkit-backdrop-filter:none} }
 .mrail-btn:hover{border-color:var(--gold); color:var(--yellow)}
 .mrail-btn .mr-caret{color:var(--gold); font-size:11px; transition:transform .25s}
 .mrail.open .mrail-btn .mr-caret{transform:rotate(180deg)}
@@ -2312,6 +2317,15 @@ if(!window.__bwHeal108){
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) bwHeal108(); });
 }
 
+/* ---------- MOBILE PERF PASS (Nov 12, his call: "make sure the
+   animations are not buggy for mobile version or laggy") ----------
+   One gate for every fix in this pass: a coarse pointer or the
+   site's own phone width. Desktop never enters these paths, and
+   nothing here changes what any animation looks like — only how
+   much paint work a phone is asked to do. */
+var BW_MOBILE_PERF = !!(window.matchMedia && (window.matchMedia('(pointer:coarse)').matches || window.matchMedia('(max-width:760px)').matches));
+window.__bwMobilePerf = BW_MOBILE_PERF;
+
 /* ---------- canvas plumbing: only the visible view's canvas runs ---------- */
 var runners = window.__bwRunners || (window.__bwRunners = {});   // shared with part 2
 var running = window.__bwRunning || (window.__bwRunning = {});
@@ -2341,9 +2355,18 @@ window.__bwStart = startRunner; window.__bwStop = stopRunner;
    running, start it. A station can never silently go missing again. */
 setInterval(function(){
   var pairs = { 'view-home':['sky-home'], 'view-login':['car-canvas'], 'view-sea':['sea-canvas'], 'view-join':['forge-canvas','anvil-canvas'], 'view-files':['lava-canvas'] };
+  /* MOBILE PERF PASS (Nov 12): during a view fade the outgoing room
+     stays on screen for a few hundred ms after the switch already
+     stopped its painter. If this watchdog ticks inside that window
+     it resurrects the stopped painter — a zombie loop that then
+     runs forever in a hidden room, burning phone CPU on every
+     other page. On phones, only the room the body names as current
+     may be (re)started here. Desktop keeps the original rule. */
+  var curVid = 'view-' + (document.body.getAttribute('data-current') || 'home');
   Object.keys(pairs).forEach(function(vid){
     var v = document.getElementById(vid);
     if(!v || v.offsetParent === null) return;
+    if(window.__bwMobilePerf && vid !== curVid) return;
     pairs[vid].forEach(function(rid){ if(!running[rid]) startRunner(rid); });
   });
 }, 3000);
@@ -4762,12 +4785,20 @@ document.querySelectorAll('.dl-btn').forEach(function(b){
 var pointer = {x:-9999, y:-9999, inside:false};
 window.addEventListener('pointermove', function(e){ pointer.x=e.clientX; pointer.y=e.clientY; pointer.inside=true; });
 window.addEventListener('pointerdown', function(e){ pointer.x=e.clientX; pointer.y=e.clientY; pointer.inside=true; });
+/* MOBILE PERF PASS (Nov 12): part 2's fitCanvas — the one the Sea,
+   car, forge, anvil and lava runners actually use — caps the two
+   soft-gradient giants on phones: the Sea at 1.25x (it draws no
+   text, only water and glow, stretched over the tallest canvas on
+   the site) and the night-drive at 1.5x. Same geometry, same
+   motion, same colors; ~61% / ~44% fewer pixels per frame. */
 function fitCanvas(c){
   /* hysteresis (the 04:52 twitch fix): fractional rect sizes used to
      round up/down by 1px between frames, resetting the bitmap and
      rebuilding the particle fields every frame — visible twitching.
      Now a resize only lands when the size truly moved (>3px). */
   var r = c.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio||1, 2);
+  if(window.__bwMobilePerf && c.id === 'sea-canvas') dpr = Math.min(dpr, 1.25);
+  else if(window.__bwMobilePerf && c.id === 'car-canvas') dpr = Math.min(dpr, 1.5);
   var w = Math.max(2, Math.round(r.width*dpr)), h = Math.max(2, Math.round(r.height*dpr));
   if(Math.abs(c.width-w) > 3 || Math.abs(c.height-h) > 3){ c.width=w; c.height=h; }
   return {w:c.width, h:c.height, dpr:dpr};
@@ -8291,6 +8322,12 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   /* the drag trail: whichever letter sits under the pointer lights up */
   var lastCh = null;
   document.addEventListener('pointermove', function(e){
+    /* MOBILE PERF PASS (Nov 12): a touch drag is a scroll, not a
+       trail — the letter under the finger is covered by the finger
+       anyway, and a document hit-test on every move event taxes
+       the scroll itself. Mouse and pen keep the trail exactly as
+       it was; taps still cascade through the click handler. */
+    if(e.pointerType === 'touch') return;
     var t = document.elementFromPoint(e.clientX, e.clientY);
     var ch = (t && typeof t.closest === 'function') ? t.closest('.hl-ch') : null;
     if(ch && ch !== lastCh) lightLetter(ch, 1100);

@@ -398,7 +398,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
   flex:0 1 350px; position:relative; border-radius:16px; padding:26px 24px 24px; text-decoration:none;
   color:var(--cream); border:1px solid rgba(240,183,63,.45);
   transition:transform .25s, box-shadow .25s, z-index 0s; min-height:158px;
-  display:flex; flex-direction:column; gap:8px; justify-content:flex-end;
+  display:flex; flex-direction:column; gap:8px; justify-content:flex-start;
 }
 .door:hover{transform:translateY(-8px) rotate(0deg) !important; box-shadow:0 22px 44px rgba(0,0,0,.55); z-index:6}
 .door .door-kicker{font-family:var(--mono); font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--yellow)}
@@ -410,6 +410,11 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 .door-3{background:linear-gradient(150deg, #4a2f78, #3a2560)}
 .door-4{background:linear-gradient(150deg, #5a3a8c, #4a2f78)}
 .door-5{background:linear-gradient(150deg, #6d47a3, #5a3a8c)}
+/* Exhibit Six hangs under the Rivers bank (his call, Nov 14): out of
+   the five-door row, wearing the staircase step that follows
+   Exhibit Two — door-2's own plum gradient. */
+.door-6{background:linear-gradient(150deg, #3a2560, #291b44)}
+.sea-left .door{margin-top:18px}
 .sea-grid{display:grid; grid-template-columns:250px minmax(0,1fr) 302px; gap:24px; align-items:start}
 .post-card{
   background:rgba(31,20,51,.92); border:1px solid rgba(184,166,217,.3); border-radius:14px;
@@ -429,7 +434,7 @@ body[data-theme="xmas"] .post-card, body[data-theme="xmas"] .post-composer{backg
    everything around them wore the season. They ride the same
    designated theme colors now; normal days keep their plum. */
 body[data-theme="halloween"] .door-1, body[data-theme="xmas"] .door-1{background:linear-gradient(150deg, var(--panel2), var(--panel))}
-body[data-theme="halloween"] .door-2, body[data-theme="xmas"] .door-2, body[data-theme="halloween"] .door-3, body[data-theme="xmas"] .door-3, body[data-theme="halloween"] .door-4, body[data-theme="xmas"] .door-4, body[data-theme="halloween"] .door-5, body[data-theme="xmas"] .door-5{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
+body[data-theme="halloween"] .door-2, body[data-theme="xmas"] .door-2, body[data-theme="halloween"] .door-3, body[data-theme="xmas"] .door-3, body[data-theme="halloween"] .door-4, body[data-theme="xmas"] .door-4, body[data-theme="halloween"] .door-5, body[data-theme="xmas"] .door-5, body[data-theme="halloween"] .door-6, body[data-theme="xmas"] .door-6{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
 body[data-theme="halloween"] .sea-note, body[data-theme="xmas"] .sea-note{background:linear-gradient(140deg, var(--panel2), var(--panel)); border-color:var(--gold)}
 body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{background:var(--panel); border-color:var(--gold)}
 .post-card:hover{border-color:var(--gold); box-shadow:0 0 0 1px rgba(240,183,63,.35), 0 14px 34px rgba(0,0,0,.4)}
@@ -627,6 +632,37 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
 }
 .save-btn:hover{border-color:var(--gold); color:var(--cream)}
 .save-btn.saved{background:rgba(240,183,63,.22); border-color:var(--gold); color:var(--yellow)}
+/* ============ NOV 14 ROUND — bottom post-action row, post editor,
+   hub click-through spot, Mariana trench layer ============
+   Save / Add to a lake / Edit move OUT of the crowded post head
+   into a bottom action row inside the box: full width, room to
+   breathe, wraps instead of squishing (his lane catch). */
+.post-actions{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid rgba(184,166,217,.18)}
+.post-actions .save-btn{margin-left:0; white-space:nowrap}
+/* the click-through landing flash — plum/gold pulse, then gone */
+@keyframes bwSpotPulse{0%{box-shadow:0 0 0 0 rgba(240,183,63,0)}25%{box-shadow:0 0 0 3px var(--gold), 0 0 34px rgba(240,183,63,.55)}75%{box-shadow:0 0 0 3px var(--gold), 0 0 34px rgba(240,183,63,.55)}100%{box-shadow:0 0 0 0 rgba(240,183,63,0)}}
+.bw-spot{animation:bwSpotPulse 2.6s ease both; border-color:var(--gold)!important}
+/* the post editor — opens inside your own post box */
+.post-edit{margin-top:12px; padding:12px 14px; border:1px solid rgba(240,183,63,.45); border-radius:12px; background:rgba(13,7,22,.55)}
+.post-edit > label{display:block; font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--yellow); margin-bottom:8px}
+.post-edit textarea{width:100%; min-height:74px; resize:vertical; background:rgba(13,7,22,.6); border:1px solid rgba(184,166,217,.35); border-radius:10px; padding:9px 12px; color:var(--cream); font-family:var(--serif); font-size:15px; outline:none; box-sizing:border-box}
+.post-edit .pe-media{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px}
+.post-edit .pe-media-note{font-family:var(--mono); font-size:12px; color:var(--muted)}
+.post-edit .pe-file-label{font-family:var(--mono); font-size:12px; letter-spacing:.05em; cursor:pointer; background:rgba(184,166,217,.08); color:var(--muted); border:1px solid rgba(184,166,217,.3); border-radius:999px; padding:6px 12px; margin:0}
+.post-edit .pe-file-label:hover{border-color:var(--gold); color:var(--cream)}
+.post-edit .pe-row{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+.post-edit .pe-save{background:rgba(240,183,63,.22); border-color:var(--gold); color:var(--yellow)}
+.post-edit .pe-note{display:block; margin-top:8px; font-size:13px; color:#ffb3b3}
+/* Hub doors: media tiles + file rows answer a click */
+.hub-media-tile{cursor:pointer}
+#hubpanel-files .file-row{cursor:pointer}
+/* MARIANA TRENCH layer (Nov 14, his spec): a black screen above the
+   waves but below the posts; the plankton ride their own canvas
+   above the black so they always glow. Opacity is set live from
+   the depth gauge's own meters: depth / 11000 (the trench). DOM
+   order breaks the z-1 tie: trench first, plankton canvas after. */
+#sea-trench{position:absolute; inset:0; z-index:1; background:#000; opacity:0; pointer-events:none; transition:opacity .25s ease}
+#sea-plankton-canvas{position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none}
 .post-head .post-del{margin-left:8px}
 .cmt-list{margin:2px 0 12px; display:flex; flex-direction:column; gap:10px}
 .cmt{background:rgba(13,7,22,.45); border:1px solid rgba(184,166,217,.18); border-radius:10px; padding:9px 13px}
@@ -1843,6 +1879,8 @@ html.kint-lock{overflow:hidden !important}
 <!-- ================= SEA (Spec 7) ================= -->
 <section class="view" id="view-sea">
   <canvas id="sea-canvas" aria-hidden="true"></canvas>
+  <div id="sea-trench" aria-hidden="true"></div>
+  <canvas id="sea-plankton-canvas" aria-hidden="true"></canvas>
   <div class="depth-gauge" id="depth-gauge" aria-hidden="true">
     <span class="dg-label">THE SEA</span>
     <div class="dg-track"><div class="dg-fill" id="dg-fill"></div><div class="dg-dot" id="dg-dot"></div></div>
@@ -1853,7 +1891,7 @@ html.kint-lock{overflow:hidden !important}
       <h1>Groups Feed</h1>
       <p>View groups and posts below.</p>
     </div>
-    <!-- The five exhibits, layered into each other (his restructure; Instant Beat door removed 2026-10-30 — the invention stays private for now; the board door added Nov 11, 2026 on his green light; the Tree Diagram and Theology doors added Nov 13, 2026 on his green light — five doors, left to right in his order: Ocean, Tree Diagram, Completion Filter, Theology, UFO) -->
+    <!-- The five exhibits, layered into each other (his restructure; Instant Beat door removed 2026-10-30 — the invention stays private for now; the board door added Nov 11, 2026 on his green light; the Tree Diagram and Theology doors added Nov 13, 2026 on his green light; Nov 14, 2026: the Mars book takes slot five and the board leaves the row to hang as Exhibit Six under the Rivers bank — five doors, left to right in his order: Ocean, Tree Diagram, Completion Filter, Theology, Mars) -->
     <div class="doors">
       <a class="door door-1" href="https://isaiahtobola.github.io/bw-ocean/" target="_blank" rel="noopener">
         <span class="door-kicker">Exhibit One · The Museum</span>
@@ -1879,11 +1917,11 @@ html.kint-lock{overflow:hidden !important}
         <p>Science tells us more about god than religion.</p>
         <span class="door-arrow">Read ↗</span>
       </a>
-      <a class="door door-5" href="https://isaiahtobola.github.io/completion-filter/board/" target="_blank" rel="noopener">
-        <span class="door-kicker">Exhibit Five · The Board</span>
-        <h3>UFO Conspiracy Hypothetical versus Science</h3>
-        <p>His thoughts, pinned up against the science — the detective board.</p>
-        <span class="door-arrow">Open ↗</span>
+      <a class="door door-5" href="https://isaiahtobola.github.io/completion-filter/mars/" target="_blank" rel="noopener">
+        <span class="door-kicker">Exhibit Five · The Mars Book</span>
+        <h3>Robots and Mars</h3>
+        <p>Turning Competitive Intelligence and Energy into a Multiplanetary Symbiosis.</p>
+        <span class="door-arrow">Read ↗</span>
       </a>
     </div>
     <div class="sea-grid">
@@ -1894,6 +1932,13 @@ html.kint-lock{overflow:hidden !important}
           <form id="river-create"><input type="text" id="river-name" maxlength="40" placeholder="Name your river…" aria-label="Name your river"><span id="river-pick"></span><button class="join-btn" type="submit">Dig the river</button></form>
           <p class="meta" style="font-family:var(--mono); font-size:11.5px; color:var(--muted); margin-top:10px">A river bundles lakes into one current — tap one and the Sea runs through just those lakes. Only its creator can dry it up, and every post in it stays in the Sea.</p>
         </div>
+        <!-- Exhibit Six (Nov 14, 2026, his call): the board door left the five-door row and hangs here, under the Rivers bank. -->
+        <a class="door door-6" href="https://isaiahtobola.github.io/completion-filter/board/" target="_blank" rel="noopener">
+          <span class="door-kicker">Exhibit Six · The Board</span>
+          <h3>UFO Conspiracy Hypothetical versus Science</h3>
+          <p>His thoughts, pinned up against the science — the detective board.</p>
+          <span class="door-arrow">Open ↗</span>
+        </a>
       </aside>
             <div class="feed">
         <div class="sea-banks-m" id="sea-banks-m" hidden></div>
@@ -1961,7 +2006,7 @@ html.kint-lock{overflow:hidden !important}
         <div class="composer-actions"><span class="composer-note">Open to read — join or log in to post</span><button class="post-btn" id="hub-post-btn">Post</button></div>
       </div>
     </div>
-    <div class="hub-lane-row"><button class="chip" id="hub-lane-toggle" type="button" aria-pressed="false" title="Pour the Hub into three lanes — wide screens only">3 LANES</button></div>
+    <div class="hub-lane-row"><button class="chip" id="hub-lane-toggle" type="button" aria-pressed="false" title="Pour the Hub into one, two or three lanes — tap to cycle — wide screens only">1 LANE</button></div>
     <div id="hub-feed"></div>
     <p class="feed-empty" id="hub-empty">No posts yet — yours will be the first thing on the porch.</p>
     </div><!-- /hubpanel-discussion -->
@@ -2841,7 +2886,7 @@ function renderFiles(){
     box.appendChild(none);
   }
   files.forEach(function(f){
-    var row = document.createElement('div'); row.className = 'file-row';
+    var row = document.createElement('div'); row.className = 'file-row'; row.dataset.fileId = f.id;
     var nameCell = document.createElement('span'); nameCell.className = 'fcell-name';
     /* RIGHT-CLICK & SAVE for music (build #74 hotfix — his
        2026-11-02 order, minutes after he saved the wave GIF off
@@ -4095,6 +4140,132 @@ function bwToggleSave(post){
       });
   }
 }
+/* ============ NOV 14 — HUB DOORS + POST EDITOR ============ */
+function bwIsAudioUrl(u){
+  return /\.(mp3|wav|ogg|oga|m4a|m4b|flac|aac|opus|aif|aiff|wma|mid|midi)(\?|#|$)/i.test(u || '');
+}
+/* land on the Sea with one post standing in the light: the filters
+   reset through the Sea chip itself, so the chips and the water
+   agree, then the view switches and the post is scrolled home */
+function bwGoSeaPost(post){
+  if(!post) return;
+  var ca = document.getElementById('chip-all');
+  if(ca) ca.click();
+  else { BW.showSaved = false; BW.lakeFilter = null; BW.riverFilter = null; bwDecorate(); }
+  switchView('sea');
+  setTimeout(function(){
+    var feed = document.getElementById('sea-feed'); if(!feed || !BW.posts) return;
+    var idx = BW.posts.indexOf(post);
+    var card = idx >= 0 ? feed.querySelectorAll('.post-card')[idx] : null;
+    if(card && card.style.display !== 'none'){
+      try{ card.scrollIntoView({ block: 'center', behavior: 'smooth' }); }catch(e){ card.scrollIntoView(); }
+      card.classList.add('bw-spot');
+      setTimeout(function(){ card.classList.remove('bw-spot'); }, 2700);
+    }
+  }, 650);
+}
+/* land on File Share; when the file is known, scroll it home + spot it */
+function bwGoFileSpot(file){
+  switchView('files');
+  if(!file) return;
+  setTimeout(function(){
+    var row = document.querySelector('#files-rows .file-row[data-file-id="' + file.id + '"]');
+    if(!row) return;
+    try{ row.scrollIntoView({ block: 'center', behavior: 'smooth' }); }catch(e){ row.scrollIntoView(); }
+    row.classList.add('bw-spot');
+    setTimeout(function(){ row.classList.remove('bw-spot'); }, 2700);
+  }, 650);
+}
+/* a post carrying a song rides to File Share; if the song is a
+   library file (same vault URL), its row gets the spot */
+function bwGoFileForPost(post){
+  var match = null;
+  (BW.files || []).forEach(function(f){
+    if(!match && f.key && post.media_url && bwWorkerGet(f) === post.media_url) match = f;
+  });
+  bwGoFileSpot(match);
+  if(!match) toast('File Share \u2014 the vault shelf. That song rides its Sea post; the library lives here.');
+}
+window.__bwGoSeaPost = bwGoSeaPost;
+window.__bwGoFile = bwGoFileSpot;
+window.__bwGoFileForPost = bwGoFileForPost;
+window.__bwIsAudioUrl = bwIsAudioUrl;
+/* the post editor \u2014 the author's own pen, opening inside their
+   own post box. Words write the row; a picked file rides the same
+   vault road as every post upload and replaces the media. The
+   update chains .select('id') (the rename law): zero rows back
+   means the notebook's posts update rule refused it, and the
+   editor says so in plain words instead of pretending. */
+function bwEditPost(post, card){
+  if(!BW.user || !post || post.author_id !== BW.user.id){ toast('Editing is the author\u2019s pen \u2014 only your own posts take your edits.'); return; }
+  var old = card.querySelector('.post-edit');
+  if(old){ old.remove(); return; }
+  var panel = document.createElement('div'); panel.className = 'post-edit';
+  var lab = document.createElement('label'); lab.textContent = 'EDIT YOUR POST'; panel.appendChild(lab);
+  var ta = document.createElement('textarea'); ta.className = 'post-edit-text'; ta.value = post.text || '';
+  ta.setAttribute('aria-label', 'Edit your post text'); ta.maxLength = 4000; panel.appendChild(ta);
+  var mrow = document.createElement('div'); mrow.className = 'pe-media';
+  var mnote = document.createElement('span'); mnote.className = 'pe-media-note';
+  var cur = bwPostMediaList(post);
+  mnote.textContent = cur.length ? ('Media now: ' + cur.length + (cur.length > 1 ? ' photos' : ' file') + ' \u2014 pick a new one to replace it') : 'No media on this post \u2014 pick a file to add one';
+  var flab = document.createElement('label'); flab.className = 'pe-file-label'; flab.textContent = 'Replace media';
+  var finp = document.createElement('input'); finp.type = 'file'; finp.className = 'post-edit-file'; finp.accept = 'image/*,video/*'; finp.hidden = true;
+  var fname = document.createElement('span'); fname.className = 'pe-media-note';
+  finp.addEventListener('change', function(){ fname.textContent = (finp.files && finp.files[0]) ? finp.files[0].name : ''; });
+  flab.appendChild(finp);
+  mrow.appendChild(mnote); mrow.appendChild(flab); mrow.appendChild(fname); panel.appendChild(mrow);
+  var row = document.createElement('div'); row.className = 'pe-row';
+  var save = document.createElement('button'); save.type = 'button'; save.className = 'save-btn pe-save'; save.textContent = 'Save changes';
+  var cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'save-btn'; cancel.textContent = 'Cancel';
+  row.appendChild(save); row.appendChild(cancel); panel.appendChild(row);
+  var note = document.createElement('span'); note.className = 'pe-note'; note.hidden = true; panel.appendChild(note);
+  var acts = card.querySelector(':scope > .post-actions');
+  if(acts) card.insertBefore(panel, acts); else card.appendChild(panel);
+  var showNote = function(msg){ note.textContent = msg; note.hidden = false; };
+  cancel.addEventListener('click', function(){ panel.remove(); });
+  save.addEventListener('click', function(){
+    var newText = (ta.value || '').trim();
+    var file = finp.files && finp.files[0];
+    if(!newText && !file && !cur.length){ showNote('A post still needs words or a picture \u2014 write something, or pick a file.'); return; }
+    save.disabled = true; cancel.disabled = true; note.hidden = true;
+    var finish = function(mediaUrl){
+      var payload = { body: newText };
+      if(mediaUrl !== undefined){
+        payload.media_url = mediaUrl; payload.media_type = bwTypeOf(file.name, file.type);
+        if(!BW.noMediaUrls) payload.media_urls = null;
+      }
+      var attempt = function(pl){
+        return BW.sb.from('posts').update(pl).eq('id', post.id).select('id').then(function(r){
+          if(r.error && pl.media_urls !== undefined && /media_urls/.test(r.error.message || '')){
+            BW.noMediaUrls = true;
+            return attempt({ body: pl.body, media_url: pl.media_url, media_type: pl.media_type });
+          }
+          return r;
+        });
+      };
+      attempt(payload).then(function(r){
+        if(r.error){ save.disabled = false; cancel.disabled = false; showNote('The notebook refused that edit: ' + r.error.message); return; }
+        if(!r.data || !r.data.length){ save.disabled = false; cancel.disabled = false; showNote('That edit did not land \u2014 the notebook kept the old post. (Its posts update rule may still be asleep \u2014 tell Lux.)'); return; }
+        post.text = newText;
+        if(mediaUrl !== undefined){ post.media_url = mediaUrl; post.media_type = payload.media_type; post.media_urls = null; }
+        try{ localStorage.setItem('bw108.posts', JSON.stringify(BW.posts)); }catch(e){}
+        toast('Post edited \u2014 live for everyone.');
+        bwFetchPosts();
+      });
+    };
+    if(file){
+      toast('Sending the new file to the vault\u2026');
+      bwUploadFile(file, null, function(res){
+        if(!res){ save.disabled = false; cancel.disabled = false; showNote('That upload got lost in the waves \u2014 try again.'); return; }
+        if(res.error){ save.disabled = false; cancel.disabled = false; showNote(res.error); return; }
+        finish(BW_CONFIG.WORKER_URL + '/f/' + bwKey(res.key));
+      });
+    } else {
+      finish(undefined);
+    }
+  });
+  try{ ta.focus(); }catch(e){}
+}
 function bwDecorate(){
     if(window.__bwRiverMembers) window.__bwRiverMembers();
   if(!BW.posts) return;
@@ -4123,29 +4294,68 @@ function bwDecorate(){
           var media = bwPostMediaNode(post);
           if(bodyEl && bodyEl.nextSibling) card.insertBefore(media, bodyEl.nextSibling);
           else card.appendChild(media);
+          /* NOV 14 — Hub doors (his ask): standing in the Hub, a
+             post's picture is a door to that same post in the Sea;
+             a post carrying a song is a door to File Share. Videos
+             keep their own controls — no hijack. Sea cards keep
+             their old manners (no doors there). */
+          if(!pair[1] && media){
+            var mFirst = (post.media_urls && post.media_urls[0]) || post.media_url;
+            if(bwIsAudioUrl(mFirst)){
+              media.style.cursor = 'pointer';
+              media.title = 'This post carries a song — hear it in File Share';
+              media.addEventListener('click', function(){ bwGoFileForPost(post); });
+            } else if(media.querySelector('img')){
+              media.style.cursor = 'pointer';
+              media.title = 'See this post in the Sea';
+              media.addEventListener('click', function(ev){
+                if(ev.target && ev.target.closest && ev.target.closest('button')) return;
+                bwGoSeaPost(post);
+              });
+            }
+          }
         }
       }
-      /* save button in the head */
-      var head = card.querySelector('.post-head');
-      if(head && !head.querySelector('.save-btn')){
+      /* NOV 14 — the bottom action row (his lane catch): Save, Add
+         to a lake and Edit live at the BOTTOM of the post box now,
+         in a full-width row of their own — up in the head they were
+         mashed together whenever the Hub pours into lanes. One
+         decorator dresses both feeds, so the Sea gets the row too. */
+      var acts = card.querySelector(':scope > .post-actions');
+      if(!acts){
+        acts = document.createElement('div'); acts.className = 'post-actions';
+        card.appendChild(acts);
+      }
+      if(!acts.querySelector('.save-btn')){
         var sv = document.createElement('button');
         sv.type = 'button'; sv.className = 'save-btn' + (BW.saves[post.id] ? ' saved' : '');
         sv.textContent = BW.saves[post.id] ? 'Saved' : 'Save';
         sv.addEventListener('click', function(){ bwToggleSave(post); });
-        var del = head.querySelector('.post-del');
-        if(del) head.insertBefore(sv, del); else head.appendChild(sv);
+        acts.appendChild(sv);
       }
-      var svNow = head ? head.querySelector('.save-btn') : null;
+      var svNow = acts.querySelector('.save-btn');
       if(svNow){ svNow.className = 'save-btn' + (BW.saves[post.id] ? ' saved' : ''); svNow.textContent = BW.saves[post.id] ? 'Saved' : 'Save'; }
       /* pour into a lake / take back out (his calls, Nov 12) */
-      if(head && BW.user && BW.lakePostsReady && !head.querySelector('.lake-add-btn')){
+      if(BW.user && BW.lakePostsReady && !acts.querySelector('.lake-add-btn')){
         var lab = document.createElement('button');
         lab.type = 'button'; lab.className = 'save-btn lake-add-btn'; lab.textContent = 'Add to a lake';
         lab.title = 'Pour this post into one of your lakes \u2014 it stays on the Sea; the author gets a letter and can take it back out';
         lab.addEventListener('click', function(){ if(window.__bwToggleLakePick) window.__bwToggleLakePick(card, post); });
-        var delRef = head.querySelector('.post-del');
-        if(delRef) head.insertBefore(lab, delRef); else head.appendChild(lab);
+        acts.appendChild(lab);
       }
+      /* NOV 14 — Edit: the author's own pen, on their own posts
+         only (the notebook's posts update rule is owner-only too;
+         the editor says so honestly if zero rows come back). */
+      var edBtn = acts.querySelector('.post-edit-btn');
+      if(BW.user && post.author_id === BW.user.id){
+        if(!edBtn){
+          edBtn = document.createElement('button');
+          edBtn.type = 'button'; edBtn.className = 'save-btn post-edit-btn'; edBtn.textContent = 'Edit';
+          edBtn.title = 'Edit your post — the words, or a new picture / file in place of the old one';
+          edBtn.addEventListener('click', function(){ bwEditPost(post, card); });
+          acts.appendChild(edBtn);
+        }
+      } else if(edBtn){ edBtn.remove(); }
       var oldOut = card.querySelector('.lake-out-btn');
       var canOut = !!(pair[1] && BW.user && BW.lakeFilter && post.author_id === BW.user.id &&
         BW.lakePosts && BW.lakePosts[BW.lakeFilter] && BW.lakePosts[BW.lakeFilter][post.id] &&
@@ -5141,25 +5351,27 @@ document.querySelectorAll('.hub-tab-btn').forEach(function(btn){
   });
 });
 /* ---------- HUB LANE TOGGLE (Build 111 fold-in, PC only;
-   Nov 12 fold-in, his order: the pour is THREE lanes now.
-   A stored '2' from the two-lane days still counts as ON.) ---------- */
+   Nov 14 fix, his catch: the pour is a CYCLE now — 1 → 2 → 3 → 1 —
+   and the label always names the lane count you are standing in.
+   A stored '2' or '3' from the earlier days lands on that count.) ---------- */
 (function(){
   var btn = document.getElementById('hub-lane-toggle');
   var feed = document.getElementById('hub-feed');
   if(!btn || !feed) return;
-  function apply(on){
-    feed.classList.toggle('lanes-3', !!on);
-    feed.classList.remove('lanes-2');
-    btn.classList.toggle('active', !!on);
-    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  function apply(n){
+    feed.classList.toggle('lanes-2', n === 2);
+    feed.classList.toggle('lanes-3', n === 3);
+    btn.textContent = n + (n === 1 ? ' LANE' : ' LANES');
+    btn.classList.toggle('active', n > 1);
+    btn.setAttribute('aria-pressed', n > 1 ? 'true' : 'false');
   }
-  var on = false;
-  try{ var v = window.localStorage.getItem('bw-hub-lanes'); on = (v === '3' || v === '2'); }catch(e){ on = false; }
-  apply(on);
+  var n = 1;
+  try{ var v = window.localStorage.getItem('bw-hub-lanes'); if(v === '2') n = 2; else if(v === '3') n = 3; }catch(e){}
+  apply(n);
   btn.addEventListener('click', function(){
-    on = !feed.classList.contains('lanes-3');
-    apply(on);
-    try{ window.localStorage.setItem('bw-hub-lanes', on ? '3' : '1'); }catch(e){}
+    n = n >= 3 ? 1 : n + 1;
+    apply(n);
+    try{ window.localStorage.setItem('bw-hub-lanes', String(n)); }catch(e){}
   });
 })();
 
@@ -5186,7 +5398,7 @@ function fitCanvas(c){
      rebuilding the particle fields every frame — visible twitching.
      Now a resize only lands when the size truly moved (>3px). */
   var r = c.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio||1, 2);
-  if(window.__bwMobilePerf && c.id === 'sea-canvas') dpr = Math.min(dpr, 1.25);
+  if(window.__bwMobilePerf && (c.id === 'sea-canvas' || c.id === 'sea-plankton-canvas')) dpr = Math.min(dpr, 1.25);
   else if(window.__bwMobilePerf && c.id === 'car-canvas') dpr = Math.min(dpr, 1.5);
   var w = Math.max(2, Math.round(r.width*dpr)), h = Math.max(2, Math.round(r.height*dpr));
   if(Math.abs(c.width-w) > 3 || Math.abs(c.height-h) > 3){ c.width=w; c.height=h; }
@@ -5961,6 +6173,17 @@ runners['sea-canvas'] = function(canvas, ctx, state){
     {plum:[31,20,51],   blue:[22,35,63],   teal:[20,70,66],   amp:0.058, len:0.0024, spd:0.13, base:0.88, alpha:0.9, mix:0, tmix:0}
   ];
   var ampK = 1, moodRGB = [96, 200, 188];
+  /* NOV 14 — THE TRENCH SPLIT (his Mariana spec): the plankton get
+     their own canvas riding ABOVE the black trench layer, so they
+     glow at full strength no matter how deep the black gets; the
+     waves stay on the sea canvas beneath the black. Same math,
+     same positions — only the surface they paint on moved. If the
+     plankton canvas is ever missing, they fall back to the waves'
+     own canvas exactly as before. */
+  var pcv = document.getElementById('sea-plankton-canvas');
+  var pctx = null;
+  try{ pctx = pcv ? pcv.getContext('2d') : null; }catch(e){ pctx = null; }
+  var pkCtx = ctx;
   function surfY(L, x, t, H){
     return H*L.base
       + Math.sin(x*L.len + t*L.spd*2.2) * H*L.amp*ampK
@@ -5980,39 +6203,40 @@ runners['sea-canvas'] = function(canvas, ctx, state){
      long antennae; chain = linked diatom colony; dino = dinoflagellate,
      the actual bioluminescent one — sphere, groove, two tiny horns */
   function drawPlankton(pk, x, y, S, a, DPR){
-    ctx.strokeStyle = 'rgba(140,255,226,'+a.toFixed(3)+')';
-    ctx.fillStyle = 'rgba(77,255,210,'+a.toFixed(3)+')';
-    ctx.lineWidth = Math.max(1, 1.1*DPR);
+    pkCtx.strokeStyle = 'rgba(140,255,226,'+a.toFixed(3)+')';
+    pkCtx.fillStyle = 'rgba(77,255,210,'+a.toFixed(3)+')';
+    pkCtx.lineWidth = Math.max(1, 1.1*DPR);
     if(pk.shape === 'diatom'){
-      ctx.beginPath(); ctx.arc(x, y, S, 0, 6.29); ctx.stroke();
-      ctx.beginPath(); ctx.arc(x, y, S*0.45, 0, 6.29); ctx.stroke();
-      for(var k=0;k<8;k++){ var an = k*Math.PI/4 + pk.ph; ctx.beginPath(); ctx.moveTo(x + Math.cos(an)*S*0.45, y + Math.sin(an)*S*0.45); ctx.lineTo(x + Math.cos(an)*S, y + Math.sin(an)*S); ctx.stroke(); }
-      ctx.beginPath(); ctx.arc(x, y, S*0.16, 0, 6.29); ctx.fill();
+      pkCtx.beginPath(); pkCtx.arc(x, y, S, 0, 6.29); pkCtx.stroke();
+      pkCtx.beginPath(); pkCtx.arc(x, y, S*0.45, 0, 6.29); pkCtx.stroke();
+      for(var k=0;k<8;k++){ var an = k*Math.PI/4 + pk.ph; pkCtx.beginPath(); pkCtx.moveTo(x + Math.cos(an)*S*0.45, y + Math.sin(an)*S*0.45); pkCtx.lineTo(x + Math.cos(an)*S, y + Math.sin(an)*S); pkCtx.stroke(); }
+      pkCtx.beginPath(); pkCtx.arc(x, y, S*0.16, 0, 6.29); pkCtx.fill();
     } else if(pk.shape === 'radiolarian'){
-      for(var k2=0;k2<10;k2++){ var a2 = k2*Math.PI/5 + pk.ph; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a2)*S*1.7, y + Math.sin(a2)*S*1.7); ctx.stroke(); }
-      ctx.beginPath(); ctx.arc(x, y, S*0.55, 0, 6.29); ctx.fill();
+      for(var k2=0;k2<10;k2++){ var a2 = k2*Math.PI/5 + pk.ph; pkCtx.beginPath(); pkCtx.moveTo(x, y); pkCtx.lineTo(x + Math.cos(a2)*S*1.7, y + Math.sin(a2)*S*1.7); pkCtx.stroke(); }
+      pkCtx.beginPath(); pkCtx.arc(x, y, S*0.55, 0, 6.29); pkCtx.fill();
     } else if(pk.shape === 'copepod'){
-      ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(pk.ph)*0.4);
-      ctx.beginPath(); ctx.ellipse(0, 0, S*0.55, S*1.05, 0, 0, 6.29); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(0, S*1.0); ctx.lineTo(0, S*1.9); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -S*0.9); ctx.quadraticCurveTo(-S*0.9, -S*1.7, -S*1.5, -S*1.9); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -S*0.9); ctx.quadraticCurveTo(S*0.9, -S*1.7, S*1.5, -S*1.9); ctx.stroke();
-      ctx.restore();
+      pkCtx.save(); pkCtx.translate(x, y); pkCtx.rotate(Math.sin(pk.ph)*0.4);
+      pkCtx.beginPath(); pkCtx.ellipse(0, 0, S*0.55, S*1.05, 0, 0, 6.29); pkCtx.fill();
+      pkCtx.beginPath(); pkCtx.moveTo(0, S*1.0); pkCtx.lineTo(0, S*1.9); pkCtx.stroke();
+      pkCtx.beginPath(); pkCtx.moveTo(0, -S*0.9); pkCtx.quadraticCurveTo(-S*0.9, -S*1.7, -S*1.5, -S*1.9); pkCtx.stroke();
+      pkCtx.beginPath(); pkCtx.moveTo(0, -S*0.9); pkCtx.quadraticCurveTo(S*0.9, -S*1.7, S*1.5, -S*1.9); pkCtx.stroke();
+      pkCtx.restore();
     } else if(pk.shape === 'chain'){
-      for(var c=0;c<3;c++){ ctx.beginPath(); ctx.arc(x + (c-1)*S*1.15, y + Math.sin(pk.ph + c)*S*0.2, S*0.6, 0, 6.29); ctx.stroke(); }
+      for(var c=0;c<3;c++){ pkCtx.beginPath(); pkCtx.arc(x + (c-1)*S*1.15, y + Math.sin(pk.ph + c)*S*0.2, S*0.6, 0, 6.29); pkCtx.stroke(); }
     } else if(pk.shape === 'dino'){
-      ctx.beginPath(); ctx.arc(x, y, S*0.8, 0, 6.29); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(x - S*0.8, y); ctx.lineTo(x + S*0.8, y); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(x - S*0.4, y - S*0.7); ctx.lineTo(x - S*0.7, y - S*1.3); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(x + S*0.4, y - S*0.7); ctx.lineTo(x + S*0.7, y - S*1.3); ctx.stroke();
+      pkCtx.beginPath(); pkCtx.arc(x, y, S*0.8, 0, 6.29); pkCtx.fill();
+      pkCtx.beginPath(); pkCtx.moveTo(x - S*0.8, y); pkCtx.lineTo(x + S*0.8, y); pkCtx.stroke();
+      pkCtx.beginPath(); pkCtx.moveTo(x - S*0.4, y - S*0.7); pkCtx.lineTo(x - S*0.7, y - S*1.3); pkCtx.stroke();
+      pkCtx.beginPath(); pkCtx.moveTo(x + S*0.4, y - S*0.7); pkCtx.lineTo(x + S*0.7, y - S*1.3); pkCtx.stroke();
     } else {
-      ctx.beginPath(); ctx.arc(x, y, S*0.6, 0, 6.29); ctx.fill();
+      pkCtx.beginPath(); pkCtx.arc(x, y, S*0.6, 0, 6.29); pkCtx.fill();
     }
   }
   function frame(now){
     if(!running['sea-canvas']) return;
     var s = fitCanvas(canvas), W=s.w, H=s.h, t = now/1000;
     ctx.clearRect(0,0,W,H);
+    if(pctx){ fitCanvas(pcv); pctx.clearRect(0,0,pcv.width,pcv.height); }
     /* FINAL FIXES — RIVER SIZE + SPEED (Nov 9, 04:31): one shared
        size unit for every river part. The animation itself is
        PERFECT (his word) — only BIGGER: the pour lands just a tad
@@ -6042,6 +6266,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
     if(targetH102 > 10){
       var curH102 = parseFloat(canvas.style.height) || 0;
       if(Math.abs(curH102 - targetH102) > 3) canvas.style.height = targetH102 + 'px';
+      if(pcv){ var curPH102 = parseFloat(pcv.style.height) || 0; if(Math.abs(curPH102 - targetH102) > 3) pcv.style.height = targetH102 + 'px'; }
     }
     var inLake = !!(window.BW && window.BW.lakeFilter);
     var inRiver = !!(window.BW && window.BW.riverFilter);
@@ -6109,6 +6334,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       /* plankton bloom — neon specks drifting in this layer's water */
       L.bloom += ((L.bloomOn ? 1 : 0) - L.bloom) * 0.06;
       if(L.bloom > 0.02 && state.lakeK < 0.95 && state.riverK < 0.95){
+        pkCtx = pctx || ctx;
         L.plank.forEach(function(pk){
           var x = ((pk.xr + t*pk.drift) % 1) * W;
           var y = surfY(L, x, t, H) + pk.depth*s.dpr + Math.sin(t*0.9 + pk.ph)*pk.bob*s.dpr;
@@ -6118,10 +6344,10 @@ runners['sea-canvas'] = function(canvas, ctx, state){
           var fl = Math.pow(Math.max(0, Math.sin(t*0.8 + pk.ph*5.3)), 24);
           var a = L.bloom * Math.min(1, 0.3 + 0.6*tw + fl*1.2) * (1 - state.lakeK) * (1 - state.riverK);
           var S = pk.r * s.dpr * (pk.shape === 'dot' ? 1 : 2.3) * (1 + 0.3*tw + 0.9*fl);
-          ctx.shadowColor = 'rgba(55,244,228,.95)';
-          ctx.shadowBlur = (8 + fl*26) * s.dpr * L.bloom;
+          pkCtx.shadowColor = 'rgba(55,244,228,.95)';
+          pkCtx.shadowBlur = (8 + fl*26) * s.dpr * L.bloom;
           drawPlankton(pk, x, y, S, a, s.dpr);
-          ctx.shadowBlur = 0;
+          pkCtx.shadowBlur = 0;
         });
       }
     });
@@ -8559,7 +8785,8 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   var cfDoor = document.querySelector('a.door-3[href*="completion-filter"]');
   var treeDoor = document.querySelector('a.door-2[href*="completion-filter/tree"]');
   var theologyDoor = document.querySelector('a.door-4[href*="completion-filter/theology"]');
-  var boardDoor = document.querySelector('a.door-5[href*="completion-filter/board"]');
+  var boardDoor = document.querySelector('a.door-6[href*="completion-filter/board"]');
+  var marsDoor = document.querySelector('a.door-5[href*="completion-filter/mars"]');
   var oceanDoor = document.querySelector('a.door-1[href*="bw-ocean"]');
   function syncCfDoor(){
     var t = theme === 'halloween' ? 'halloween' : theme === 'xmas' ? 'christmas' : 'normal';
@@ -8569,6 +8796,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     if(treeDoor) treeDoor.setAttribute('href', 'https://isaiahtobola.github.io/completion-filter/tree/?theme=' + t);
     if(theologyDoor) theologyDoor.setAttribute('href', 'https://isaiahtobola.github.io/completion-filter/theology/?theme=' + t);
     if(boardDoor) boardDoor.setAttribute('href', 'https://isaiahtobola.github.io/completion-filter/board/?theme=' + t);
+    if(marsDoor) marsDoor.setAttribute('href', 'https://isaiahtobola.github.io/completion-filter/mars/?theme=' + t);
     /* the Ocean door rides the same sync (Nov 12): NORMAL is
        handed over as the word 'normal', never as silence — a
        missing ?theme= lets the Ocean fall back to whatever
@@ -8636,7 +8864,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
      The floor is COMPUTED from the Sea's own content height, so every new
      post literally makes the Sea deeper. Depth = scroll fraction × floor. */
   var dgFill = document.getElementById('dg-fill'), dgDot = document.getElementById('dg-dot'),
-      dgNow = document.getElementById('dg-now'),
+      dgNow = document.getElementById('dg-now'), dgTrench = document.getElementById('sea-trench'),
       seaInner = document.querySelector('.sea-inner'), seaFeed = document.getElementById('sea-feed'),
       dgTick = false;
   function seaDepths(){
@@ -8648,6 +8876,11 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     var frac = Math.min(1, Math.max(0, window.scrollY / maxScroll));
     var depth = Math.round(frac * floorM);
     dgNow.textContent = depth + ' m';
+    /* NOV 14 — MARIANA TRENCH (his spec): the black layer deepens
+       with the gauge's own meters — opacity = depth / 11000, so the
+       surface stays clear glass and even the Sea's floor (217 m
+       today) is only a ~2% deepening. */
+    if(dgTrench) dgTrench.style.opacity = Math.min(1, Math.max(0, depth / 11000)).toFixed(4);
     if(dgFill) dgFill.style.height = (frac * 100).toFixed(1) + '%';
     if(dgDot) dgDot.style.top = (frac * 100).toFixed(1) + '%';
   }
@@ -10342,6 +10575,14 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
         var cap = document.createElement('div'); cap.className = 'hub-media-cap';
         cap.textContent = (p.author || 'member') + ' · ' + new Date(p.ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
         tile.appendChild(cap);
+        /* NOV 14 — Hub doors: a media tile is a door to its post
+           standing in the Sea; a song tile rides to File Share. */
+        tile.title = window.__bwIsAudioUrl && window.__bwIsAudioUrl(p.media_url) ? 'Hear it in File Share' : 'See this post in the Sea';
+        tile.addEventListener('click', function(ev){
+          if(ev.target && ev.target.closest && ev.target.closest('video')) return;
+          if(window.__bwIsAudioUrl && window.__bwIsAudioUrl(p.media_url) && window.__bwGoFileForPost){ window.__bwGoFileForPost(p); return; }
+          if(window.__bwGoSeaPost) window.__bwGoSeaPost(p);
+        });
         grid.appendChild(tile);
       });
       mp.appendChild(grid);
@@ -10361,6 +10602,10 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
         var date = document.createElement('span'); date.className = 'fmeta';
         date.textContent = new Date(f.ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
         row.appendChild(nameCell); row.appendChild(who); row.appendChild(date);
+        /* NOV 14 — Hub doors: a file on the Hub shelf is a door to
+           the same file standing in File Share. */
+        row.title = 'Open in File Share';
+        row.addEventListener('click', function(){ if(window.__bwGoFile) window.__bwGoFile(f); });
         fp.appendChild(row);
       });
       var note = document.createElement('p'); note.className = 'hub-files-note';

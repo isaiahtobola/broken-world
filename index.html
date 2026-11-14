@@ -392,7 +392,7 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 .sea-inner{position:relative; z-index:2; padding:52px 0 70px}
 .page-head h1{font-size:clamp(32px,4.4vw,52px); font-weight:800; line-height:1.1}
 .page-head p{color:var(--muted); font-size:19px; font-style:italic; margin-top:6px}
-/* The three doors — layered into each other */
+/* The five doors — layered into each other */
 .doors{display:flex; align-items:stretch; justify-content:flex-start; gap:18px; margin:38px 0 46px; padding:6px 4px}
 .door{
   flex:0 1 350px; position:relative; border-radius:16px; padding:26px 24px 24px; text-decoration:none;
@@ -408,6 +408,8 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 .door-1{background:linear-gradient(150deg, #291b44, #1f1433)}
 .door-2{background:linear-gradient(150deg, #3a2560, #291b44)}
 .door-3{background:linear-gradient(150deg, #4a2f78, #3a2560)}
+.door-4{background:linear-gradient(150deg, #5a3a8c, #4a2f78)}
+.door-5{background:linear-gradient(150deg, #6d47a3, #5a3a8c)}
 .sea-grid{display:grid; grid-template-columns:250px minmax(0,1fr) 302px; gap:24px; align-items:start}
 .post-card{
   background:rgba(31,20,51,.92); border:1px solid rgba(184,166,217,.3); border-radius:14px;
@@ -427,7 +429,7 @@ body[data-theme="xmas"] .post-card, body[data-theme="xmas"] .post-composer{backg
    everything around them wore the season. They ride the same
    designated theme colors now; normal days keep their plum. */
 body[data-theme="halloween"] .door-1, body[data-theme="xmas"] .door-1{background:linear-gradient(150deg, var(--panel2), var(--panel))}
-body[data-theme="halloween"] .door-2, body[data-theme="xmas"] .door-2, body[data-theme="halloween"] .door-3, body[data-theme="xmas"] .door-3{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
+body[data-theme="halloween"] .door-2, body[data-theme="xmas"] .door-2, body[data-theme="halloween"] .door-3, body[data-theme="xmas"] .door-3, body[data-theme="halloween"] .door-4, body[data-theme="xmas"] .door-4, body[data-theme="halloween"] .door-5, body[data-theme="xmas"] .door-5{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
 body[data-theme="halloween"] .sea-note, body[data-theme="xmas"] .sea-note{background:linear-gradient(140deg, var(--panel2), var(--panel)); border-color:var(--gold)}
 body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{background:var(--panel); border-color:var(--gold)}
 .post-card:hover{border-color:var(--gold); box-shadow:0 0 0 1px rgba(240,183,63,.35), 0 14px 34px rgba(0,0,0,.4)}
@@ -1130,7 +1132,7 @@ body.wave-on .mrail{opacity:0; pointer-events:none}
   #lake-create, #river-create{margin-top:8px}
   #lake-list .lr-row, #river-bar .river-row{flex-wrap:wrap}
   .doors{flex-direction:column; gap:14px}
-  .door-2,.door-3{margin-left:0}
+  .door-2,.door-3,.door-4,.door-5{margin-left:0}
   /* Sea doors hug their words on phones: in the column stack the
      desktop row's 350px flex-basis would otherwise become a 350px
      HEIGHT per door, with the words parked at the bottom. */
@@ -1851,7 +1853,7 @@ html.kint-lock{overflow:hidden !important}
       <h1>Groups Feed</h1>
       <p>View groups and posts below.</p>
     </div>
-    <!-- The three exhibits, layered into each other (his restructure; Instant Beat door removed 2026-10-30 — the invention stays private for now; the board door added Nov 11, 2026 on his green light) -->
+    <!-- The five exhibits, layered into each other (his restructure; Instant Beat door removed 2026-10-30 — the invention stays private for now; the board door added Nov 11, 2026 on his green light; the Tree Diagram and Theology doors added Nov 13, 2026 on his green light — five doors, left to right in his order: Ocean, Tree Diagram, Completion Filter, Theology, UFO) -->
     <div class="doors">
       <a class="door door-1" href="https://isaiahtobola.github.io/bw-ocean/" target="_blank" rel="noopener">
         <span class="door-kicker">Exhibit One · The Museum</span>
@@ -1859,14 +1861,26 @@ html.kint-lock{overflow:hidden !important}
         <p>Songs, videos and art that stay up — the digital museum.</p>
         <span class="door-arrow">Enter ↗</span>
       </a>
-      <a class="door door-2" href="https://isaiahtobola.github.io/completion-filter/" target="_blank" rel="noopener">
-        <span class="door-kicker">Exhibit Two · The Theory</span>
+      <a class="door door-2" href="https://isaiahtobola.github.io/completion-filter/tree/" target="_blank" rel="noopener">
+        <span class="door-kicker">Exhibit Two · The Tree Diagram</span>
+        <h3>One Tree, Every Variation</h3>
+        <p>One stem, every variation — leaves, shapes, light, and mammals.</p>
+        <span class="door-arrow">Open ↗</span>
+      </a>
+      <a class="door door-3" href="https://isaiahtobola.github.io/completion-filter/" target="_blank" rel="noopener">
+        <span class="door-kicker">Exhibit Three · The Theory</span>
         <h3>The Completion Filter</h3>
         <p>What connects, remains. And what lets go, arrives.</p>
         <span class="door-arrow">Read ↗</span>
       </a>
-      <a class="door door-3" href="https://isaiahtobola.github.io/completion-filter/board/" target="_blank" rel="noopener">
-        <span class="door-kicker">Exhibit Three · The Board</span>
+      <a class="door door-4" href="https://isaiahtobola.github.io/completion-filter/theology/" target="_blank" rel="noopener">
+        <span class="door-kicker">Exhibit Four · The Book</span>
+        <h3>My Theology</h3>
+        <p>Science tells us more about god than religion.</p>
+        <span class="door-arrow">Read ↗</span>
+      </a>
+      <a class="door door-5" href="https://isaiahtobola.github.io/completion-filter/board/" target="_blank" rel="noopener">
+        <span class="door-kicker">Exhibit Five · The Board</span>
         <h3>UFO Conspiracy Hypothetical versus Science</h3>
         <p>His thoughts, pinned up against the science — the detective board.</p>
         <span class="door-arrow">Open ↗</span>
@@ -8542,12 +8556,18 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
      door link itself. applyTheme() keeps the CF door's href carrying
      ?theme=normal|halloween|christmas for the theme in force, so the
      Filter opens dressed the way the visitor left the main site. */
-  var cfDoor = document.querySelector('a.door-2[href*="completion-filter"]');
-  var boardDoor = document.querySelector('a.door-3[href*="completion-filter/board"]');
+  var cfDoor = document.querySelector('a.door-3[href*="completion-filter"]');
+  var treeDoor = document.querySelector('a.door-2[href*="completion-filter/tree"]');
+  var theologyDoor = document.querySelector('a.door-4[href*="completion-filter/theology"]');
+  var boardDoor = document.querySelector('a.door-5[href*="completion-filter/board"]');
   var oceanDoor = document.querySelector('a.door-1[href*="bw-ocean"]');
   function syncCfDoor(){
     var t = theme === 'halloween' ? 'halloween' : theme === 'xmas' ? 'christmas' : 'normal';
     if(cfDoor) cfDoor.setAttribute('href', 'https://isaiahtobola.github.io/completion-filter/?theme=' + t);
+    /* the Tree Diagram and Theology doors (Nov 13) ride the same
+       sync, in the same CF dialect, as their siblings */
+    if(treeDoor) treeDoor.setAttribute('href', 'https://isaiahtobola.github.io/completion-filter/tree/?theme=' + t);
+    if(theologyDoor) theologyDoor.setAttribute('href', 'https://isaiahtobola.github.io/completion-filter/theology/?theme=' + t);
     if(boardDoor) boardDoor.setAttribute('href', 'https://isaiahtobola.github.io/completion-filter/board/?theme=' + t);
     /* the Ocean door rides the same sync (Nov 12): NORMAL is
        handed over as the word 'normal', never as silence — a

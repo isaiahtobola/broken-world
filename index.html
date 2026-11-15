@@ -749,6 +749,36 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
 .rv-leave{font:inherit; font-size:11px; color:var(--gold); background:none; border:1px solid var(--gold); border-radius:999px; padding:1px 8px; cursor:pointer; margin-left:2px}
 .rv-leave.armed{background:var(--gold); color:#150d20}
 .chip.river-chip{border-color:rgba(240,183,63,.55); color:var(--yellow)}
+/* ROSE GOLD & BISMUTH (his genius idea, Nov 15): hovering a lake's
+   transparent button shines it ROSE GOLD; hovering a river's shines
+   it BISMUTH IRIDESCENT — the oil-slick rainbow of the crystal.
+   Literal values on purpose, like the gold doors and the silver
+   Sea chip, so the seasons never remap them. The active gold tint
+   (where you're sitting) is untouched — this shine is hover only. */
+.chip.lake-chip:hover, .chip.lake-chip:active{
+  background:linear-gradient(135deg,#f7cfae 0%,#eda38f 30%,#e5989b 55%,#b76e79 80%,#f3c6b3 100%);
+  color:#43192b; border-color:#ffd9c9; box-shadow:0 0 18px rgba(232,165,140,.55), inset 0 1px 0 rgba(255,255,255,.5);
+}
+.chip.river-chip:hover, .chip.river-chip:active{
+  background:linear-gradient(120deg,#f2a7c3 0%,#a7d8f2 28%,#c9b8f5 52%,#f5e3a1 76%,#a8e6c9 100%);
+  color:#241433; border-color:#efe2ff; box-shadow:0 0 18px rgba(167,216,242,.55), inset 0 1px 0 rgba(255,255,255,.5);
+}
+/* THE WATER PICKER (same idea): one dropdown under the chip bank,
+   purely for choosing lakes and rivers — search the list, tap one,
+   you're there. Lake names read rose gold, river names bismuth. */
+.waters-pick{margin:-4px 0 16px}
+.waters-pick-btn{width:100%}
+.waters-pick-drop{margin-top:8px; background:rgba(21,13,32,.78); border:1px solid rgba(240,183,63,.4); border-radius:14px; padding:10px}
+.waters-pick-drop[hidden]{display:none}
+.waters-pick-search{width:100%; margin:0}
+.waters-pick-list{max-height:246px; overflow-y:auto; margin-top:8px; display:flex; flex-direction:column; gap:4px}
+.waters-pick-item{display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; text-align:left; background:rgba(184,166,217,.06); border:1px solid rgba(184,166,217,.25); border-radius:10px; padding:8px 12px; cursor:pointer; font-family:var(--serif); font-size:16.5px; transition:all .18s}
+.waters-pick-item .wp-kind{font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); flex:0 0 auto}
+.wp-lake-name{background:linear-gradient(100deg,#e8a58c,#f6cfc0 40%,#d18a7a 70%,#f0bfae); -webkit-background-clip:text; background-clip:text; color:transparent}
+.wp-river-name{background:linear-gradient(100deg,#f2a7c3,#a7d8f2 30%,#c9b8f5 55%,#f5e3a1 78%,#a8e6c9); -webkit-background-clip:text; background-clip:text; color:transparent}
+.waters-pick-item.wp-lake:hover{border-color:#ffd9c9; box-shadow:0 0 14px rgba(232,165,140,.4)}
+.waters-pick-item.wp-river:hover{border-color:#efe2ff; box-shadow:0 0 14px rgba(167,216,242,.4)}
+.waters-pick-empty{color:var(--muted); font-family:var(--mono); font-size:12.5px; padding:6px 2px}
 .chip.river-del{border-color:rgba(255,130,130,.45); color:#ff9d9d; padding:5px 10px}
 .chip.river-del[data-armed="1"]{background:rgba(120,20,20,.35); color:#ffd9d9}
 .sea-help-q{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin-left:8px; vertical-align:2px; border-radius:50%; border:1px solid rgba(240,183,63,.65); background:rgba(240,183,63,.12); color:var(--yellow); font-family:var(--mono); font-size:13px; line-height:1; cursor:pointer}
@@ -1955,6 +1985,7 @@ html.kint-lock{overflow:hidden !important}
         <div class="sea-banks-m" id="sea-banks-m" hidden></div>
         <div class="sea-note"><b>Share, save, and react to each other's files</b> — save SFX, images, PNGs, and GIFs to your own PC!<span class="sea-note-sign">— BW File Sharing Waves</span></div>
         <div class="feed-chips" id="lake-chips"><button class="chip active" id="chip-all" type="button">The Sea</button><button class="chip chip-gold" id="chip-saved" type="button">Saved by me</button><button class="chip sea-help-open chip-gold" id="sea-help-btn" type="button" aria-haspopup="dialog" aria-controls="sea-help-modal">Waters guide</button><button class="chip chip-gold" id="waters-library-btn" type="button" aria-haspopup="dialog" aria-controls="waters-library-modal">Waters Library</button></div>
+<div class="waters-pick" id="waters-pick"><button class="chip waters-pick-btn" id="waters-pick-btn" type="button" aria-haspopup="true" aria-expanded="false">Find a lake or river ▾</button><div class="waters-pick-drop" id="waters-pick-drop" hidden><input class="search-box waters-pick-search" id="waters-pick-search" type="search" placeholder="Search lakes and rivers…" aria-label="Search lakes and rivers"><div class="waters-pick-list" id="waters-pick-list"></div></div></div>
 <div class="river-members" id="river-members" hidden></div>
         <div class="post-composer">
           <div class="avatar">B</div>
@@ -4710,6 +4741,7 @@ window.__bwAuth = function(form){
       sel.value = cur || '';
       sel.hidden = !Object.keys(BW.lakes).length;
     }
+    bwRenderWaterPick();
   }
   function bwFetchLakes(){
     if(!BW.sb) return;
@@ -5160,7 +5192,72 @@ window.__bwAuth = function(form){
         pick.appendChild(lb);
       });
     }
+    bwRenderWaterPick();
   }
+  /* THE WATER PICKER (his genius idea, Nov 15): one dropdown under
+     the chip bank purely for choosing lakes and rivers — search the
+     list, tap one, and its own chip does the walking, so choosing
+     here can never disagree with the bank. Lake names read rose
+     gold in the list; river names read bismuth iridescent. The
+     list rebuilds whenever the lakes or rivers re-render, so the
+     menu grows with every new water. */
+  function bwCloseWaterPick(){
+    var drop = document.getElementById('waters-pick-drop');
+    var btn = document.getElementById('waters-pick-btn');
+    if(drop) drop.hidden = true;
+    if(btn) btn.setAttribute('aria-expanded', 'false');
+  }
+  function bwRenderWaterPick(){
+    var list = document.getElementById('waters-pick-list'); if(!list) return;
+    var search = document.getElementById('waters-pick-search');
+    var q = ((search && search.value) || '').trim().toLowerCase();
+    list.innerHTML = '';
+    var n = 0;
+    function add(kind, id, name, sub){
+      if(q && name.toLowerCase().indexOf(q) < 0) return;
+      n++;
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'waters-pick-item wp-' + kind;
+      var nm = document.createElement('span'); nm.className = 'wp-name wp-' + kind + '-name'; nm.textContent = name;
+      var kd = document.createElement('span'); kd.className = 'wp-kind'; kd.textContent = sub;
+      b.appendChild(nm); b.appendChild(kd);
+      b.addEventListener('click', function(){
+        var chip = document.querySelector(kind === 'lake'
+          ? '#lake-chips .chip.lake-chip[data-lake="' + id + '"]'
+          : '.chip.river-chip[data-river="' + id + '"]');
+        if(chip) chip.click();
+        bwCloseWaterPick();
+      });
+      list.appendChild(b);
+    }
+    Object.keys(BW.lakes || {}).forEach(function(id){ add('lake', id, BW.lakes[id].name, 'Lake'); });
+    Object.keys(BW.rivers || {}).forEach(function(id){
+      var R = BW.rivers[id];
+      add('river', id, R.name, 'River · ' + R.lakes.length + (R.lakes.length === 1 ? ' lake' : ' lakes'));
+    });
+    if(!n){
+      var e = document.createElement('div'); e.className = 'waters-pick-empty';
+      e.textContent = q ? 'No lake or river by that name yet.' : 'No lakes or rivers yet — dig the first one.';
+      list.appendChild(e);
+    }
+  }
+  (function(){
+    var btn = document.getElementById('waters-pick-btn');
+    var drop = document.getElementById('waters-pick-drop');
+    var search = document.getElementById('waters-pick-search');
+    if(!btn || !drop) return;
+    btn.addEventListener('click', function(){
+      var open = drop.hidden;
+      drop.hidden = !open;
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if(open){ bwRenderWaterPick(); if(search) search.focus(); }
+    });
+    if(search) search.addEventListener('input', bwRenderWaterPick);
+    document.addEventListener('click', function(e){
+      var host = document.getElementById('waters-pick');
+      if(host && !drop.hidden && !host.contains(e.target)) bwCloseWaterPick();
+    });
+    bwRenderWaterPick();
+  })();
   var bwLeaveArm = {}; /* lakeId -> arm expiry (ms); lives outside the DOM so a re-render can never disarm a confirm tap */
   function bwRenderRiverMembers(){
     var host = document.getElementById('river-members');

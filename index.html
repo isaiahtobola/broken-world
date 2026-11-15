@@ -785,6 +785,21 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
 .waters-pick-item.wp-lake:hover{border-color:#ffd9c9; box-shadow:0 0 14px rgba(232,165,140,.4)}
 .waters-pick-item.wp-river:hover{border-color:#efe2ff; box-shadow:0 0 14px rgba(167,216,242,.4)}
 .waters-pick-empty{color:var(--muted); font-family:var(--mono); font-size:12.5px; padding:6px 2px}
+/* WORD-INDICATIVE SEARCH (his call, Nov 15 02:51): the Sea's search
+   bar answers as he types — waters on top in their metals, posts
+   below with a snippet around the word. */
+.sea-search-menu{margin-top:8px; background:rgba(21,13,32,.85); border:1px solid rgba(240,183,63,.4); border-radius:12px; padding:8px; max-height:330px; overflow-y:auto}
+.sea-search-menu[hidden]{display:none}
+.sea-search-menu .waters-pick-item{margin-top:4px}
+.ss-label{font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); padding:6px 4px 2px}
+.ss-item{display:block; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid rgba(184,166,217,.14); padding:7px 6px; cursor:pointer; color:var(--cream); font-family:var(--serif); font-size:15.5px}
+.ss-item:last-child{border-bottom:none}
+.ss-item:hover{background:rgba(240,183,63,.08)}
+.ss-post-who{font-family:var(--mono); font-size:11px; color:var(--gold); letter-spacing:.05em}
+.ss-snip{display:block; color:var(--muted); font-size:13.5px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.ss-empty{color:var(--muted); font-family:var(--mono); font-size:12.5px; padding:6px 4px}
+.post-card.search-hit{animation:ssHit 1.8s ease}
+@keyframes ssHit{0%,60%{box-shadow:0 0 0 2px rgba(240,183,63,.85), 0 14px 34px rgba(0,0,0,.4)}100%{box-shadow:0 0 0 0 rgba(240,183,63,0)}}
 .chip.river-del{border-color:rgba(255,130,130,.45); color:#ff9d9d; padding:5px 10px}
 .chip.river-del[data-armed="1"]{background:rgba(120,20,20,.35); color:#ffd9d9}
 .sea-help-q{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin-left:8px; vertical-align:2px; border-radius:50%; border:1px solid rgba(240,183,63,.65); background:rgba(240,183,63,.12); color:var(--yellow); font-family:var(--mono); font-size:13px; line-height:1; cursor:pointer}
@@ -2048,7 +2063,7 @@ html.kint-lock{overflow:hidden !important}
       <aside>
         <div class="side-panel">
           <h4>Search</h4>
-          <input class="search-box" type="search" placeholder="Search the Sea..." aria-label="Search posts">
+          <input class="search-box" id="sea-search" type="search" placeholder="Search the Sea..." aria-label="Search posts"><div class="sea-search-menu" id="sea-search-menu" hidden></div>
                     <h4>Community</h4>
           <div class="group-line">
             <div class="avatar">BW</div>
@@ -5304,6 +5319,101 @@ window.__bwAuth = function(form){
       if(host && !drop.hidden && !host.contains(e.target)) bwCloseWaterPick();
     });
     bwRenderWaterPick();
+  })();
+  /* WORD-INDICATIVE SEARCH (his call, Nov 15 02:51): the Sea's
+     search bar answers as he types — matching lakes and rivers on
+     top (rose gold / bismuth, tap to go there), then every post in
+     the Sea carrying the word, with a snippet around it (tap to
+     jump to the post; a filtered-out post first reopens the whole
+     Sea, then jumps). */
+  (function(){
+    var inp = document.getElementById('sea-search');
+    var menu = document.getElementById('sea-search-menu');
+    if(!inp || !menu) return;
+    var t = null;
+    function close(){ menu.hidden = true; menu.innerHTML = ''; }
+    function goWater(kind, id){
+      var chip = document.querySelector(kind === 'lake'
+        ? '#lake-chips .chip.lake-chip[data-lake="' + id + '"]'
+        : '.chip.river-chip[data-river="' + id + '"]');
+      if(chip) chip.click();
+      close(); inp.blur();
+    }
+    function waterRow(kind, id, name, sub){
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'waters-pick-item wp-' + kind;
+      var nm = document.createElement('span'); nm.className = 'wp-name wp-' + kind + '-name'; nm.textContent = name;
+      var kd = document.createElement('span'); kd.className = 'wp-kind'; kd.textContent = sub;
+      b.appendChild(nm); b.appendChild(kd);
+      b.addEventListener('click', function(){ goWater(kind, id); });
+      return b;
+    }
+    function render(){
+      var q = (inp.value || '').trim().toLowerCase();
+      if(q.length < 2){ close(); return; }
+      menu.innerHTML = '';
+      var waters = 0, posts = 0, wlabel = null, plabel = null;
+      function label(txt){
+        var d = document.createElement('div'); d.className = 'ss-label'; d.textContent = txt;
+        menu.appendChild(d);
+      }
+      Object.keys(BW.lakes || {}).forEach(function(id){
+        var L = BW.lakes[id];
+        if(L.name.toLowerCase().indexOf(q) < 0) return;
+        if(!wlabel){ label('Lakes & Rivers'); wlabel = true; }
+        waters++;
+        menu.appendChild(waterRow('lake', id, L.name, 'Lake'));
+      });
+      Object.keys(BW.rivers || {}).forEach(function(id){
+        var R = BW.rivers[id];
+        if(R.name.toLowerCase().indexOf(q) < 0) return;
+        if(!wlabel){ label('Lakes & Rivers'); wlabel = true; }
+        waters++;
+        menu.appendChild(waterRow('river', id, R.name, 'River · ' + R.lakes.length + (R.lakes.length === 1 ? ' lake' : ' lakes')));
+      });
+      document.querySelectorAll('#sea-feed .post-card').forEach(function(card){
+        if(posts >= 8) return;
+        var bodyEl = card.querySelector('.post-body');
+        var whoEl = card.querySelector('.post-head .who b');
+        var text = bodyEl ? (bodyEl.textContent || '') : '';
+        var who = whoEl ? (whoEl.textContent || '') : '';
+        if((who + ' ' + text).toLowerCase().indexOf(q) < 0) return;
+        if(!plabel){ label('Posts'); plabel = true; }
+        posts++;
+        var idx = text.toLowerCase().indexOf(q);
+        var snip;
+        if(idx >= 0) snip = (idx > 30 ? '…' : '') + text.slice(Math.max(0, idx - 30), idx + q.length + 50).replace(/\s+/g, ' ') + '…';
+        else snip = text.slice(0, 90).replace(/\s+/g, ' ');
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'ss-item';
+        var w = document.createElement('span'); w.className = 'ss-post-who'; w.textContent = who || 'post';
+        var s = document.createElement('span'); s.className = 'ss-snip'; s.textContent = snip;
+        b.appendChild(w); b.appendChild(s);
+        b.addEventListener('click', function(){
+          close(); inp.blur();
+          function jump(){
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.remove('search-hit'); void card.offsetWidth; card.classList.add('search-hit');
+          }
+          if(card.offsetParent === null || getComputedStyle(card).display === 'none'){
+            var ca = document.getElementById('chip-all');
+            if(ca) ca.click();
+            setTimeout(jump, 380);
+          } else jump();
+        });
+        menu.appendChild(b);
+      });
+      if(!waters && !posts){
+        var e = document.createElement('div'); e.className = 'ss-empty';
+        e.textContent = 'Nothing in the Sea answers to "' + q + '" yet.';
+        menu.appendChild(e);
+      }
+      menu.hidden = false;
+    }
+    inp.addEventListener('input', function(){ if(t) clearTimeout(t); t = setTimeout(render, 120); });
+    inp.addEventListener('focus', function(){ if((inp.value || '').trim().length >= 2) render(); });
+    inp.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
+    document.addEventListener('click', function(e){
+      if(!menu.hidden && !menu.contains(e.target) && e.target !== inp) close();
+    });
   })();
   var bwLeaveArm = {}; /* lakeId -> arm expiry (ms); lives outside the DOM so a re-render can never disarm a confirm tap */
   function bwRenderRiverMembers(){

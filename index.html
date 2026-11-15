@@ -804,7 +804,13 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
    glow never sits on two letters at once — it walks the word. */
 @keyframes bwChip{0%,100%{color:inherit; text-shadow:none}3.5%,7%{color:#ffe9b0; text-shadow:0 0 12px rgba(240,183,63,.85)}}
 .hchip .hl-ch{animation:bwChip 11s ease-in-out infinite; animation-delay:var(--gd,0s)}
-.htext .hl-ch{animation:bwChip 11s ease-in-out infinite; animation-delay:var(--gd,0s)}
+/* SEA TEXT HEARTH — SLOW (his call, Nov 15 00:44): the page-wide
+   wave made whole paragraphs flare gold at a glance. Sea texts now
+   breathe at the books' pace: a long 30s cycle, a narrow bright
+   window, and per-element timing, so a soft comet of a few letters
+   crosses each paragraph slowly instead of the paragraph flashing. */
+@keyframes bwSeaText{0%,100%{color:inherit; text-shadow:none}2.2%,4.4%{color:#ffe9b0; text-shadow:0 0 12px rgba(240,183,63,.85)}}
+.htext .hl-ch{animation:bwSeaText 30s ease-in-out infinite; animation-delay:var(--gd,0s)}
 /* BUILD 101 — lake rows wrap; a Delete can never clip off the panel. */
 .lakes-panel .group-line{flex-wrap:wrap; row-gap:8px}
 .lakes-panel .group-line .avatar{flex:0 0 auto}
@@ -10723,7 +10729,17 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       spans.forEach(function(s, i){ s.style.setProperty('--gd', (i * step) + 'ms'); });
     }
     layChain(chipEls, 10600, 55, 160);
-    layChain(restEls, 10600, 4, 280);
+    /* Sea texts walk SLOW, each on its own clock (his call, Nov 15
+       00:44 — "like the other site pages"): delays fitted per
+       element across a ~26s walk on the 30s bwSeaText cycle, so a
+       paragraph glows letter by letter at book pace instead of
+       flaring gold the moment it scrolls into view. */
+    restEls.forEach(function(el){
+      var spans = el.querySelectorAll('.hl-ch');
+      if(!spans.length) return;
+      var step = Math.min(240, Math.max(45, Math.floor(26000 / spans.length)));
+      spans.forEach(function(s, i){ s.style.setProperty('--gd', (i * step) + 'ms'); });
+    });
   }
   function seaChainSoon(){
     if(chainTimer) clearTimeout(chainTimer);

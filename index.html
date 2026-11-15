@@ -415,6 +415,17 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
    Exhibit Two — door-2's own plum gradient. */
 .door-6{background:linear-gradient(150deg, #3a2560, #291b44)}
 .sea-left .door{margin-top:18px}
+/* NOV 14 late — GOLDEN DOORS (his call, 23:39): a door under the
+   cursor — or under a dragging finger — turns gold and glows; the
+   moment the pointer leaves its premise it fades back to the
+   staircase color it started at. */
+.door{transition:transform .25s, box-shadow .5s, border-color .5s, z-index 0s}
+.door::after{content:''; position:absolute; inset:0; border-radius:inherit; background:linear-gradient(150deg, #ffd166, #d9930d); opacity:0; transition:opacity .5s ease; pointer-events:none}
+.door > *{position:relative; z-index:1}
+.door.gold-on::after{opacity:1}
+.door.gold-on{box-shadow:0 22px 44px rgba(0,0,0,.55), 0 0 34px rgba(240,183,63,.6); border-color:#ffd166}
+.door .door-kicker, .door h3, .door p, .door .door-arrow{transition:color .5s ease}
+.door.gold-on .door-kicker, .door.gold-on h3, .door.gold-on p, .door.gold-on .door-arrow{color:#33240a}
 .sea-grid{display:grid; grid-template-columns:250px minmax(0,1fr) 302px; gap:24px; align-items:start}
 .post-card{
   background:rgba(31,20,51,.92); border:1px solid rgba(184,166,217,.3); border-radius:14px;
@@ -6173,6 +6184,14 @@ runners['sea-canvas'] = function(canvas, ctx, state){
     {plum:[31,20,51],   blue:[22,35,63],   teal:[20,70,66],   amp:0.058, len:0.0024, spd:0.13, base:0.88, alpha:0.9, mix:0, tmix:0}
   ];
   var ampK = 1, moodRGB = [96, 200, 188];
+  /* NOV 14 late — THE FROZEN RULER (his catch, 23:34): Build 102
+     stretched this canvas to the page's full height, and the wave
+     math measured itself against that whole height — so every
+     swell ballooned as the page grew. His law: the meter measures
+     depth, it never resizes the waves. tileHcur is ONE screenful —
+     the height the sea was born at — and the pattern simply
+     repeats downward, layer under layer, as deep as the page runs. */
+  var tileHcur = 0;
   /* NOV 14 — THE TRENCH SPLIT (his Mariana spec): the plankton get
      their own canvas riding ABOVE the black trench layer, so they
      glow at full strength no matter how deep the black gets; the
@@ -6184,17 +6203,19 @@ runners['sea-canvas'] = function(canvas, ctx, state){
   var pctx = null;
   try{ pctx = pcv ? pcv.getContext('2d') : null; }catch(e){ pctx = null; }
   var pkCtx = ctx;
-  function surfY(L, x, t, H){
-    return H*L.base
-      + Math.sin(x*L.len + t*L.spd*2.2) * H*L.amp*ampK
-      + Math.sin(x*L.len*2.7 - t*L.spd*1.6) * H*L.amp*0.45*ampK;
+  function surfY(L, x, t, yRef){
+    var th = tileHcur > 0 ? tileHcur : 1;
+    var ty = Math.floor(yRef / th) * th;
+    return ty + th*L.base
+      + Math.sin(x*L.len + t*L.spd*2.2) * th*L.amp*ampK
+      + Math.sin(x*L.len*2.7 - t*L.spd*1.6) * th*L.amp*0.45*ampK;
   }
   /* plankton colonies (his 03:21 spec): tiny neon lives per layer,
      woken by a click, glowing like little stars in the water */
   var PSHAPES = ['dot','dot','dot','diatom','diatom','radiolarian','copepod','chain','dino'];
   layers.forEach(function(L){
     L.bloom = 0; L.bloomOn = false; L.plank = [];
-    for(var i=0;i<26;i++) L.plank.push({xr:Math.random(), depth:6+Math.random()*90, r:0.8+Math.random()*1.7, ph:Math.random()*6.28, drift:0.004+Math.random()*0.010, bob:2+Math.random()*5,
+    for(var i=0;i<26;i++) L.plank.push({xr:Math.random(), tileR:Math.random(), depth:6+Math.random()*90, r:0.8+Math.random()*1.7, ph:Math.random()*6.28, drift:0.004+Math.random()*0.010, bob:2+Math.random()*5,
       shape: PSHAPES[Math.floor(Math.random()*PSHAPES.length)]});
   });
   /* real plankton forms (science-checked 2026-10-30): diatom = centric
@@ -6235,6 +6256,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
   function frame(now){
     if(!running['sea-canvas']) return;
     var s = fitCanvas(canvas), W=s.w, H=s.h, t = now/1000;
+    tileHcur = Math.max(160, Math.min(H, (window.visualViewport ? window.visualViewport.height : (window.innerHeight || 800)) * s.dpr));
     ctx.clearRect(0,0,W,H);
     if(pctx){ fitCanvas(pcv); pctx.clearRect(0,0,pcv.width,pcv.height); }
     /* FINAL FIXES — RIVER SIZE + SPEED (Nov 9, 04:31): one shared
@@ -6283,7 +6305,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       var cxp = (ck.x - rect.left) * s.dpr, cyp = (ck.y - rect.top) * s.dpr;
       if(cxp >= 0 && cxp <= W && cyp >= 0 && cyp <= H){
         for(var ci = layers.length-1; ci >= 0; ci--){
-          if(cyp >= surfY(layers[ci], cxp, t, H)){ layers[ci].bloomOn = !layers[ci].bloomOn; break; }
+          if(cyp >= surfY(layers[ci], cxp, t, cyp)){ layers[ci].bloomOn = !layers[ci].bloomOn; break; }
         }
       }
     }
@@ -6324,20 +6346,32 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       var b = Math.round(ab + (L.plum[2] - ab) * L.restK);
       if(idx === 2) moodRGB = [r, g, b];
       L._rgb = [r, g, b]; L._alp = L.alpha + (1 - L.alpha) * 0.7 * mx;
-      ctx.beginPath(); ctx.moveTo(0, H);
-      for(var x=0; x<=W; x+=6) ctx.lineTo(x, surfY(L, x, t, H));
-      ctx.lineTo(W, H); ctx.closePath();
       ctx.fillStyle = 'rgb('+r+','+g+','+b+')';
       /* while active, waves go near-solid so the plum page behind them
          can't bleed through the translucency and purple the mix */
-      ctx.globalAlpha = (L.alpha + (1 - L.alpha) * 0.7 * mx) * (1 - 0.45 * state.lakeK - 0.2 * state.riverK) * (1 - state.lakeK) * (1 - state.riverK); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.globalAlpha = (L.alpha + (1 - L.alpha) * 0.7 * mx) * (1 - 0.45 * state.lakeK - 0.2 * state.riverK) * (1 - state.lakeK) * (1 - state.riverK);
+      /* THE FROZEN RULER at work: this layer is painted once per
+         screenful tile, from its surface down to the tile's floor —
+         the same five waves at their born size, repeated as deep as
+         the page runs. Only tiles near the visible window paint. */
+      var kTile = rect.height ? (H / rect.height) : s.dpr;
+      var visTopT = -rect.top * kTile - tileHcur, visBotT = -rect.top * kTile + (window.innerHeight || 800) * kTile + tileHcur;
+      for(var tyT = 0; tyT < H; tyT += tileHcur){
+        var tyB = Math.min(H, tyT + tileHcur);
+        if(tyB < visTopT || tyT > visBotT) continue;
+        ctx.beginPath(); ctx.moveTo(0, tyB);
+        for(var x=0; x<=W; x+=6) ctx.lineTo(x, surfY(L, x, t, tyT + 1));
+        ctx.lineTo(W, tyB); ctx.closePath(); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
       /* plankton bloom — neon specks drifting in this layer's water */
       L.bloom += ((L.bloomOn ? 1 : 0) - L.bloom) * 0.06;
       if(L.bloom > 0.02 && state.lakeK < 0.95 && state.riverK < 0.95){
         pkCtx = pctx || ctx;
         L.plank.forEach(function(pk){
           var x = ((pk.xr + t*pk.drift) % 1) * W;
-          var y = surfY(L, x, t, H) + pk.depth*s.dpr + Math.sin(t*0.9 + pk.ph)*pk.bob*s.dpr;
+          var pkTileTop = Math.min(H - 1, Math.floor(pk.tileR * Math.max(1, Math.ceil(H / tileHcur))) * tileHcur + 1);
+          var y = surfY(L, x, t, pkTileTop) + pk.depth*s.dpr + Math.sin(t*0.9 + pk.ph)*pk.bob*s.dpr;
           if(y > H - 2) return;
           var tw = 0.55 + 0.45*Math.sin(t*2 + pk.ph);
           /* the FLASH (his 04:00 call): sharp random bioluminescent spikes */
@@ -6489,7 +6523,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       layers.forEach(function(L2){
         if(!L2._rgb) return;
         ctx.beginPath(); ctx.moveTo(cx - Rb * 1.1, cy + Rb * 1.1);
-        for(var lx = cx - Rb * 1.1; lx <= cx + Rb * 1.1; lx += 6) ctx.lineTo(lx, surfY(L2, lx, t, H));
+        for(var lx = cx - Rb * 1.1; lx <= cx + Rb * 1.1; lx += 6) ctx.lineTo(lx, surfY(L2, lx, t, cy));
         ctx.lineTo(cx + Rb * 1.1, cy + Rb * 1.1); ctx.closePath();
         ctx.fillStyle = 'rgb(' + L2._rgb[0] + ',' + L2._rgb[1] + ',' + L2._rgb[2] + ')';
         ctx.globalAlpha = (L2._alp === undefined ? 0.6 : L2._alp) * state.lakeK;
@@ -10536,6 +10570,71 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     var host = document.getElementById(id);
     if(host) pmo.observe(host, { childList: true, subtree: true, characterData: true });
   });
+  /* NOV 14 late — THE ONE CHAIN (his call, 23:35–23:38): the hearth
+     stops being a dozen little glows each minding its own counter.
+     The whole Sea page becomes ONE letter-by-letter chain in
+     reading order — doors, note, chips, banks — fitted to a single
+     11-second cycle the way the guide cards fit theirs, so one
+     smooth wave of light walks the page from its first letter to
+     its last. Chips and texts keep their own colors; only the
+     timing is shared now. */
+  var chainTimer = null;
+  function seaChain(){
+    var els = [];
+    function push(el){ if(el && els.indexOf(el) < 0) els.push(el); }
+    document.querySelectorAll('#view-sea .door').forEach(function(d){
+      d.querySelectorAll('.door-kicker, h3, p, .door-arrow').forEach(push);
+    });
+    document.querySelectorAll('#view-sea .sea-note').forEach(push);
+    ['lake-chips', 'river-bar'].forEach(function(id){
+      var host = document.getElementById(id);
+      if(host) host.querySelectorAll('.chip').forEach(push);
+    });
+    document.querySelectorAll('#view-sea .sea-grid > aside .side-panel').forEach(function(panel){
+      var cand = Array.prototype.slice.call(panel.querySelectorAll('h4, .meta > b, .meta > span, p.meta, .rv-label'));
+      cand = cand.filter(function(el){ return !cand.some(function(o){ return o !== el && o.contains(el); }); });
+      cand.forEach(push);
+    });
+    push(document.getElementById('river-members'));
+    els.forEach(function(el){
+      el.classList.add(el.classList.contains('chip') ? 'hchip' : 'htext');
+      hearthLetters(el, 0);
+    });
+    var spans = [];
+    els.forEach(function(el){ el.querySelectorAll('.hl-ch').forEach(function(s){ spans.push(s); }); });
+    if(!spans.length) return;
+    var step = Math.min(280, Math.max(4, Math.floor(10600 / spans.length)));
+    spans.forEach(function(s, i){ s.style.setProperty('--gd', (i * step) + 'ms'); });
+  }
+  function seaChainSoon(){
+    if(chainTimer) clearTimeout(chainTimer);
+    chainTimer = setTimeout(seaChain, 350);
+  }
+  seaChain();
+  var cmo = new MutationObserver(seaChainSoon);
+  ['lake-chips', 'river-bar', 'lake-list', 'river-members'].forEach(function(id){
+    var host = document.getElementById(id);
+    if(host) cmo.observe(host, { childList: true, subtree: true });
+  });
+  /* — GOLDEN DOORS: hover on desktop; a dragging finger on mobile — */
+  (function(){
+    var doors = Array.prototype.slice.call(document.querySelectorAll('#view-sea .door'));
+    if(!doors.length) return;
+    function setGold(d){ doors.forEach(function(x){ x.classList.toggle('gold-on', x === d); }); }
+    doors.forEach(function(d){
+      d.addEventListener('mouseenter', function(){ setGold(d); });
+      d.addEventListener('mouseleave', function(){ setGold(null); });
+    });
+    document.addEventListener('touchmove', function(e){
+      var vs = document.getElementById('view-sea');
+      if(!vs || !vs.classList.contains('active')) return;
+      var t = e.touches && e.touches[0]; if(!t) return;
+      var el = document.elementFromPoint(t.clientX, t.clientY);
+      setGold(el && el.closest ? el.closest('#view-sea .door') : null);
+    }, { passive: true });
+    document.addEventListener('touchend', function(){ setGold(null); }, { passive: true });
+    document.addEventListener('touchcancel', function(){ setGold(null); }, { passive: true });
+  })();
   /* — BUILD 102: the Hub as the organized view (his words: "BW
      hub is like a more organized view of the sea and the file
      share stuff together"). The Discussion tab already IS the

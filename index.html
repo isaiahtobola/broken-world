@@ -7908,6 +7908,19 @@ runners['lava-canvas'] = function(canvas, ctx, state){
      burst proves it died young; wideNow is the latest 1–5 kHz
      level, shared with the slot completer. */
   var pendDip = 0, pendT = -1e9, pendPeak = 0, wideNow = 0;
+  /* CLAP v2 state (Nov 15, his 04:18-19 steer — "loudness
+     and frequency", "my claps are always loud af"): loudPeak
+     is a peak-hold of the wide band with a ~5 s decay and
+     loudAvg its ~1.5 s average; both fold in at the END of
+     each eval step, so a burst is always judged against the
+     track as it stood before the burst. pendRef / pendCov /
+     pendHat snapshot, at queue time, the loudness reference,
+     the attack frame's band coverage and its top-heaviness —
+     the fingerprints the escrow judges at confirm (see
+     stepPend). covScr is scratch for the coverage count. */
+  var loudPeak = 0, loudAvg = 0, covNow = 0, hatNow = false;
+  var pendRef = 0, pendCov = 0, pendHat = false;
+  var covScr = new Float32Array(64);
 
   /* --- CLAP EAR v6 LEARNER (round 6, his design steer 2026-11-11:
      "takes an initial clap pattern from 8 bars and then does magic
@@ -8144,17 +8157,38 @@ runners['lava-canvas'] = function(canvas, ctx, state){
      peaks and fail) AND the low end is quiet (kick rumble
      vetoes: it was a kick). Sustained sounds never fall in
      time and are dropped unspent. The dip, once landed, is
-     the shipped visual, untouched. --- */
+     the shipped visual, untouched.
+     v2 (Nov 15, his 04:18-19 steer, after his phone test —
+     "working better", but hi-hats and short arp blips could
+     still fake the frequency math; his chosen metrics:
+     "loudness and frequency", his claps "always loud af"):
+     three more fingerprints, all snapshotted at queue time
+     because they describe the ATTACK frame — by confirm time
+     a short blip has vanished into the bed and a hat's top
+     has fallen quiet. COVERAGE: the burst must light most
+     of its own band (pendCov >= 0.35 of the 1–5 kHz bins at
+     >=30% of the band's peak bin) — noise fills the band, a
+     tonal blip lights a narrow slice. HAT VETO: at attack
+     the top band (6.3–16 kHz) must not outweigh the whole
+     PSHT band (pendHat) — a hi-hat is top-heavy, a clap is
+     mid-heavy. LOUDNESS: the burst's peak must stand at
+     >=85% of the track's rolling wide-band peak reference
+     (pendRef, snapshotted pre-burst) and >=1.24x its
+     rolling average — his claps sit on top of his mixes;
+     hats and blips live underneath and fail. Thresholds
+     tuned on the six-case synthetic suite (clap margins
+     >=1.25x on every gate; every impostor fails >=2). --- */
   function queueDip(depth, now, peak){
     if(depth <= 0) return;
-    if(pendDip <= 0){ pendT = now; pendPeak = peak || wideNow; }
+    if(pendDip <= 0){ pendT = now; pendPeak = peak || wideNow; pendRef = loudPeak; pendCov = covNow; pendHat = hatNow; }
     else if((peak || 0) > pendPeak) pendPeak = peak;
     if(depth > pendDip) pendDip = depth;
   }
   function stepPend(now, flatB, lowVeto){
     if(pendDip <= 0) return;
     if(wideNow <= pendPeak * 0.70 && wideNow <= pendPeak - 0.15){
-      if(flatB >= 0.40 && !lowVeto) clapDip = Math.max(clapDip, pendDip);
+      var loudOK = pendPeak >= pendRef * 0.85 && pendPeak >= loudAvg * 1.24;
+      if(flatB >= 0.40 && !lowVeto && !pendHat && pendCov >= 0.35 && loudOK) clapDip = Math.max(clapDip, pendDip);
       pendDip = 0;
     }
     else if(now - pendT > 230) pendDip = 0;
@@ -9033,7 +9067,7 @@ function smStats(S) {
          crack statistics, timed re-tries, slot bookkeeping --- */
       gIdleT = 0;
       var gTid = (window.__bwAudio && window.__bwAudio.id) || null;
-      if(gTid !== gTrack){ gTrack = gTid; gHits = []; gKickTs = []; gSamp = []; gResetGrid(); gDevHist = []; gMisfitRun = 0; gLastGridT = -1e9; gFireTs = []; pendDip = 0; stuOnTrack(gTid); }
+      if(gTid !== gTrack){ gTrack = gTid; gHits = []; gKickTs = []; gSamp = []; gResetGrid(); gDevHist = []; gMisfitRun = 0; gLastGridT = -1e9; gFireTs = []; pendDip = 0; loudPeak = 0; loudAvg = 0; stuOnTrack(gTid); }
       if(!mStudy && gTid && now - mStuTry > 2000){ mStuTry = now; stuKickoff(gTid); }
       gSamp.push(crackE); if(gSamp.length > 2048) gSamp.splice(0, gSamp.length - 2048);
       if(!(gLastStat > 0 && now - gLastStat < 500)){
@@ -9111,11 +9145,25 @@ function smStats(S) {
         var shareW = wSum / Math.max(0.001, allSum);
         var bins = L.bins, srB = (window.BW_ACTX && BW_ACTX.sampleRate) || 44100;
         var b0 = Math.ceil(1000 / (srB / 512)), b1 = Math.min(bins.length - 1, Math.floor(5000 / (srB / 512)));
-        var fLog = 0, fSum = 0, fN = 0;
-        for(qi = b0; qi <= b1; qi++){ var lin = Math.pow(10, (-100 + 70 * (bins[qi] / 255)) / 20); fLog += Math.log(lin); fSum += lin; fN++; }
+        var fLog = 0, fSum = 0, fN = 0, fMax = 0;
+        for(qi = b0; qi <= b1; qi++){ var lin = Math.pow(10, (-100 + 70 * (bins[qi] / 255)) / 20); covScr[fN] = lin; if(lin > fMax) fMax = lin; fLog += Math.log(lin); fSum += lin; fN++; }
         var flatB = fN ? Math.exp(fLog / fN) / (fSum / fN) : 0;
+        /* --- v2 features: COVERAGE — the fraction of the
+           band's bins lit to at least 30% of the band's peak
+           bin (noise fills its band; a tonal blip lights a
+           narrow slice). HAT — the top band (bands 54–63,
+           ~6.3–16 kHz) outweighing the whole 1–5 kHz band:
+           a hi-hat's weight sits on top, a clap's sits in
+           the middle. Both are read at the attack frame and
+           snapshotted by queueDip for the escrow; the
+           instant gate also takes a loose loudness pass
+           (this frame's level vs the rolling peak) so quiet
+           impostors never even seed the learner. --- */
+        var covN = 0; for(qi = 0; qi < fN; qi++) if(covScr[qi] >= fMax * 0.30) covN++;
+        covNow = fN ? covN / fN : 0;
+        hatNow = topE >= wideE;
         var lowVeto = (kE - kickAvg > 0.10 && kE > 0.30) || (kE > 0.30 && kE >= wideE * 0.9);
-        var printOK = (shareW >= 0.30 && flatB >= 0.40);
+        var printOK = (shareW >= 0.30 && flatB >= 0.40 && covNow >= 0.35 && !hatNow && wideE >= loudPeak * 0.70);
         stepPend(now, flatB, lowVeto);
         /* round 7: inside a slot window, remember the best
            crack-led peak (completion's quarry); once it starts
@@ -9160,6 +9208,12 @@ function smStats(S) {
             gConfirmSlot(now, crackE);
           }
         }
+        /* v2 loudness stats fold in LAST — every gate above
+           read the reference as it stood before this step's
+           burst (peak-hold ~5 s decay, average ~1.5 s). */
+        var stepDt = Math.max(1, now - lastEvalT);
+        loudPeak = Math.max(wideE, loudPeak * Math.exp(-stepDt / 5000));
+        loudAvg += (wideE - loudAvg) * (1 - Math.exp(-stepDt / 1500));
         evCrack = crackE; evTop = topE; lastEvalT = now;
       }
       stuFireMap(now);
@@ -9168,7 +9222,7 @@ function smStats(S) {
       aEnv *= 0.94; bassNow *= 0.92; highNow *= 0.92; beatNow *= 0.9;
       xEnv *= 0.92; pEnv *= 0.9;
       kickPulse *= 0.88; clapDip *= Math.pow(0.926, dt/16.667);
-      crackAvg *= 0.98; patConf = 0; patI = 0; seedT = -1e9; lastEvalT = -1e9; pendDip = 0;
+      crackAvg *= 0.98; patConf = 0; patI = 0; seedT = -1e9; lastEvalT = -1e9; pendDip = 0; loudPeak = 0; loudAvg = 0;
       if(!gIdleT) gIdleT = now;
       if(gLock && now - gIdleT > 2500){ gResetGrid(); gHits = []; }
       for(var j=0;j<=96;j++) spec[j] *= 0.96;

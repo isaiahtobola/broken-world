@@ -1011,6 +1011,18 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
 .wave-mode-btn.on.wm-silver{background:linear-gradient(135deg,#ffffff,#c9d4e4 55%,#8b98ab); color:#232c38; border-color:#ffffff; box-shadow:0 0 18px rgba(203,216,233,.65)}
 .wave-mode-btn.on.wm-rose{background:linear-gradient(135deg,#f7cfae,#e5989b 55%,#b76e79); color:#43192b; border-color:#ffd9c9; box-shadow:0 0 18px rgba(232,165,140,.6)}
 .wave-mode-btn.on.wm-bismuth{background:linear-gradient(120deg,#f2a7c3,#a7d8f2 30%,#c9b8f5 55%,#f5e3a1 78%,#a8e6c9); color:#241433; border-color:#efe2ff; box-shadow:0 0 18px rgba(167,216,242,.6)}
+/* RAINBOW SEEK BAR (his call, Nov 15 02:53): a timestamp meter for
+   File Share songs — current time, the bar, total time. The fill
+   is the full rainbow clipped to the progress, so the deeper the
+   song runs, the further along the spectrum its leading edge
+   rides. Click it, or press and drag, to land anywhere. */
+#fs-seek{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:920; display:flex; align-items:center; gap:12px; width:min(680px,94vw); background:rgba(21,13,32,.86); border:1px solid rgba(240,183,63,.45); border-radius:999px; padding:10px 18px; backdrop-filter:blur(6px); box-shadow:0 14px 34px rgba(0,0,0,.45)}
+#fs-seek[hidden]{display:none}
+#view-files.wave-focus #fs-seek{bottom:182px}
+.fs-seek-time{font-family:var(--mono); font-size:12.5px; color:var(--cream); min-width:38px; text-align:center}
+.fs-seek-track{position:relative; flex:1; height:10px; border-radius:99px; background:rgba(184,166,217,.22); cursor:pointer; touch-action:none}
+.fs-seek-fill{position:absolute; inset:0; border-radius:99px; background:linear-gradient(90deg,#ff5a4d 0%,#ffa53a 18%,#ffd166 36%,#7dd87d 54%,#4da6ff 74%,#b07fe8 100%); clip-path:inset(0 100% 0 0)}
+.fs-seek-knob{position:absolute; top:50%; left:0%; width:16px; height:16px; border-radius:50%; background:#fff; border:2px solid rgba(21,13,32,.6); transform:translate(-50%,-50%); box-shadow:0 0 10px rgba(255,255,255,.55); pointer-events:none}
 /* WAVE MODE — the menu, the banner and the whole header slide up out of
    the way so the waveform circle gets the screen (his 2026-11-10 call);
    Back to files / Escape brings them back down. */
@@ -2196,6 +2208,7 @@ html.kint-lock{overflow:hidden !important}
   </div>
   <button type="button" id="wave-exit">Back to files</button>
   <div id="wave-modes" role="group" aria-label="Waveform color modes"><button type="button" class="wave-mode-btn wm-silver" data-lava-mode="silver" aria-pressed="false">Silver</button><button type="button" class="wave-mode-btn wm-rose" data-lava-mode="rose" aria-pressed="false">Rose Gold</button><button type="button" class="wave-mode-btn wm-bismuth" data-lava-mode="bismuth" aria-pressed="false">Bismuth</button></div>
+  <div id="fs-seek" hidden><span class="fs-seek-time" id="fs-seek-cur">0:00</span><div class="fs-seek-track" id="fs-seek-track"><div class="fs-seek-fill" id="fs-seek-fill"></div><div class="fs-seek-knob" id="fs-seek-knob"></div></div><span class="fs-seek-time" id="fs-seek-dur">0:00</span></div>
   <span id="wave-stamp" aria-hidden="true">player v8</span>
 </section>
 <!-- ================= KINTSUGI (his 2026-10-31 order: Lux's idea, his game spec) ================= -->
@@ -11520,6 +11533,58 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
   document.querySelectorAll('[data-view]').forEach(function(b){
     b.addEventListener('click', function(){ if(b.getAttribute('data-view') !== 'files') setLavaMode(null); });
   });
+  /* RAINBOW SEEK BAR (his call, Nov 15 02:53): File Share and the
+     wave view share one timestamp meter — current time, the bar,
+     total time — wired to the same player every song uses. Click
+     the bar, or press and drag along it, to rewind or jump to any
+     point; the rainbow fill is clipped to the progress so its
+     leading edge changes color the deeper the song runs. */
+  (function(){
+    var bar = document.getElementById('fs-seek');
+    if(!bar) return;
+    var curEl = document.getElementById('fs-seek-cur'), durEl = document.getElementById('fs-seek-dur'),
+        track = document.getElementById('fs-seek-track'), fill = document.getElementById('fs-seek-fill'),
+        knob = document.getElementById('fs-seek-knob');
+    function fmt(s){ if(!isFinite(s) || s < 0) s = 0; s = Math.floor(s); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+    function audio(){ return (window.__bwAudio && window.__bwAudio.a) || null; }
+    var dragging = false, dragT = 0;
+    function paint(){
+      var a = audio();
+      if(!a || document.body.getAttribute('data-current') !== 'files'){ bar.hidden = true; return; }
+      bar.hidden = false;
+      var d = a.duration || 0, c = dragging ? dragT : (a.currentTime || 0);
+      var p = d > 0 ? Math.min(100, Math.max(0, c / d * 100)) : 0;
+      fill.style.clipPath = 'inset(0 ' + (100 - p) + '% 0 0)';
+      knob.style.left = p + '%';
+      curEl.textContent = fmt(c);
+      durEl.textContent = fmt(d);
+    }
+    function posToTime(e){
+      var r = track.getBoundingClientRect();
+      var p = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+      var a = audio();
+      dragT = (a && a.duration) ? p * a.duration : 0;
+    }
+    track.addEventListener('pointerdown', function(e){
+      if(!audio()) return;
+      dragging = true;
+      try{ track.setPointerCapture(e.pointerId); }catch(err){}
+      posToTime(e); paint();
+      e.preventDefault();
+    });
+    track.addEventListener('pointermove', function(e){ if(dragging){ posToTime(e); paint(); } });
+    function endDrag(){
+      if(!dragging) return;
+      dragging = false;
+      var a = audio();
+      if(a && isFinite(dragT)){ try{ a.currentTime = dragT; }catch(err){} }
+      paint();
+    }
+    track.addEventListener('pointerup', endDrag);
+    track.addEventListener('pointercancel', endDrag);
+    setInterval(paint, 250);
+    paint();
+  })();
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape') setWave(false); });
   document.querySelectorAll('[data-view]').forEach(function(b){
     b.addEventListener('click', function(){ if(b.getAttribute('data-view') !== 'files') setWave(false); });

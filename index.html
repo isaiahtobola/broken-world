@@ -979,6 +979,17 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
 }
 #wave-exit:hover{background:var(--yellow)}
 #view-files.wave-focus #wave-exit{opacity:1; pointer-events:auto; transform:translate(-50%,0)}
+/* WAVEFORM COLOR MODE BUTTONS (genius idea #2): three little
+   toggles riding above Back to files in wave view — Silver, Rose
+   Gold, Bismuth. A lit button wears its own metal; off hands the
+   page back to its theme. */
+#wave-modes{position:fixed; left:50%; bottom:126px; transform:translate(-50%,18px); z-index:900; display:flex; gap:8px; opacity:0; pointer-events:none; transition:opacity .4s ease, transform .4s ease}
+#view-files.wave-focus #wave-modes{opacity:1; pointer-events:auto; transform:translate(-50%,0)}
+.wave-mode-btn{background:rgba(21,13,32,.72); color:var(--cream); border:1px solid rgba(240,183,63,.5); font-family:var(--mono); font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:9px 16px; border-radius:999px; cursor:pointer; transition:all .2s; backdrop-filter:blur(4px)}
+.wave-mode-btn:hover{border-color:var(--yellow); color:#fff}
+.wave-mode-btn.on.wm-silver{background:linear-gradient(135deg,#ffffff,#c9d4e4 55%,#8b98ab); color:#232c38; border-color:#ffffff; box-shadow:0 0 18px rgba(203,216,233,.65)}
+.wave-mode-btn.on.wm-rose{background:linear-gradient(135deg,#f7cfae,#e5989b 55%,#b76e79); color:#43192b; border-color:#ffd9c9; box-shadow:0 0 18px rgba(232,165,140,.6)}
+.wave-mode-btn.on.wm-bismuth{background:linear-gradient(120deg,#f2a7c3,#a7d8f2 30%,#c9b8f5 55%,#f5e3a1 78%,#a8e6c9); color:#241433; border-color:#efe2ff; box-shadow:0 0 18px rgba(167,216,242,.6)}
 /* WAVE MODE — the menu, the banner and the whole header slide up out of
    the way so the waveform circle gets the screen (his 2026-11-10 call);
    Back to files / Escape brings them back down. */
@@ -1269,6 +1280,29 @@ body[data-theme="xmas"]{
   --violet:#2e7d46; --gold:#d93636; --yellow:#ff5a4d; --cream:#ffefe0;
   --muted:#a8c9ae; --ink:#07160c;
 }
+/* WAVEFORM COLOR MODES (his genius idea #2, Nov 15): while a mode
+   is on, the whole File Share page wears it — these variables sit
+   AFTER the season blocks at equal strength, so a mode wins while
+   its class is on the body, and removing the class hands the page
+   back to whichever theme it was on, exactly. The lava canvas is
+   exempted from the seasonal hue filter in a mode, so silver
+   reads silver even at Halloween. */
+body.lava-mode-silver{
+  --bg:#0e1218; --panel:#1a212c; --panel2:#232d3b; --plum-mid:#334155;
+  --violet:#7d8fa8; --gold:#c3cedd; --yellow:#ffffff; --cream:#eef2f8;
+  --muted:#97a5b8; --ink:#0b0f14;
+}
+body.lava-mode-rose{
+  --bg:#1c0e15; --panel:#2a1620; --panel2:#381d2a; --plum-mid:#5c3040;
+  --violet:#a86a72; --gold:#e5989b; --yellow:#ffd9c9; --cream:#fbeae2;
+  --muted:#cf9d94; --ink:#170a10;
+}
+body.lava-mode-bismuth{
+  --bg:#110d22; --panel:#1d1838; --panel2:#282050; --plum-mid:#3c2f6e;
+  --violet:#7a68c9; --gold:#a7d8f2; --yellow:#f5e3a1; --cream:#eef0ff;
+  --muted:#a79fd8; --ink:#0c0918;
+}
+body.lava-mode-silver #lava-canvas, body.lava-mode-rose #lava-canvas, body.lava-mode-bismuth #lava-canvas{filter:none}
 /* canvas art leans into the season too (normal mode: no filter, untouched) */
 body[data-theme="halloween"] .view canvas{filter:hue-rotate(-18deg) saturate(1.18)}
 body[data-theme="halloween"] .view canvas#sea-canvas, body[data-theme="xmas"] .view canvas#sea-canvas{filter:none} /* 97f: the Sea paints its own seasons now */
@@ -2140,6 +2174,7 @@ html.kint-lock{overflow:hidden !important}
     </div>
   </div>
   <button type="button" id="wave-exit">Back to files</button>
+  <div id="wave-modes" role="group" aria-label="Waveform color modes"><button type="button" class="wave-mode-btn wm-silver" data-lava-mode="silver" aria-pressed="false">Silver</button><button type="button" class="wave-mode-btn wm-rose" data-lava-mode="rose" aria-pressed="false">Rose Gold</button><button type="button" class="wave-mode-btn wm-bismuth" data-lava-mode="bismuth" aria-pressed="false">Bismuth</button></div>
   <span id="wave-stamp" aria-hidden="true">player v8</span>
 </section>
 <!-- ================= KINTSUGI (his 2026-10-31 order: Lux's idea, his game spec) ================= -->
@@ -8517,6 +8552,38 @@ function smStats(S) {
     var cx = W/2, cy = H*0.44, R = Math.min(W, H) * 0.36;
     var lt = lava.lt, sw = lava.swell;
     var pump = 1 + 0.10*bassNow*aEnv + 0.05*lava.kick + 0.07*beatNow*aEnv + 0.06*kickPulse*aEnv;
+    /* COLOR MODES (his genius idea #2, Nov 15): Silver / Rose Gold /
+       Bismuth toggles on the player. COLORS ONLY — every radius,
+       wobble, pump, dip and blur below is the shipped v8 behavior,
+       untouched. No mode (null) = the exact original literals. The
+       sheen blends two stop-sets on a slow sine; bismuth crawls
+       its hue. The theme underneath is never touched, so toggling
+       off lands back on it precisely. */
+    var CM = window.__lavaColorMode || null;
+    var HCOL = '240,183,63', RCOL = '255,233,168', SHCOL = 'rgba(255,170,60,.8)';
+    var B0 = '#ffd166', B1 = '#f0b73f', B2 = '#c97b2d', B3 = '#8a4b1d';
+    if(CM){
+      var shim = 0.5 + 0.5*Math.sin(lt*0.8);
+      var mixHex = function(a, b, t){
+        var pa = [parseInt(a.slice(1,3),16), parseInt(a.slice(3,5),16), parseInt(a.slice(5,7),16)];
+        var pb = [parseInt(b.slice(1,3),16), parseInt(b.slice(3,5),16), parseInt(b.slice(5,7),16)];
+        return 'rgb(' + Math.round(pa[0]+(pb[0]-pa[0])*t) + ',' + Math.round(pa[1]+(pb[1]-pa[1])*t) + ',' + Math.round(pa[2]+(pb[2]-pa[2])*t) + ')';
+      };
+      if(CM === 'silver'){
+        HCOL = '203,216,233'; RCOL = '255,255,255'; SHCOL = 'rgba(198,214,233,.85)';
+        B0 = mixHex('#ffffff', '#d7e0ec', shim); B1 = mixHex('#e9eef6', '#c9d4e4', shim);
+        B2 = mixHex('#aeb9c9', '#bfcbd9', shim); B3 = '#626e7e';
+      } else if(CM === 'rose'){
+        HCOL = '238,166,140'; RCOL = '255,218,198'; SHCOL = 'rgba(242,152,132,.85)';
+        B0 = mixHex('#ffedcb', '#ffdcae', shim); B1 = mixHex('#f7bd8d', '#facaa5', shim);
+        B2 = mixHex('#e79a9d', '#eda58f', shim); B3 = '#9c5464';
+      } else if(CM === 'bismuth'){
+        var hb = ((lt*14) % 360 + 360) % 360;
+        HCOL = '186,168,232'; RCOL = '238,240,255'; SHCOL = 'hsla(' + ((hb+90)%360) + ',85%,70%,.85)';
+        B0 = 'hsl(' + hb + ',85%,76%)'; B1 = 'hsl(' + ((hb+55)%360) + ',82%,64%)';
+        B2 = 'hsl(' + ((hb+140)%360) + ',78%,56%)'; B3 = 'hsl(' + ((hb+225)%360) + ',72%,42%)';
+      }
+    }
     /* soft halo — THE yellowish glow around the inner circle. Bass
        and kicks feed it; a clap SHRINKS it, reach and brightness
        together, by the clap's measured strength (clapDip 0..1).
@@ -8524,8 +8591,8 @@ function smStats(S) {
        glow, one shrink — pixel checks showed the clap's own shadow
        flare otherwise masks the halo's shrink completely. */
     var halo = ctx.createRadialGradient(cx, cy, R*0.4, cx, cy, R*1.9*(1 - 0.50*clapDip));
-    halo.addColorStop(0, 'rgba(240,183,63,'+((0.12 + 0.14*sw + 0.22*bassNow*aEnv + 0.10*lava.kick + 0.16*beatNow*aEnv) * (1 - 0.75*clapDip))+')');
-    halo.addColorStop(1, 'rgba(240,183,63,0)');
+    halo.addColorStop(0, 'rgba('+HCOL+','+((0.12 + 0.14*sw + 0.22*bassNow*aEnv + 0.10*lava.kick + 0.16*beatNow*aEnv) * (1 - 0.75*clapDip))+')');
+    halo.addColorStop(1, 'rgba('+HCOL+',0)');
     ctx.fillStyle = halo;
     ctx.fillRect(cx - R*1.9, cy - R*1.9, R*3.8, R*3.8);
     /* the molten ring body — liquid wobble, plus every angle of
@@ -8551,10 +8618,10 @@ function smStats(S) {
     }
     ctx.closePath();
     var g = ctx.createRadialGradient(cx, cy, R*0.55*(1 - 0.30*clapDip), cx, cy, R*1.25*(1 - 0.30*clapDip));
-    g.addColorStop(0, '#ffd166'); g.addColorStop(0.55, '#f0b73f');
-    g.addColorStop(0.85, '#c97b2d'); g.addColorStop(1, '#8a4b1d');
+    g.addColorStop(0, B0); g.addColorStop(0.55, B1);
+    g.addColorStop(0.85, B2); g.addColorStop(1, B3);
     ctx.fillStyle = g;
-    ctx.shadowColor = 'rgba(255,170,60,.8)';
+    ctx.shadowColor = SHCOL;
     ctx.shadowBlur = (26 + 48*sw + 60*highNow*aEnv*(1 - clapDip)) * s.dpr * (1 - 0.60*clapDip);
     ctx.fill();
     ctx.shadowBlur = 0;
@@ -8607,7 +8674,7 @@ function smStats(S) {
       if(j === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
     }
     ctx.closePath();
-    ctx.strokeStyle = 'rgba(255,233,168,'+(0.5 + 0.4*sw + 0.45*highNow*aEnv)+')';
+    ctx.strokeStyle = 'rgba('+RCOL+','+(0.5 + 0.4*sw + 0.45*highNow*aEnv)+')';
     ctx.lineWidth = 2 * s.dpr;
     ctx.stroke();
   }
@@ -11296,6 +11363,33 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
   }
   if(wbtn) wbtn.addEventListener('click', function(){ setWave(!(vf && vf.classList.contains('wave-focus'))); });
   if(wexit) wexit.addEventListener('click', function(){ setWave(false); });
+  /* WAVEFORM COLOR MODES (his genius idea #2, Nov 15): three little
+     toggles in wave view. One at a time; tapping the lit one turns
+     it off. The mode wears the whole File Share page via a body
+     class and the circle via window.__lavaColorMode — the site
+     theme (data-theme) is never touched, so off = back to exactly
+     the theme he entered in. Leaving File Share clears the mode. */
+  var lavaModeBtns = document.querySelectorAll('.wave-mode-btn');
+  function setLavaMode(mode){
+    window.__lavaColorMode = mode;
+    document.body.classList.remove('lava-mode-silver', 'lava-mode-rose', 'lava-mode-bismuth');
+    if(mode) document.body.classList.add('lava-mode-' + mode);
+    lavaModeBtns.forEach(function(b){
+      var on = b.getAttribute('data-lava-mode') === mode;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+  lavaModeBtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      var m = b.getAttribute('data-lava-mode');
+      setLavaMode(window.__lavaColorMode === m ? null : m);
+      if(typeof window.__lavaKick === 'function') window.__lavaKick();
+    });
+  });
+  document.querySelectorAll('[data-view]').forEach(function(b){
+    b.addEventListener('click', function(){ if(b.getAttribute('data-view') !== 'files') setLavaMode(null); });
+  });
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape') setWave(false); });
   document.querySelectorAll('[data-view]').forEach(function(b){
     b.addEventListener('click', function(){ if(b.getAttribute('data-view') !== 'files') setWave(false); });

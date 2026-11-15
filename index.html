@@ -10782,7 +10782,13 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       var host = document.getElementById(id);
       if(host) host.querySelectorAll('.chip').forEach(push);
     });
-    document.querySelectorAll('#view-sea .sea-grid > aside .side-panel').forEach(function(panel){
+    push(document.getElementById('waters-pick-btn'));
+    /* EVERY BOX gets the glow (his call, Nov 15 02:50): the Search
+       box, the Rivers box, the Lakes box — panels are collected
+       wherever they live, because on phones the banks move out of
+       the asides into their own stack, and a selector married to
+       the desktop asides silently left the phone's boxes dark. */
+    document.querySelectorAll('#view-sea .side-panel').forEach(function(panel){
       var cand = Array.prototype.slice.call(panel.querySelectorAll('h4, .meta > b, .meta > span, p.meta, .rv-label'));
       cand = cand.filter(function(el){ return !cand.some(function(o){ return o !== el && o.contains(el); }); });
       cand.forEach(push);

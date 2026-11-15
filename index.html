@@ -788,15 +788,31 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
 /* WORD-INDICATIVE SEARCH (his call, Nov 15 02:51): the Sea's search
    bar answers as he types — waters on top in their metals, posts
    below with a snippet around the word. */
-.sea-search-menu{margin-top:8px; background:rgba(21,13,32,.85); border:1px solid rgba(240,183,63,.4); border-radius:12px; padding:8px; max-height:330px; overflow-y:auto}
+.sea-search-menu{margin-top:8px; background:rgba(21,13,32,.85); border:1px solid rgba(240,183,63,.4); border-radius:12px; padding:8px; max-height:330px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(240,183,63,.55) rgba(21,13,32,.35); -webkit-overflow-scrolling:touch}
+.sea-search-menu::-webkit-scrollbar{width:8px}
+.sea-search-menu::-webkit-scrollbar-track{background:rgba(21,13,32,.35); border-radius:99px}
+.sea-search-menu::-webkit-scrollbar-thumb{background:rgba(240,183,63,.45); border-radius:99px}
 .sea-search-menu[hidden]{display:none}
 .sea-search-menu .waters-pick-item{margin-top:4px}
 .ss-label{font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); padding:6px 4px 2px}
-.ss-item{display:block; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid rgba(184,166,217,.14); padding:7px 6px; cursor:pointer; color:var(--cream); font-family:var(--serif); font-size:15.5px}
+.ss-item{border-bottom:1px solid rgba(184,166,217,.14); padding:2px 0}
 .ss-item:last-child{border-bottom:none}
-.ss-item:hover{background:rgba(240,183,63,.08)}
-.ss-post-who{font-family:var(--mono); font-size:11px; color:var(--gold); letter-spacing:.05em}
-.ss-snip{display:block; color:var(--muted); font-size:13.5px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.ss-head{display:block; width:100%; background:none; border:none; cursor:pointer; text-align:left; padding:6px 6px 0; font-family:var(--serif)}
+.ss-date{display:block; font-family:var(--mono); font-size:10.5px; color:var(--muted); letter-spacing:.05em}
+.ss-post-who{font-family:var(--mono); font-size:11.5px; color:var(--gold); letter-spacing:.05em}
+.ss-head:hover .ss-post-who{color:var(--yellow); text-decoration:underline}
+.ss-jump{display:block; width:100%; background:none; border:none; cursor:pointer; text-align:left; padding:1px 6px 7px; font-family:var(--serif)}
+.ss-jump:hover{background:rgba(240,183,63,.08)}
+.ss-snip{display:block; color:var(--muted); font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+/* USER POSTS PAGE (his call, Nov 15 03:27): one member's every post,
+   gathered — reached from the search menu's names and the Hub's
+   Members wall. */
+.up-wrap{max-width:820px; margin:0 auto; padding:52px 18px 70px}
+.up-title{font-family:var(--serif); font-size:36px; color:var(--cream); margin:16px 0 4px}
+.up-sub{font-family:var(--mono); font-size:12px; color:var(--muted); letter-spacing:.05em}
+#up-feed{display:flex; flex-direction:column; gap:18px; margin-top:20px}
+.up-media-el{max-width:100%; border-radius:10px; display:block; margin-top:10px}
+.up-media-audio{width:100%; margin-top:10px}
 .ss-empty{color:var(--muted); font-family:var(--mono); font-size:12.5px; padding:6px 4px}
 .post-card.search-hit{animation:ssHit 1.8s ease}
 @keyframes ssHit{0%,60%{box-shadow:0 0 0 2px rgba(240,183,63,.85), 0 14px 34px rgba(0,0,0,.4)}100%{box-shadow:0 0 0 0 rgba(240,183,63,0)}}
@@ -2094,6 +2110,17 @@ html.kint-lock{overflow:hidden !important}
   </div>
 </section>
 
+<!-- ================= USER POSTS (his call, Nov 15 03:27) ================= -->
+<section class="view" id="view-userposts">
+  <div class="up-wrap">
+    <button class="chip" id="up-back" type="button">← Back to the Sea</button>
+    <h2 class="up-title" id="up-title">A member's posts</h2>
+    <p class="up-sub" id="up-sub">Tap a name in the Sea's search or on the Hub's Members wall, and every post that member has made gathers here.</p>
+    <div id="up-feed"></div>
+    <p class="feed-empty" id="up-empty" hidden></p>
+  </div>
+</section>
+
 <!-- ================= BW HUB ================= -->
 <section class="view" id="view-hub">
   <div class="hub-inner wrap">
@@ -2737,7 +2764,7 @@ document.getElementById('get-started').addEventListener('click', function(){ swi
 (function(){
   var room = '';
   try{ room = (new URLSearchParams(window.location.search).get('room') || '').toLowerCase(); }catch(e){}
-  var ROOMS = ['home','login','welcome','sea','hub','join','files','kintsugi','buildlog'];
+  var ROOMS = ['home','login','welcome','sea','hub','join','files','kintsugi','buildlog','userposts'];
   if(!room || ROOMS.indexOf(room) < 0 || room === 'home') return;
   var go = function(){ switchView(room); };
   if(document.readyState === 'complete') setTimeout(go, 50);
@@ -2751,7 +2778,7 @@ document.getElementById('get-started').addEventListener('click', function(){ swi
 window.addEventListener('popstate', function(){
   var room = 'home';
   try{ room = (new URLSearchParams(window.location.search).get('room') || 'home').toLowerCase(); }catch(e){}
-  var ROOMS = ['home','login','welcome','sea','hub','join','files','kintsugi','buildlog'];
+  var ROOMS = ['home','login','welcome','sea','hub','join','files','kintsugi','buildlog','userposts'];
   if(ROOMS.indexOf(room) < 0) room = 'home';
   var targetId = (room === 'welcome') ? 'join' : room;
   if(currentViewId() === targetId) return;
@@ -5383,12 +5410,19 @@ window.__bwAuth = function(form){
         waters++;
         menu.appendChild(waterRow('river', id, R.name, 'River · ' + R.lakes.length + (R.lakes.length === 1 ? ' lake' : ' lakes')));
       });
-      document.querySelectorAll('#sea-feed .post-card').forEach(function(card){
-        if(posts >= 8) return;
+      /* EVERY matching post rides the menu (his call, Nov 15
+         03:25): no cap — the box scrolls. Each row wears the date
+         it was made, small, above the publisher's name; tapping
+         the name opens that member's own page of posts (03:27),
+         tapping the words jumps to the post itself. Cards pair
+         with BW.posts by index — the same pairing the decorator
+         uses — so the date and name come from the post itself. */
+      document.querySelectorAll('#sea-feed .post-card').forEach(function(card, ci){
+        var post = (BW.posts || [])[ci];
         var bodyEl = card.querySelector('.post-body');
         var whoEl = card.querySelector('.post-head .who b');
-        var text = bodyEl ? (bodyEl.textContent || '') : '';
-        var who = whoEl ? (whoEl.textContent || '') : '';
+        var text = post ? (post.text || '') : (bodyEl ? (bodyEl.textContent || '') : '');
+        var who = post ? (post.author || 'member') : (whoEl ? (whoEl.textContent || '') : 'member');
         if((who + ' ' + text).toLowerCase().indexOf(q) < 0) return;
         if(!plabel){ label('Posts'); plabel = true; }
         posts++;
@@ -5396,23 +5430,33 @@ window.__bwAuth = function(form){
         var snip;
         if(idx >= 0) snip = (idx > 30 ? '…' : '') + text.slice(Math.max(0, idx - 30), idx + q.length + 50).replace(/\s+/g, ' ') + '…';
         else snip = text.slice(0, 90).replace(/\s+/g, ' ');
-        var b = document.createElement('button'); b.type = 'button'; b.className = 'ss-item';
-        var w = document.createElement('span'); w.className = 'ss-post-who'; w.textContent = who || 'post';
-        var s = document.createElement('span'); s.className = 'ss-snip'; s.textContent = snip;
-        b.appendChild(w); b.appendChild(s);
-        b.addEventListener('click', function(){
+        var row = document.createElement('div'); row.className = 'ss-item';
+        var head = document.createElement('button'); head.type = 'button'; head.className = 'ss-head';
+        head.title = 'See every post by ' + who;
+        var dt = document.createElement('span'); dt.className = 'ss-date'; dt.textContent = post ? fmtWhen(post.ts) : '';
+        var wn = document.createElement('span'); wn.className = 'ss-post-who'; wn.textContent = who;
+        head.appendChild(dt); head.appendChild(wn);
+        head.addEventListener('click', function(){
           close(); inp.blur();
-          function jump(){
+          if(window.bwOpenUserPosts) bwOpenUserPosts(who);
+        });
+        var jump = document.createElement('button'); jump.type = 'button'; jump.className = 'ss-jump';
+        var s = document.createElement('span'); s.className = 'ss-snip'; s.textContent = snip;
+        jump.appendChild(s);
+        jump.addEventListener('click', function(){
+          close(); inp.blur();
+          function jumpTo(){
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
             card.classList.remove('search-hit'); void card.offsetWidth; card.classList.add('search-hit');
           }
           if(card.offsetParent === null || getComputedStyle(card).display === 'none'){
             var ca = document.getElementById('chip-all');
             if(ca) ca.click();
-            setTimeout(jump, 380);
-          } else jump();
+            setTimeout(jumpTo, 380);
+          } else jumpTo();
         });
-        menu.appendChild(b);
+        row.appendChild(head); row.appendChild(jump);
+        menu.appendChild(row);
       });
       if(!waters && !posts){
         var e = document.createElement('div'); e.className = 'ss-empty';
@@ -5428,6 +5472,48 @@ window.__bwAuth = function(form){
       if(!menu.hidden && !menu.contains(e.target) && e.target !== inp) close();
     });
   })();
+  /* USER POSTS PAGE (his call, Nov 15 03:27): every post one member
+     has made, gathered on its own page. The Sea's post list already
+     carries them all — Sea posts, lake posts and river posts alike
+     (a poured post keeps its lake tag) — so the page is the list,
+     filtered to one name, newest first. Two doors in: the name
+     over a post in the search menu above, and the names on the
+     Hub's Members wall. For reading and finding, by his scope. */
+  function bwUpCard(p){
+    var card = document.createElement('article'); card.className = 'post-card';
+    var head = document.createElement('div'); head.className = 'post-head';
+    var av = document.createElement('div'); av.className = 'avatar'; av.textContent = (p.author || 'm').charAt(0).toUpperCase();
+    var who = document.createElement('div'); who.className = 'who';
+    var b = document.createElement('b'); b.textContent = p.author || 'member';
+    var s = document.createElement('span');
+    s.textContent = fmtWhen(p.ts) + (p.lake_id && BW.lakes && BW.lakes[p.lake_id] ? ' · in ' + BW.lakes[p.lake_id].name : '');
+    who.appendChild(b); who.appendChild(s);
+    head.appendChild(av); head.appendChild(who);
+    card.appendChild(head);
+    if(p.text){ var body = document.createElement('p'); body.className = 'post-body'; body.textContent = p.text; card.appendChild(body); }
+    var urls = (p.media_urls && p.media_urls.length) ? p.media_urls : (p.media_url ? [p.media_url] : []);
+    urls.forEach(function(u){
+      var m;
+      if(bwIsAudioUrl(u)){ m = document.createElement('audio'); m.controls = true; m.src = u; m.className = 'up-media-audio'; }
+      else if(/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u)){ m = document.createElement('video'); m.controls = true; m.src = u; m.className = 'up-media-el'; }
+      else { m = document.createElement('img'); m.src = u; m.alt = ''; m.className = 'up-media-el'; }
+      card.appendChild(m);
+    });
+    return card;
+  }
+  window.bwOpenUserPosts = function(name){
+    var feed = document.getElementById('up-feed'); if(!feed) return;
+    var title = document.getElementById('up-title'), sub = document.getElementById('up-sub'), empty = document.getElementById('up-empty');
+    var posts = (BW.posts || []).filter(function(p){ return (p.author || 'member') === name; });
+    if(title) title.textContent = name;
+    if(sub) sub.textContent = posts.length + (posts.length === 1 ? ' post' : ' posts') + ' — gathered from the Sea, its lakes and its rivers, newest first.';
+    feed.innerHTML = '';
+    posts.forEach(function(p){ feed.appendChild(bwUpCard(p)); });
+    if(empty){ empty.hidden = posts.length > 0; empty.textContent = name + ' has not posted yet — when they do, it lands here.'; }
+    switchView('userposts');
+  };
+  var upBackBtn = document.getElementById('up-back');
+  if(upBackBtn) upBackBtn.addEventListener('click', function(){ switchView('sea'); });
   var bwLeaveArm = {}; /* lakeId -> arm expiry (ms); lives outside the DOM so a re-render can never disarm a confirm tap */
   function bwRenderRiverMembers(){
     var host = document.getElementById('river-members');
@@ -6626,14 +6712,23 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       for(var tyT = 0; tyT < H; tyT += tileHcur){
         var tyB = Math.min(H, tyT + tileHcur);
         if(tyB < visTopT || tyT > visBotT) continue;
-        /* FLUSH (his catch, 00:10): the band between the tile's top
-           and this layer's surface wears the full layer stack — the
-           same composite as the tile floor above it — so no bare
-           stripe of page shows between one screenful and the next.
-           Painted per layer, in order, it is exact, not a patch. */
-        ctx.beginPath(); ctx.moveTo(0, tyT);
-        for(var bx=0; bx<=W; bx+=6) ctx.lineTo(bx, surfY(L, bx, t, tyT + 1));
-        ctx.lineTo(W, tyT); ctx.closePath(); ctx.fill();
+        /* THE SEAM, DONE RIGHT (his spec, Nov 15 03:22 — OG shape,
+           clean loop, no gaps, no funky overlapping): the strip
+           between the tile's top and the SHALLOWEST surface is
+           painted by every layer in turn, so the strip wears the
+           full stack — exactly the composite the tile floor above
+           it ends with — and the strata below keep their own
+           colors, untouched. (The first flush attempt ran each
+           layer's band down to its OWN surface: the deep layers
+           painted over the shallow strata, every height ended with
+           all five layers stacked, and the whole sea flattened to
+           one color — the night the waves vanished. Never again.)
+           The first tile wears no strip: that sky is the OG sky. */
+        if(tyT > 0){
+          ctx.beginPath(); ctx.moveTo(0, tyT);
+          for(var bx=0; bx<=W; bx+=6) ctx.lineTo(bx, surfY(layers[0], bx, t, tyT + 1));
+          ctx.lineTo(W, tyT); ctx.closePath(); ctx.fill();
+        }
         ctx.beginPath(); ctx.moveTo(0, tyB);
         for(var x=0; x<=W; x+=6) ctx.lineTo(x, surfY(L, x, t, tyT + 1));
         ctx.lineTo(W, tyB); ctx.closePath(); ctx.fill();
@@ -10424,6 +10519,11 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       var chip = document.createElement('span');
       chip.className = 'member-chip';
       chip.textContent = '\u2726 ' + nm + (nm === me ? ' (you)' : '');
+      /* his call, Nov 15 03:27: a name on the wall is a door to
+         that member's own page of posts */
+      chip.style.cursor = 'pointer';
+      chip.title = 'See every post by ' + nm;
+      chip.addEventListener('click', function(){ if(window.bwOpenUserPosts) bwOpenUserPosts(nm); });
       wall.appendChild(chip);
     });
     if(stripNote) stripNote.textContent = '\u2726 ' + names.length + (names.length === 1 ? ' member' : ' members') + ' on the wall';

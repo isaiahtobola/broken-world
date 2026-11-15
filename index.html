@@ -6359,6 +6359,14 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       for(var tyT = 0; tyT < H; tyT += tileHcur){
         var tyB = Math.min(H, tyT + tileHcur);
         if(tyB < visTopT || tyT > visBotT) continue;
+        /* FLUSH (his catch, 00:10): the band between the tile's top
+           and this layer's surface wears the full layer stack — the
+           same composite as the tile floor above it — so no bare
+           stripe of page shows between one screenful and the next.
+           Painted per layer, in order, it is exact, not a patch. */
+        ctx.beginPath(); ctx.moveTo(0, tyT);
+        for(var bx=0; bx<=W; bx+=6) ctx.lineTo(bx, surfY(L, bx, t, tyT + 1));
+        ctx.lineTo(W, tyT); ctx.closePath(); ctx.fill();
         ctx.beginPath(); ctx.moveTo(0, tyB);
         for(var x=0; x<=W; x+=6) ctx.lineTo(x, surfY(L, x, t, tyT + 1));
         ctx.lineTo(W, tyB); ctx.closePath(); ctx.fill();

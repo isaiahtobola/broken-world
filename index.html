@@ -1259,12 +1259,27 @@ body.wave-on .mrail{opacity:0; pointer-events:none}
   .quote-break{display:none}
   .video-row{grid-template-columns:1fr}
   .sea-grid{grid-template-columns:1fr}.sea-grid .feed{order:-1}
+  /* Mobile fit (Nov 15, his phone check): the Sea's Search panel
+     lived in the right bank, which stacks BELOW the whole feed on
+     phones — the search box sat near the page bottom (measured
+     ~2470px down a ~2780px page). On phones the bank now rides
+     above the feed, so Search is up top where a thumb expects it.
+     The Lakes panel still relocates under the feed chips (build
+     106), so only Search + Community move up. Desktop order is
+     untouched — this block only exists at phone widths. */
+  .sea-grid > aside:last-of-type{order:-2}
+  /* Mobile fit (Nov 15): hub and join content ran bezel-to-bezel
+     on phones (their inner padding is vertical-only at every
+     width, and the wrap's side padding loses the cascade). Give
+     both a side gutter at phone widths only. */
+  .hub-inner{padding-left:20px; padding-right:20px}
+  .join-inner{padding-left:20px; padding-right:20px}
   /* Build 110 (his mobile check, Nov 9): the Sea's glass chips and
      bubbles ran full-bleed under the fixed depth gauge floating at
      the screen's right edge, and the two clashed. On phones the
      whole Sea column now breathes a tinsy bit smaller and keeps a
      clear lane on its right, so nothing slides under the meter. */
-  #view-sea .sea-inner{zoom:.95; padding-right:18px}
+  #view-sea .sea-inner{zoom:.95; padding-right:18px; padding-left:14px}
   /* Build 106 (his mobile check, Nov 7): on a phone the two banks fell
      BELOW the whole feed — you could not find Lakes or Rivers without
      scrolling past every post. The banks compact to chips under the

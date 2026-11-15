@@ -10608,11 +10608,25 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
       el.classList.add(el.classList.contains('chip') ? 'hchip' : 'htext');
       hearthLetters(el, 0);
     });
-    var spans = [];
-    els.forEach(function(el){ el.querySelectorAll('.hl-ch').forEach(function(s){ spans.push(s); }); });
-    if(!spans.length) return;
-    var step = Math.min(280, Math.max(4, Math.floor(10600 / spans.length)));
-    spans.forEach(function(s, i){ s.style.setProperty('--gd', (i * step) + 'ms'); });
+    /* THE BUTTONS walk letter by letter (his correction, Nov 15
+       00:34): fitted to the whole page, the step shrank so far that
+       dozens of letters burned at once and the buttons flashed in
+       word blobs. So the chips form their own tight chain — delays
+       cumulative from The Sea's T through the last button, stepped
+       wide enough that only a few letters burn at a time and the
+       glow truly travels letter to letter. The rest of the page
+       keeps its broad smooth wave. */
+    var chipEls = els.filter(function(el){ return el.classList.contains('chip'); });
+    var restEls = els.filter(function(el){ return !el.classList.contains('chip'); });
+    function layChain(list, fitMs, minStep, maxStep){
+      var spans = [];
+      list.forEach(function(el){ el.querySelectorAll('.hl-ch').forEach(function(s){ spans.push(s); }); });
+      if(!spans.length) return;
+      var step = Math.min(maxStep, Math.max(minStep, Math.floor(fitMs / spans.length)));
+      spans.forEach(function(s, i){ s.style.setProperty('--gd', (i * step) + 'ms'); });
+    }
+    layChain(chipEls, 10600, 55, 160);
+    layChain(restEls, 10600, 4, 280);
   }
   function seaChainSoon(){
     if(chainTimer) clearTimeout(chainTimer);

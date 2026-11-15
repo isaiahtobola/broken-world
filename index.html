@@ -7888,6 +7888,11 @@ runners['lava-canvas'] = function(canvas, ctx, state){
   var lastClapT = -1e9;
   var crackAvg = 0, evCrack = 0, evTop = 0, lastEvalT = -1e9, seedT = -1e9;
   var patI = 0, patNext = 0, patConf = 0;
+  /* CLAP FINGERPRINT escrow state (Nov 15 fix — see queueDip
+     and the eval block): a detected dip waits here until the
+     burst proves it died young; wideNow is the latest 1–5 kHz
+     level, shared with the slot completer. */
+  var pendDip = 0, pendT = -1e9, pendPeak = 0, wideNow = 0;
 
   /* --- CLAP EAR v6 LEARNER (round 6, his design steer 2026-11-11:
      "takes an initial clap pattern from 8 bars and then does magic
@@ -8111,6 +8116,34 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     var f = gMed + (0.22 + 0.10 * gDevRate()) * (ref - gMed);
     return { floor: Math.max(f, dropFloor + 0.02), ref: ref };
   }
+  /* --- CLAP FINGERPRINT escrow (Nov 15, his 03:59 report: the
+     shrink "is catching kicks sometimes and high frequencys
+     like arps, bells, other soundscapes"). A clap is a PSHT —
+     a short burst of NOISE around 1–5 kHz. The live fire paths
+     (free ear, MAGIC, slot completion) no longer set clapDip
+     directly: they queue the dip here, and it lands only when
+     the burst proves itself — the 1–5 kHz band falls to <=70%
+     of its peak (and >=0.15 lower, byte scale) within 230 ms,
+     AND at that moment the band still reads noise-like
+     (spectral flatness >= 0.40 — bells and arps are a few tall
+     peaks and fail) AND the low end is quiet (kick rumble
+     vetoes: it was a kick). Sustained sounds never fall in
+     time and are dropped unspent. The dip, once landed, is
+     the shipped visual, untouched. --- */
+  function queueDip(depth, now, peak){
+    if(depth <= 0) return;
+    if(pendDip <= 0){ pendT = now; pendPeak = peak || wideNow; }
+    else if((peak || 0) > pendPeak) pendPeak = peak;
+    if(depth > pendDip) pendDip = depth;
+  }
+  function stepPend(now, flatB, lowVeto){
+    if(pendDip <= 0) return;
+    if(wideNow <= pendPeak * 0.70 && wideNow <= pendPeak - 0.15){
+      if(flatB >= 0.40 && !lowVeto) clapDip = Math.max(clapDip, pendDip);
+      pendDip = 0;
+    }
+    else if(now - pendT > 230) pendDip = 0;
+  }
   /* SLOT COMPLETION: hunt the current slot's best crack-led peak.
      Fires the dip scaled by the peak against the slot's own
      strength, tempered by the song's deviation rate; the pulse
@@ -8126,7 +8159,7 @@ runners['lava-canvas'] = function(canvas, ctx, state){
     var depth = 0.45 + 0.55 * Math.min(1, Math.max(0, (gWinBest.e - cf.floor) / span));
     depth *= (1 - 0.35 * gDevRate());
     depth = Math.min(1, Math.max(0.30, depth));
-    clapDip = Math.max(clapDip, depth);
+    queueDip(depth, now, gWinBest.w || 0);
     gLastGridT = now;
     gFireTs.push(now);
     gConfirmSlot(gWinBest.t, gWinBest.e);
@@ -8985,7 +9018,7 @@ function smStats(S) {
          crack statistics, timed re-tries, slot bookkeeping --- */
       gIdleT = 0;
       var gTid = (window.__bwAudio && window.__bwAudio.id) || null;
-      if(gTid !== gTrack){ gTrack = gTid; gHits = []; gKickTs = []; gSamp = []; gResetGrid(); gDevHist = []; gMisfitRun = 0; gLastGridT = -1e9; gFireTs = []; stuOnTrack(gTid); }
+      if(gTid !== gTrack){ gTrack = gTid; gHits = []; gKickTs = []; gSamp = []; gResetGrid(); gDevHist = []; gMisfitRun = 0; gLastGridT = -1e9; gFireTs = []; pendDip = 0; stuOnTrack(gTid); }
       if(!mStudy && gTid && now - mStuTry > 2000){ mStuTry = now; stuKickoff(gTid); }
       gSamp.push(crackE); if(gSamp.length > 2048) gSamp.splice(0, gSamp.length - 2048);
       if(!(gLastStat > 0 && now - gLastStat < 500)){
@@ -9041,14 +9074,42 @@ function smStats(S) {
       else if(now - lastEvalT >= 28){
         var cRise = crackE - evCrack, tRise = topE - evTop;
         var over = crackE - crackAvg;
+        /* --- CLAP FINGERPRINT features (Nov 15, his 03:59
+           report): wide band = bands 34–52 (~1–5 kHz, the
+           PSHT's home). shareW = the wide band's share of the
+           whole spectrum (a kick lives downstairs and scores
+           low). flatB = spectral flatness over the raw bins in
+           1–5 kHz, byte values inverted back to linear (noise
+           ~0.9; a bell's few tall peaks ~0.05). lowVeto = the
+           kick ear's own kE standing as tall as the wide band
+           itself. The instant gate (share + flat) guards
+           candidacy so the learner never seeds on a kick; flat
+           and low are re-judged at escrow confirm time (see
+           stepPend), once the attack's onset splatter — which
+           briefly fakes lows and flatness on ANY onset — has
+           cleared. --- */
+        var wSum = 0, allSum = 0, qi;
+        for(qi = 0; qi < 64; qi++) allSum += bands[qi];
+        for(qi = 34; qi <= 52; qi++) wSum += bands[qi];
+        var wideE = wSum / 19;
+        wideNow = wideE;
+        var shareW = wSum / Math.max(0.001, allSum);
+        var bins = L.bins, srB = (window.BW_ACTX && BW_ACTX.sampleRate) || 44100;
+        var b0 = Math.ceil(1000 / (srB / 512)), b1 = Math.min(bins.length - 1, Math.floor(5000 / (srB / 512)));
+        var fLog = 0, fSum = 0, fN = 0;
+        for(qi = b0; qi <= b1; qi++){ var lin = Math.pow(10, (-100 + 70 * (bins[qi] / 255)) / 20); fLog += Math.log(lin); fSum += lin; fN++; }
+        var flatB = fN ? Math.exp(fLog / fN) / (fSum / fN) : 0;
+        var lowVeto = (kE - kickAvg > 0.10 && kE > 0.30) || (kE > 0.30 && kE >= wideE * 0.9);
+        var printOK = (shareW >= 0.30 && flatB >= 0.40);
+        stepPend(now, flatB, lowVeto);
         /* round 7: inside a slot window, remember the best
            crack-led peak (completion's quarry); once it starts
            falling, the hunt fires near the peak, not at close */
         if(gLock && !gDone && Math.abs(now - gNextSlotT()) <= gHalfW()){
-          if(cRise > tRise * 0.40 && cRise > 0.008 && (!gWinBest || crackE > gWinBest.e)) gWinBest = { e: crackE, t: now };
+          if(cRise > tRise * 0.40 && cRise > 0.008 && (!gWinBest || crackE > gWinBest.e)) gWinBest = { e: crackE, t: now, w: wideE };
           if(gWinBest && now > gWinBest.t && crackE < gWinBest.e * 0.85) gTryComplete(now);
         }
-        var cand = (over > 0.11 && cRise > 0.02 && cRise > tRise*0.9 && crackE > 0.30);
+        var cand = (over > 0.11 && cRise > 0.02 && cRise > tRise*0.9 && crackE > 0.30 && printOK);
         if(cand && now - lastClapT > 150){
           var inWin = (patConf >= 0.5 && patI > 0 && Math.abs(now - patNext) <= patI*0.28);
           var strong = (over > 0.45 && crackE > 0.50);
@@ -9061,7 +9122,7 @@ function smStats(S) {
               patI = patI ? patI + (spacing - patI)*0.35 : spacing;
               patConf = Math.min(1, patConf + 0.5);
             }
-            clapDip = Math.max(clapDip, Math.min(1, Math.max(0.6, 0.35 + over*1.5)) * (lone ? 0.75 : 1));
+            queueDip(Math.min(1, Math.max(0.6, 0.35 + over*1.5)) * (lone ? 0.75 : 1), now, wideE);
             lastClapT = now;
             gFireTs.push(now);
             if(patI > 0){ patNext = now + patI; if(strong) patConf = Math.min(1, patConf + 0.34); }
@@ -9077,8 +9138,8 @@ function smStats(S) {
            (dropout discipline in the frame block above). */
         if(gLock && !gDone && Math.abs(now - gNextSlotT()) <= gHalfW() && now - Math.max(lastClapT, gLastGridT) > 100){
           var gFloorC = gHitMed > 0 ? Math.max(0.22, gMed + 0.30 * (gHitMed - gMed)) : 0.40;
-          if(crackE > gFloorC && over > 0.05 && cRise > 0.008 && cRise > tRise * 0.40){
-            clapDip = Math.max(clapDip, Math.min(1, Math.max(0.55, 0.45 + over * 1.6 + Math.max(0, crackE - gFloorC) * 0.6)));
+          if(crackE > gFloorC && over > 0.05 && cRise > 0.008 && cRise > tRise * 0.40 && printOK){
+            queueDip(Math.min(1, Math.max(0.55, 0.45 + over * 1.6 + Math.max(0, crackE - gFloorC) * 0.6)), now, wideE);
             gLastGridT = now;   /* the grid keeps its OWN refractory — it must never delay the free ear */
             gFireTs.push(now);
             gConfirmSlot(now, crackE);
@@ -9092,7 +9153,7 @@ function smStats(S) {
       aEnv *= 0.94; bassNow *= 0.92; highNow *= 0.92; beatNow *= 0.9;
       xEnv *= 0.92; pEnv *= 0.9;
       kickPulse *= 0.88; clapDip *= Math.pow(0.926, dt/16.667);
-      crackAvg *= 0.98; patConf = 0; patI = 0; seedT = -1e9; lastEvalT = -1e9;
+      crackAvg *= 0.98; patConf = 0; patI = 0; seedT = -1e9; lastEvalT = -1e9; pendDip = 0;
       if(!gIdleT) gIdleT = now;
       if(gLock && now - gIdleT > 2500){ gResetGrid(); gHits = []; }
       for(var j=0;j<=96;j++) spec[j] *= 0.96;

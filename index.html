@@ -448,13 +448,13 @@ body[data-theme="halloween"] .door-1, body[data-theme="xmas"] .door-1{background
 body[data-theme="halloween"] .door-2, body[data-theme="xmas"] .door-2, body[data-theme="halloween"] .door-3, body[data-theme="xmas"] .door-3, body[data-theme="halloween"] .door-4, body[data-theme="xmas"] .door-4, body[data-theme="halloween"] .door-5, body[data-theme="xmas"] .door-5, body[data-theme="halloween"] .door-6, body[data-theme="xmas"] .door-6{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
 body[data-theme="halloween"] .sea-note, body[data-theme="xmas"] .sea-note{background:linear-gradient(140deg, var(--panel2), var(--panel)); border-color:var(--gold)}
 body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{background:var(--panel); border-color:var(--gold)}
-/* RETIRED (his call, Nov 15 02:39): posts used to glow fully gold
-   on hover — an early-dev instruction that no longer makes sense
-   now that the hearth glow and the mouse/finger riding glow do
-   that work letter by letter. Hover now gives only a soft depth
-   shadow; the border stays its resting color and no gold ring
-   fires. */
-.post-card:hover{box-shadow:0 14px 34px rgba(0,0,0,.4)}
+/* REFINED (his calls, Nov 15 02:39 + 02:47): posts used to glow
+   fully gold on hover — ring and all — which no longer makes
+   sense now that the hearth glow and the riding glow do that work
+   letter by letter. The gold RING stays retired, but the gold
+   BORDER on hover stays — he likes the border. Hover is now:
+   gold edge + a soft depth shadow, no ring, no flash. */
+.post-card:hover{border-color:var(--gold); box-shadow:0 14px 34px rgba(0,0,0,.4)}
 .post-head{display:flex; align-items:center; gap:12px; margin-bottom:12px}
 .avatar{
   width:42px; height:42px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;

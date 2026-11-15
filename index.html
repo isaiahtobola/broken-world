@@ -9190,18 +9190,26 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
     if(ch && ch !== lastCh) lightLetter(ch, 1100);
     lastCh = ch;
   }, {passive:true});
-  /* a click on any living text (or anywhere on a post card) cascades it */
+  /* a click on any living text (or anywhere on a post card) cascades it.
+     SEA EXCEPTION (his call, Nov 15 02:39): in the Sea, no entire box
+     of text goes gold anymore — the whole-box cascades were retired
+     there because the hearth glow and the riding glow already do
+     that work letter by letter, and the cascades' per-letter timers
+     were glitching the page on scroll. The Sea keeps the riding
+     glow only; other pages keep their cascades. */
+  function inSea(el){ return !!(el && typeof el.closest === 'function' && el.closest('#view-sea')); }
   document.addEventListener('click', function(e){
     var t = e.target;
     if(!t || typeof t.closest !== 'function') return;
     var liv = t.closest('[data-living]');
-    if(liv){ cascadeText(liv, 6000); return; }
+    if(liv){ if(!inSea(liv)) cascadeText(liv, 6000); return; }
     var card = t.closest('.post-card');
-    if(card) cascadeText(card.querySelector('.post-body'), 6000);
+    if(card && !inSea(card)) cascadeText(card.querySelector('.post-body'), 6000);
   });
-  /* scrolling a text into view cascades it too — every time, never once */
+  /* scrolling a text into view cascades it too — every time, never once
+     (outside the Sea; see the exception above) */
   var livingIO = ('IntersectionObserver' in window) ? new IntersectionObserver(function(entries){
-    entries.forEach(function(en){ if(en.isIntersecting) cascadeText(en.target, 6000); });
+    entries.forEach(function(en){ if(en.isIntersecting && !inSea(en.target)) cascadeText(en.target, 6000); });
   }, {threshold: 0.15}) : null;
   function livingWatch(root){
     (root || document).querySelectorAll(LIVING_SEL).forEach(function(el){

@@ -1280,6 +1280,35 @@ body.wave-on .mrail{opacity:0; pointer-events:none}
      whole Sea column now breathes a tinsy bit smaller and keeps a
      clear lane on its right, so nothing slides under the meter. */
   #view-sea .sea-inner{zoom:.95; padding-right:18px; padding-left:14px}
+  /* Mobile fit (Nov 15, his second phone check): words, letters and
+     menus on the Sea must fit the screen for every user. Three
+     measured spills at 390px, all fixed inside this phone-only
+     block so the desktop Sea never moves: (1) the composer's
+     actions row — the note, the lake picker and the Post button —
+     would not wrap or shrink, so once the picker appears for a
+     member it stretched the whole composer past its card and
+     pushed Post off the screen (measured right edge 411 on a
+     390 screen, the Upload pill cut at 401); the row now wraps
+     and every flex child may shrink. (2) One long unbroken word
+     in a post ran its glow letters off the right edge (to 506),
+     because post words are nowrap spans; post words may now
+     break on phones. (3) A gentle size trim on the Sea's biggest
+     letters, so more of the page fits a phone at a glance. */
+  #view-sea .post-composer{min-width:0}
+  #view-sea .composer-main{min-width:0}
+  #view-sea .composer-main textarea{width:100%; box-sizing:border-box}
+  #view-sea .media-row{min-width:0}
+  #view-sea .media-link{min-width:0}
+  #view-sea .composer-actions{flex-wrap:wrap; row-gap:8px}
+  #view-sea .composer-note{flex:1 1 auto; min-width:0}
+  #sea-lake-sel{flex:1 1 140px; min-width:0; max-width:100% !important}
+  #view-sea .post-body{overflow-wrap:anywhere}
+  #view-sea .post-body .hl-w{white-space:normal; overflow-wrap:anywhere}
+  #view-sea .post-head{min-width:0}
+  #view-sea .post-name{min-width:0; overflow-wrap:anywhere}
+  #view-sea .page-head h1{font-size:27px}
+  #view-sea .door h3{font-size:19px}
+  #view-sea .post-body{font-size:16px}
   /* Build 106 (his mobile check, Nov 7): on a phone the two banks fell
      BELOW the whole feed — you could not find Lakes or Rivers without
      scrolling past every post. The banks compact to chips under the

@@ -11665,19 +11665,30 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
       var a = audio();
       dragT = (a && a.duration) ? p * a.duration : 0;
     }
+    /* SEEK ON PRESS (his catch, Nov 15 03:35): the first build only
+       landed the seek when the finger lifted, so a tap felt like
+       nothing happened. Now the song jumps the moment the bar is
+       pressed, follows the drag (throttled), and settles on lift. */
+    var lastSeek = 0;
+    function seekNow(force){
+      var a = audio(); if(!a || !a.duration || !isFinite(dragT)) return;
+      var now = Date.now();
+      if(!force && now - lastSeek < 120) return;
+      lastSeek = now;
+      try{ a.currentTime = dragT; }catch(err){}
+    }
     track.addEventListener('pointerdown', function(e){
       if(!audio()) return;
       dragging = true;
       try{ track.setPointerCapture(e.pointerId); }catch(err){}
-      posToTime(e); paint();
+      posToTime(e); seekNow(true); paint();
       e.preventDefault();
     });
-    track.addEventListener('pointermove', function(e){ if(dragging){ posToTime(e); paint(); } });
+    track.addEventListener('pointermove', function(e){ if(dragging){ posToTime(e); seekNow(false); paint(); } });
     function endDrag(){
       if(!dragging) return;
       dragging = false;
-      var a = audio();
-      if(a && isFinite(dragT)){ try{ a.currentTime = dragT; }catch(err){} }
+      seekNow(true);
       paint();
     }
     track.addEventListener('pointerup', endDrag);

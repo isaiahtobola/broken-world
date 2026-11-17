@@ -1402,7 +1402,8 @@ body.lava-mode-bismuth{
 body.lava-mode-silver #lava-canvas, body.lava-mode-rose #lava-canvas, body.lava-mode-bismuth #lava-canvas{filter:none}
 /* canvas art leans into the season too (normal mode: no filter, untouched) */
 body[data-theme="halloween"] .view canvas{filter:hue-rotate(-18deg) saturate(1.18)}
-body[data-theme="halloween"] .view canvas#sea-canvas, body[data-theme="xmas"] .view canvas#sea-canvas{filter:none} /* 97f: the Sea paints its own seasons now */
+body[data-theme="halloween"] .view canvas#sea-canvas, body[data-theme="xmas"] .view canvas#sea-canvas,
+body[data-theme="halloween"] .view canvas#sea-plankton-canvas, body[data-theme="xmas"] .view canvas#sea-plankton-canvas{filter:none} /* 97f: the Sea paints its own seasons now — NOV 17, 2026 THEME LAW (his word): the waters keep their own colors in EVERY season; the Sea, the Lake, the River and the plankton in them are exempt from the holiday recolor. Boxes, menus, doors and the rest of the design still dress up. */
 body[data-theme="xmas"] .view canvas{filter:hue-rotate(-32deg) saturate(1.22)}
 /* the sky dancers dress for the season as well */
 body[data-theme="halloween"] .orb-yang svg path{fill:#ffa53a}
@@ -2684,7 +2685,7 @@ function bwPaintCache108(){
   try{
     if(!window.BW) return;
     var p = localStorage.getItem('bw108.posts');
-    if(p){ var arr = JSON.parse(p); if(arr && arr.length){ BW.posts = arr; if(typeof renderPosts === 'function') renderPosts(); if(typeof bwDecorate === 'function') bwDecorate(); } }
+    if(p){ var arr = JSON.parse(p); if(arr && arr.length){ BW.posts = bwRelicsPartition(arr); if(typeof renderPosts === 'function') renderPosts(); if(typeof bwDecorate === 'function') bwDecorate(); } }
     var f = localStorage.getItem('bw108.files');
     if(f){ var fa = JSON.parse(f); if(fa && fa.length){ BW.files = fa; if(typeof renderFiles === 'function') renderFiles(); } }
   }catch(e){}
@@ -3605,6 +3606,24 @@ function bwApplyAuth(){
    script at the end of the body; the live fetchers call it through
    here so freshly loaded posts/files reach the Hub tabs at once. */
 function bwHubSyncLive102(){ if(window.__bwHubSyncForce) window.__bwHubSyncForce(); }
+/* NOV 17, 2026 — THE RELICS (his word): in the Sea, the founders'
+   posts never float up with the tide. bwyoungbo's and Lux's posts
+   ride at the BOTTOM of the feed, below every newer arrival,
+   keeping their own relative order — relics on the Sea floor.
+   Everyone else keeps the order they arrived in. The partition
+   is stable and runs wherever BW.posts is (re)built, so the
+   feed and every index pairing that reads it stay in lockstep. */
+function bwRelicsPartition(posts){
+  if(!posts || posts.length < 2) return posts;
+  var top = [], relics = [];
+  posts.forEach(function(p){
+    var a = p && p.author;
+    if(a === 'bwyoungbo' || a === 'Lux' || (p && p.author_id === '4d0e6f6f-dcdb-495f-90dc-7d28177a7dcd')) relics.push(p);
+    else top.push(p);
+  });
+  return top.concat(relics);
+}
+
 function bwFetchPosts(){
   return bwGuardedFetch('posts', function(){ return bwFetchPostsRaw(); }, { onSlow: function(){}, onStuck: function(retry){
     bwRetryNote(document.getElementById('sea-feed'), 'The Sea is still reaching the notebook — stormy connections stall here. Your posts are safe; this is only the road.', retry);
@@ -3627,13 +3646,13 @@ function bwFetchPostsRaw(){
         if(!BW.noMediaUrls && /media_urls/.test(r.error.message || '')){ BW.noMediaUrls = true; return bwFetchPostsRaw(); }
         throw r.error;
       }
-      BW.posts = (r.data || []).map(function(row){
+      BW.posts = bwRelicsPartition((r.data || []).map(function(row){
         return { id: row.id, text: row.body, ts: new Date(row.created_at).getTime(),
                  author: row.author_name || 'member', author_id: row.author,
                  media_url: row.media_url || null, media_type: row.media_type || null,
                  media_urls: (Array.isArray(row.media_urls) && row.media_urls.length) ? row.media_urls.filter(function(u){ return typeof u === 'string' && u; }) : null,
                  lake_id: row.lake_id || null };
-      });
+      }));
       renderPosts();
       if(window.__bwFetchLakePosts) window.__bwFetchLakePosts();
       try{ localStorage.setItem('bw108.posts', JSON.stringify(BW.posts)); }catch(e){}
@@ -6624,8 +6643,12 @@ runners['car-canvas'] = function(canvas, ctx, state){
 /* ============================================================
    SEA — the whole page IS the sea (Spec 7, revised by Isaiah
    2026-10-30 03:19: NO lights, waves span top to bottom, BIG).
-   5 layered plum waves spread across the full height of the
-   page, rolling behind everything.
+   STAGE 3 (Nov 17, 2026, his green light): the waves are retired —
+   the Sea wears the Sea Demo 2 water now (deep-water gradient
+   column, sunshine rays at the surface, the plankton field; see
+   the STAGE 3 block inside). The five layers remain as the color
+   engine for the Lake pond and the River pour, and surfY still
+   shapes the pond’s water. The furniture never moved.
    ============================================================ */
 runners['sea-canvas'] = function(canvas, ctx, state){
   /* plum ↔ blue pairs matched in lightness (his 03:20 spec):
@@ -6664,49 +6687,180 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       + Math.sin(x*L.len + t*L.spd*2.2) * th*L.amp*ampK
       + Math.sin(x*L.len*2.7 - t*L.spd*1.6) * th*L.amp*0.45*ampK;
   }
-  /* plankton colonies (his 03:21 spec): tiny neon lives per layer,
-     woken by a click, glowing like little stars in the water */
-  var PSHAPES = ['dot','dot','dot','diatom','diatom','radiolarian','copepod','chain','dino'];
-  layers.forEach(function(L){
-    L.bloom = 0; L.bloomOn = false; L.plank = [];
-    for(var i=0;i<26;i++) L.plank.push({xr:Math.random(), tileR:Math.random(), depth:6+Math.random()*90, r:0.8+Math.random()*1.7, ph:Math.random()*6.28, drift:0.004+Math.random()*0.010, bob:2+Math.random()*5,
-      shape: PSHAPES[Math.floor(Math.random()*PSHAPES.length)]});
+  /* ============================================================
+     STAGE 3 — THE NEW WATER (Nov 17, 2026, his green light:
+     "change the sea design to this design — goodbye to our
+     waves"). The layered wave strata and the old per-layer
+     plankton colonies are retired. In their place, the Sea
+     Demo 2 water, ported to the real Sea:
+       · a deep-water gradient column keyed to TRUE depth — the
+         demo's own gradient stops laid over metres, so the water
+         at a given depth looks the same forever, no matter how
+         deep the Sea grows (the Frozen Ruler, applied to color);
+       · sunshine rays at the very top, in page space at the
+         surface, scrolling away as you dive;
+       · a plankton field spread through the whole Sea at every
+         depth — ghostly bright turquoise, transparent, glowing —
+         answering taps by the demo's band law.
+     DEPTH SCALE: the Sea's own gauge has always read depth as
+     content px × 0.045 (≈45 m per 1000 px; the floor reads
+     ~300 m today and sinks with every post). That scale — not
+     the demo's compressed scale-model scale — is the Sea's
+     truth; the demo's band lines (3,000 / 6,000 / 9,000 /
+     12,000 m), its ray-fade depth and its gradient are imported
+     onto it unchanged. At today's ~300 m a tap lights ONE
+     plankton; the deeper bands, and the past-12,000 chain
+     reaction, are already in the water, waiting for the Sea
+     to grow into them. */
+  var SP_M_PER_PX = 0.045;                 /* the Sea's depth scale (the gauge's own) */
+  var SP_TOTAL_M = 13000;                  /* the demo's full depth — the gradient's span */
+  var SP_CHAIN_M = 12000;
+  var SP = window.__bwSeaPlankton || (window.__bwSeaPlankton = {
+    dots: [], coveredCssH: 0, coveredCssW: 0, sequences: [], armed: false, geom: null
   });
-  /* real plankton forms (science-checked 2026-10-30): diatom = centric
-     glass disc with radial spokes ("jewel of the sea"); radiolarian =
-     silica ball with long spines; copepod = teardrop body, tail, two
-     long antennae; chain = linked diatom colony; dino = dinoflagellate,
-     the actual bioluminescent one — sphere, groove, two tiny horns */
-  function drawPlankton(pk, x, y, S, a, DPR){
-    pkCtx.strokeStyle = 'rgba(140,255,226,'+a.toFixed(3)+')';
-    pkCtx.fillStyle = 'rgba(77,255,210,'+a.toFixed(3)+')';
-    pkCtx.lineWidth = Math.max(1, 1.1*DPR);
-    if(pk.shape === 'diatom'){
-      pkCtx.beginPath(); pkCtx.arc(x, y, S, 0, 6.29); pkCtx.stroke();
-      pkCtx.beginPath(); pkCtx.arc(x, y, S*0.45, 0, 6.29); pkCtx.stroke();
-      for(var k=0;k<8;k++){ var an = k*Math.PI/4 + pk.ph; pkCtx.beginPath(); pkCtx.moveTo(x + Math.cos(an)*S*0.45, y + Math.sin(an)*S*0.45); pkCtx.lineTo(x + Math.cos(an)*S, y + Math.sin(an)*S); pkCtx.stroke(); }
-      pkCtx.beginPath(); pkCtx.arc(x, y, S*0.16, 0, 6.29); pkCtx.fill();
-    } else if(pk.shape === 'radiolarian'){
-      for(var k2=0;k2<10;k2++){ var a2 = k2*Math.PI/5 + pk.ph; pkCtx.beginPath(); pkCtx.moveTo(x, y); pkCtx.lineTo(x + Math.cos(a2)*S*1.7, y + Math.sin(a2)*S*1.7); pkCtx.stroke(); }
-      pkCtx.beginPath(); pkCtx.arc(x, y, S*0.55, 0, 6.29); pkCtx.fill();
-    } else if(pk.shape === 'copepod'){
-      pkCtx.save(); pkCtx.translate(x, y); pkCtx.rotate(Math.sin(pk.ph)*0.4);
-      pkCtx.beginPath(); pkCtx.ellipse(0, 0, S*0.55, S*1.05, 0, 0, 6.29); pkCtx.fill();
-      pkCtx.beginPath(); pkCtx.moveTo(0, S*1.0); pkCtx.lineTo(0, S*1.9); pkCtx.stroke();
-      pkCtx.beginPath(); pkCtx.moveTo(0, -S*0.9); pkCtx.quadraticCurveTo(-S*0.9, -S*1.7, -S*1.5, -S*1.9); pkCtx.stroke();
-      pkCtx.beginPath(); pkCtx.moveTo(0, -S*0.9); pkCtx.quadraticCurveTo(S*0.9, -S*1.7, S*1.5, -S*1.9); pkCtx.stroke();
-      pkCtx.restore();
-    } else if(pk.shape === 'chain'){
-      for(var c=0;c<3;c++){ pkCtx.beginPath(); pkCtx.arc(x + (c-1)*S*1.15, y + Math.sin(pk.ph + c)*S*0.2, S*0.6, 0, 6.29); pkCtx.stroke(); }
-    } else if(pk.shape === 'dino'){
-      pkCtx.beginPath(); pkCtx.arc(x, y, S*0.8, 0, 6.29); pkCtx.fill();
-      pkCtx.beginPath(); pkCtx.moveTo(x - S*0.8, y); pkCtx.lineTo(x + S*0.8, y); pkCtx.stroke();
-      pkCtx.beginPath(); pkCtx.moveTo(x - S*0.4, y - S*0.7); pkCtx.lineTo(x - S*0.7, y - S*1.3); pkCtx.stroke();
-      pkCtx.beginPath(); pkCtx.moveTo(x + S*0.4, y - S*0.7); pkCtx.lineTo(x + S*0.7, y - S*1.3); pkCtx.stroke();
-    } else {
-      pkCtx.beginPath(); pkCtx.arc(x, y, S*0.6, 0, 6.29); pkCtx.fill();
+  function spDepthAtCssY(cssY){ return Math.max(0, cssY * SP_M_PER_PX); }
+  function spTapCount(d){ if(d < 3000) return 1; if(d < 6000) return 2; if(d < 9000) return 3; return 4; }
+  var SP_SEQ_GAP = 420, SP_SEQ_LIT = 1350, SP_CHAIN_LIT = 1750;
+  function spSeqDuration(count){ return (count - 1) * SP_SEQ_GAP + SP_SEQ_LIT; }
+  /* the field: a dot holds a true page depth (y in CSS px from
+     the Sea's top) and a fractional x, so a dot at 200 m stays at
+     200 m forever; as posts deepen the Sea, new dots seed into
+     the new water below. Density matches the demo's school:
+     ~120 dots (snow included) per viewport of water. */
+  function spEnsureField(cssW, cssH){
+    if(cssW <= 0 || cssH <= 0) return;
+    if(Math.abs(cssW - SP.coveredCssW) > 40){ SP.dots = []; SP.coveredCssH = 0; SP.coveredCssW = cssW; }
+    if(SP.coveredCssH >= cssH - 4) return;
+    var y0 = SP.coveredCssH, area = cssW * (cssH - y0);
+    var n = Math.round(area / 11000);
+    for(var i = 0; i < n && SP.dots.length < 1600; i++){
+      var snow = Math.random() < 0.38;
+      SP.dots.push({
+        fx: Math.random(), y: y0 + Math.random() * (cssH - y0),
+        r: snow ? 0.8 + Math.random() * 1.4 : 0.7 + Math.random() * 2.1,
+        snow: snow, sp: snow ? 6 + Math.random() * 10 : 3 + Math.random() * 7,
+        sway: Math.random() * Math.PI * 2, swaySp: 0.2 + Math.random() * 0.5,
+        hue: Math.random(), tw: Math.random() * Math.PI * 2
+      });
     }
+    SP.coveredCssH = cssH;
   }
+  function spDotBobY(d, t){
+    /* a gentle bob on top of the drift (the drift pass in the frame
+       owns the real motion, as in the demo: snow sinks, plankton rise) */
+    return d.y + Math.sin(t * 0.9 + d.sway) * (d.snow ? 2 : 3.5);
+  }
+  /* THE CHAIN — past 12,000 m: tap one and the whole school in
+     view lights in succession, one rolling wave, its route dealt
+     fresh every tap (ripple out / sweep across / sweep down /
+     bloom from center / pure shuffle), exactly the demo's law. */
+  function spStartChain(first, now){
+    var g = SP.geom; if(!g) return;
+    var tSec = now / 1000, vis = [], i;
+    for(i = 0; i < SP.dots.length; i++){
+      var p0 = SP.dots[i];
+      if(p0.snow) continue;
+      var y0 = spDotBobY(p0, tSec);
+      if(y0 >= g.visTopCss - 24 && y0 <= g.visBotCss + 24) vis.push(p0);
+    }
+    if(!vis.length) vis = [first];
+    if(vis.indexOf(first) < 0) vis.unshift(first);
+    var rest = vis.filter(function(p){ return p !== first; });
+    var pattern = Math.floor(Math.random() * 5);
+    var dirSign = Math.random() < 0.5 ? 1 : -1;
+    var cx = g.cssW / 2, cy = (g.visTopCss + g.visBotCss) / 2;
+    var fxPx = first.fx * g.cssW, fyPx = spDotBobY(first, tSec);
+    function key(p){
+      var dx, dy;
+      if(pattern === 0){ dx = p.fx * g.cssW - fxPx; dy = spDotBobY(p, tSec) - fyPx; return Math.sqrt(dx * dx + dy * dy); }
+      if(pattern === 1) return dirSign * p.fx;
+      if(pattern === 2) return dirSign * spDotBobY(p, tSec);
+      if(pattern === 3){ dx = p.fx * g.cssW - cx; dy = spDotBobY(p, tSec) - cy; return Math.sqrt(dx * dx + dy * dy); }
+      return Math.random();
+    }
+    var keyed = rest.map(function(p){ return { p: p, k: key(p) }; });
+    keyed.sort(function(a, b){ return a.k - b.k; });
+    var members = [first], delays = [0], peaks = [1];
+    var step = Math.max(26, Math.min(85, 4300 / Math.max(1, vis.length - 1)));
+    for(i = 0; i < keyed.length; i++){ members.push(keyed[i].p); delays.push((i + 1) * step + Math.random() * step * 0.6); peaks.push(0.86 + Math.random() * 0.14); }
+    var dur = delays[delays.length - 1] + SP_CHAIN_LIT;
+    SP.sequences.push({ members: members, delays: delays, peaks: peaks, t0: now, litMs: SP_CHAIN_LIT, dur: dur, chain: true });
+  }
+  function spSequenceGlow(p, now){
+    var best = 0;
+    for(var i = 0; i < SP.sequences.length; i++){
+      var seq = SP.sequences[i];
+      for(var j = 0; j < seq.members.length; j++){
+        if(seq.members[j] !== p) continue;
+        var delay = seq.delays ? seq.delays[j] : j * SP_SEQ_GAP;
+        var litMs = seq.litMs || SP_SEQ_LIT;
+        var lt = now - seq.t0 - delay;
+        if(lt <= 0 || lt > litMs) continue;
+        var env = Math.sin(Math.PI * Math.min(1, lt / litMs));
+        var peak = seq.peaks ? seq.peaks[j] : (1 - j * 0.08);
+        var v = env * peak;
+        if(v > best) best = v;
+      }
+    }
+    return best;
+  }
+  /* Taps are heard on CLICK — never pointerdown — so a scroll
+     that starts on the water never sets the plankton off. The
+     tap must land on the Sea's own water: anything inside the
+     room's furniture (posts, panels, doors, composer, buttons,
+     forms) is not water, and empty water — no dot within a
+     forgiving ~78 CSS px — does nothing. */
+  function spArmTap(){
+    if(SP.armed) return; SP.armed = true;
+    document.addEventListener('click', function(e){
+      var vs = document.getElementById('view-sea');
+      if(!vs || !vs.classList.contains('active')) return;
+      var t = e.target;
+      if(!t || !t.closest || !t.closest('#view-sea')) return;
+      if(t.closest('.post-card, .side-panel, .door, .post-composer, .sea-note, .page-head, button, a, input, textarea, select, form, video, audio, .chip, .depth-gauge, .waters-pick, .river-members')) return;
+      var pcvEl = document.getElementById('sea-plankton-canvas');
+      if(!pcvEl) return;
+      var rect = pcvEl.getBoundingClientRect();
+      var cxCss = e.clientX - rect.left, cyCss = e.clientY - rect.top;
+      if(cxCss < 0 || cyCss < 0 || cxCss > rect.width || cyCss > rect.height) return;
+      var now = performance.now(), tSec = now / 1000;
+      var best = null, bestD = Infinity;
+      for(var i = 0; i < SP.dots.length; i++){
+        var p = SP.dots[i];
+        if(p.snow) continue;
+        var dx = p.fx * rect.width - cxCss, dy = spDotBobY(p, tSec) - cyCss;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if(d < bestD){ bestD = d; best = p; }
+      }
+      if(!best || bestD > 78) return; /* empty water: nothing happens */
+      var depth = spDepthAtCssY(cyCss);
+      if(depth >= SP_CHAIN_M){ spStartChain(best, now); if(SP.sequences.length > 5) SP.sequences.shift(); return; }
+      var count = spTapCount(depth);
+      var members = [best];
+      if(count > 1){
+        var others = [];
+        for(var k = 0; k < SP.dots.length; k++){
+          var q = SP.dots[k];
+          if(q.snow || q === best) continue;
+          var qdx = (q.fx - best.fx) * rect.width, qdy = spDotBobY(q, tSec) - spDotBobY(best, tSec);
+          others.push({ p: q, d: Math.sqrt(qdx * qdx + qdy * qdy) });
+        }
+        others.sort(function(a, b){ return a.d - b.d; });
+        for(var m = 0; m < others.length && members.length < count; m++) members.push(others[m].p);
+      }
+      SP.sequences.push({ members: members, t0: now });
+      if(SP.sequences.length > 5) SP.sequences.shift();
+    });
+  }
+  spArmTap();
+  /* the one depth scale, readable for the gauge's friends + QA */
+  window.__bwSeaDepth = {
+    mPerPx: SP_M_PER_PX,
+    depthAtCssY: spDepthAtCssY,
+    floorM: function(){ var si = document.querySelector('#view-sea .sea-inner'); return si ? Math.max(40, Math.round(si.scrollHeight * SP_M_PER_PX)) : 0; },
+    field: SP
+  };
+
   function frame(now){
     if(!running['sea-canvas']) return;
     var s = fitCanvas(canvas), W=s.w, H=s.h, t = now/1000;
@@ -6753,16 +6907,8 @@ runners['sea-canvas'] = function(canvas, ctx, state){
     ampK = 1 - 0.82 * state.lakeK - 0.25 * state.riverK;
     var rect = canvas.getBoundingClientRect();
     var px = (pointer.x - rect.left) * s.dpr, py = (pointer.y - rect.top) * s.dpr;
-    /* a fresh click wakes (or sleeps) the plankton in the clicked layer */
-    if(window.__seaClick && now - window.__seaClick.t < 150){
-      var ck = window.__seaClick; window.__seaClick = null;
-      var cxp = (ck.x - rect.left) * s.dpr, cyp = (ck.y - rect.top) * s.dpr;
-      if(cxp >= 0 && cxp <= W && cyp >= 0 && cyp <= H){
-        for(var ci = layers.length-1; ci >= 0; ci--){
-          if(cyp >= surfY(layers[ci], cxp, t, cyp)){ layers[ci].bloomOn = !layers[ci].bloomOn; break; }
-        }
-      }
-    }
+    /* (Stage 3: the old click-bloom is retired — plankton taps
+       are heard by the SP system above, on completed clicks.) */
     layers.forEach(function(L, idx){
       /* THE SEA EQUATION (his 2026-10-30 19:36 final, GD-trigger style):
          while ACTIVE, plum is OUT of the equation entirely — a wave's
@@ -6783,14 +6929,13 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       else if(loc < 2100) tp = 1;
       else tp = 1 - (loc - 2100) / 500;
       tp = tp * tp * (3 - 2 * tp);
-      /* 97f — SEASONAL SEAS (his spec, Nov 7): under a holiday theme
-         the ACTIVE blend crosses the season's pair instead of
-         blue/turquoise — Halloween: black <-> orange; Christmas:
-         red <-> green. Plum still waits at rest, untouched. */
-      var TH = document.body.getAttribute('data-theme');
+      /* 97f — SEASONAL SEAS, RETIRED Nov 17, 2026 (his THEME LAW):
+         the waters keep their own colors in every season now, so
+         the holiday pairs (Halloween black<->orange, Christmas
+         red<->green) no longer touch the water. The ACTIVE blend
+         is always the water’s own blue<->turquoise; plum still
+         waits at rest, untouched. Boxes and menus still dress up. */
       var C1 = L.blue, C2 = L.teal;
-      if(TH === 'halloween'){ C1 = [10,6,5];   C2 = [255,140,26]; }
-      else if(TH === 'xmas'){ C1 = [217,54,54]; C2 = [46,160,80]; }
       var ar = C1[0] + (C2[0] - C1[0]) * tp;
       var ag = C1[1] + (C2[1] - C1[1]) * tp;
       var ab = C1[2] + (C2[2] - C1[2]) * tp;
@@ -6800,62 +6945,159 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       var b = Math.round(ab + (L.plum[2] - ab) * L.restK);
       if(idx === 2) moodRGB = [r, g, b];
       L._rgb = [r, g, b]; L._alp = L.alpha + (1 - L.alpha) * 0.7 * mx;
-      ctx.fillStyle = 'rgb('+r+','+g+','+b+')';
-      /* while active, waves go near-solid so the plum page behind them
-         can't bleed through the translucency and purple the mix */
-      ctx.globalAlpha = (L.alpha + (1 - L.alpha) * 0.7 * mx) * (1 - 0.45 * state.lakeK - 0.2 * state.riverK) * (1 - state.lakeK) * (1 - state.riverK);
-      /* THE FROZEN RULER at work: this layer is painted once per
-         screenful tile, from its surface down to the tile's floor —
-         the same five waves at their born size, repeated as deep as
-         the page runs. Only tiles near the visible window paint. */
-      var kTile = rect.height ? (H / rect.height) : s.dpr;
-      var visTopT = -rect.top * kTile - tileHcur, visBotT = -rect.top * kTile + (window.innerHeight || 800) * kTile + tileHcur;
-      for(var tyT = 0; tyT < H; tyT += tileHcur){
-        var tyB = Math.min(H, tyT + tileHcur);
-        if(tyB < visTopT || tyT > visBotT) continue;
-        /* THE SEAM, DONE RIGHT (his spec, Nov 15 03:22 — OG shape,
-           clean loop, no gaps, no funky overlapping): the strip
-           between the tile's top and the SHALLOWEST surface is
-           painted by every layer in turn, so the strip wears the
-           full stack — exactly the composite the tile floor above
-           it ends with — and the strata below keep their own
-           colors, untouched. (The first flush attempt ran each
-           layer's band down to its OWN surface: the deep layers
-           painted over the shallow strata, every height ended with
-           all five layers stacked, and the whole sea flattened to
-           one color — the night the waves vanished. Never again.)
-           The first tile wears no strip: that sky is the OG sky. */
-        if(tyT > 0){
-          ctx.beginPath(); ctx.moveTo(0, tyT);
-          for(var bx=0; bx<=W; bx+=6) ctx.lineTo(bx, surfY(layers[0], bx, t, tyT + 1));
-          ctx.lineTo(W, tyT); ctx.closePath(); ctx.fill();
-        }
-        ctx.beginPath(); ctx.moveTo(0, tyB);
-        for(var x=0; x<=W; x+=6) ctx.lineTo(x, surfY(L, x, t, tyT + 1));
-        ctx.lineTo(W, tyB); ctx.closePath(); ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-      /* plankton bloom — neon specks drifting in this layer's water */
-      L.bloom += ((L.bloomOn ? 1 : 0) - L.bloom) * 0.06;
-      if(L.bloom > 0.02 && state.lakeK < 0.95 && state.riverK < 0.95){
-        pkCtx = pctx || ctx;
-        L.plank.forEach(function(pk){
-          var x = ((pk.xr + t*pk.drift) % 1) * W;
-          var pkTileTop = Math.min(H - 1, Math.floor(pk.tileR * Math.max(1, Math.ceil(H / tileHcur))) * tileHcur + 1);
-          var y = surfY(L, x, t, pkTileTop) + pk.depth*s.dpr + Math.sin(t*0.9 + pk.ph)*pk.bob*s.dpr;
-          if(y > H - 2) return;
-          var tw = 0.55 + 0.45*Math.sin(t*2 + pk.ph);
-          /* the FLASH (his 04:00 call): sharp random bioluminescent spikes */
-          var fl = Math.pow(Math.max(0, Math.sin(t*0.8 + pk.ph*5.3)), 24);
-          var a = L.bloom * Math.min(1, 0.3 + 0.6*tw + fl*1.2) * (1 - state.lakeK) * (1 - state.riverK);
-          var S = pk.r * s.dpr * (pk.shape === 'dot' ? 1 : 2.3) * (1 + 0.3*tw + 0.9*fl);
-          pkCtx.shadowColor = 'rgba(55,244,228,.95)';
-          pkCtx.shadowBlur = (8 + fl*26) * s.dpr * L.bloom;
-          drawPlankton(pk, x, y, S, a, s.dpr);
-          pkCtx.shadowBlur = 0;
-        });
-      }
+
     });
+    /* — STAGE 3 · THE NEW WATER PAINTS (Nov 17, 2026) —
+       The gradient column: the demo's deep-water gradient, keyed
+       to true depth. Its stops are fractions of the full
+       13,000 m; at the Sea's scale (0.045 m/px) the gradient's
+       far end sits ~289,000 CSS px down — far below today's
+       floor — so the surface water a visitor sees today IS the
+       demo's surface water, and every metre of future Sea
+       reveals the next slice of the same gradient, unmoved.
+       Painted only across the visible window, and faded out
+       entirely in lake/river mode (outside the pond's rim there
+       is no water — just the page — exactly as the waves did). */
+    var kTile3 = rect.height ? (H / rect.height) : s.dpr;
+    var visTop3 = Math.max(0, -rect.top * kTile3 - 8 * s.dpr);
+    var visBot3 = Math.min(H, -rect.top * kTile3 + (window.innerHeight || 800) * kTile3 + 8 * s.dpr);
+    var seaAlpha3 = (1 - state.lakeK) * (1 - state.riverK);
+    if(seaAlpha3 > 0.003 && visBot3 > visTop3){
+      if(!state._grad3 || state._gradKey3 !== H + '|' + kTile3){
+        var g3 = ctx.createLinearGradient(0, 0, 0, (SP_TOTAL_M / SP_M_PER_PX) * kTile3);
+        g3.addColorStop(0.00, '#14607e'); g3.addColorStop(0.06, '#0d4a68');
+        g3.addColorStop(0.14, '#083650'); g3.addColorStop(0.24, '#062a44');
+        g3.addColorStop(0.38, '#041c31'); g3.addColorStop(0.55, '#02101f');
+        g3.addColorStop(0.72, '#01070f'); g3.addColorStop(0.88, '#00040a');
+        g3.addColorStop(1.00, '#000000');
+        state._grad3 = g3; state._gradKey3 = H + '|' + kTile3;
+      }
+      ctx.save();
+      ctx.globalAlpha = seaAlpha3;
+      ctx.fillStyle = state._grad3;
+      ctx.fillRect(0, visTop3, W, visBot3 - visTop3);
+      ctx.restore();
+      /* — sunshine rays: they live at the surface, in page space —
+         the demo's own beams (same widths, same ~16° lean, same
+         shimmer), full strength at the top of the Sea and gone
+         from view within the first stretch of scrolling, exactly
+         as the demo's fade reads. Skipped once the window has
+         dived past them. — */
+      var vh3 = (window.visualViewport ? window.visualViewport.height : (window.innerHeight || 800)) * kTile3;
+      if(visTop3 < vh3 * 1.35){
+        ctx.save();
+        /* the demo's own fade: the whole light layer dissolves with
+           depth — full at the surface, gone after ~640 px of dive */
+        ctx.globalAlpha = seaAlpha3 * Math.max(0, 1 - (window.scrollY || 0) / 640);
+        var pool3 = ctx.createLinearGradient(0, 0, 0, vh3 * 0.16);
+        pool3.addColorStop(0, 'rgba(230,250,255,0.20)'); pool3.addColorStop(1, 'rgba(230,250,255,0)');
+        ctx.fillStyle = pool3; ctx.fillRect(0, 0, W, vh3 * 0.16);
+        var wash3 = ctx.createRadialGradient(W * 0.30, -vh3 * 0.12, 0, W * 0.30, -vh3 * 0.12, W * 0.62);
+        wash3.addColorStop(0, 'rgba(196,242,255,0.30)'); wash3.addColorStop(1, 'rgba(196,242,255,0)');
+        ctx.fillStyle = wash3; ctx.fillRect(0, 0, W, vh3 * 0.62);
+        var wash3b = ctx.createRadialGradient(W * 0.78, -vh3 * 0.10, 0, W * 0.78, -vh3 * 0.10, W * 0.5);
+        wash3b.addColorStop(0, 'rgba(255,242,196,0.20)'); wash3b.addColorStop(1, 'rgba(255,242,196,0)');
+        ctx.fillStyle = wash3b; ctx.fillRect(0, 0, W, vh3 * 0.55);
+        var beams3 = [
+          { fx: 0.04, w: 120, dur: 9.0, ph: 0.0 }, { fx: 0.19, w: 52, dur: 6.5, ph: -2.0 },
+          { fx: 0.33, w: 170, dur: 11.0, ph: -5.0 }, { fx: 0.55, w: 64, dur: 7.5, ph: -1.0 },
+          { fx: 0.70, w: 140, dur: 10.0, ph: -4.0 }, { fx: 0.86, w: 48, dur: 6.0, ph: -3.0 }
+        ];
+        var wScale3 = Math.max(0.45, Math.min(1.15, (W / kTile3) / 1200));
+        beams3.forEach(function(bm){
+          var shim = 0.5 + 0.5 * Math.sin((t / bm.dur) * Math.PI * 2 + bm.ph);
+          var bAlpha = 0.38 + 0.47 * shim;
+          var bw3 = bm.w * wScale3 * kTile3, bx3 = bm.fx * W, blen3 = vh3 * 1.28, btop3 = -vh3 * 0.24;
+          var lean3 = (15 + 2.5 * shim) * Math.PI / 180;
+          ctx.save();
+          ctx.translate(bx3, btop3); ctx.rotate(lean3);
+          ctx.globalCompositeOperation = 'screen'; /* the demo blends its beams on screen mode */
+          var bg3 = ctx.createLinearGradient(0, 0, 0, blen3);
+          bg3.addColorStop(0, 'rgba(255,247,208,' + (0.55 * bAlpha).toFixed(3) + ')');
+          bg3.addColorStop(0.42, 'rgba(198,238,255,' + (0.16 * bAlpha).toFixed(3) + ')');
+          bg3.addColorStop(0.76, 'rgba(198,238,255,0)');
+          ctx.fillStyle = bg3;
+          ctx.fillRect(-bw3 / 2, 0, bw3, blen3);
+          ctx.restore();
+        });
+        /* faint diagonal streaks — the far edge of the same light,
+           their alpha spent segment by segment as they deepen */
+        ctx.lineWidth = Math.max(1, 1.4 * s.dpr);
+        var streakStep3 = 190 * wScale3 * kTile3;
+        var streakOff3 = (t * 3.65 * kTile3) % streakStep3; /* the demo's slow 52 s drift */
+        for(var sx3 = -W * 0.1 - streakStep3 + streakOff3; sx3 < W * 1.1; sx3 += streakStep3){
+          for(var sy3 = 0; sy3 < vh3 * 1.15; sy3 += 46 * s.dpr){
+            var sa3 = 0.05 * Math.pow(1 - sy3 / (vh3 * 1.15), 2);
+            if(sa3 <= 0.004) continue;
+            ctx.strokeStyle = 'rgba(178,232,250,' + sa3.toFixed(3) + ')';
+            ctx.beginPath();
+            ctx.moveTo(sx3 + sy3 * 0.27, sy3);
+            ctx.lineTo(sx3 + sy3 * 0.27 + 30 * s.dpr, sy3 + 40 * s.dpr);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+    }
+    /* — the plankton field, on its own canvas above the trench:
+       dots hold true page depths, only the visible window paints,
+       and the deeper you scroll the harder they shine (the demo's
+       glow law). In lake/river mode they fade away entirely — no
+       plankton live in a lake or a river; the old law stands. — */
+    if(pctx && pcv){
+      var cssW3 = rect.width, cssH3 = rect.height;
+      spEnsureField(cssW3, cssH3);
+      var visTopCss3 = Math.max(0, -rect.top);
+      var visBotCss3 = visTopCss3 + (window.visualViewport ? window.visualViewport.height : (window.innerHeight || 800));
+      SP.geom = { cssW: cssW3, cssH: cssH3, visTopCss: visTopCss3, visBotCss: visBotCss3 };
+      /* the school is alive, as in the demo: snow sinks, plankton
+         drift up — and a dot that wanders out of the window's
+         neighbourhood quietly re-enters on the far side, so the
+         school is always around you, at your own depth */
+      for(var mi3 = 0; mi3 < SP.dots.length; mi3++){
+        var md3 = SP.dots[mi3];
+        md3.y += md3.snow ? md3.sp * 0.016 : -md3.sp * 0.016;
+        if(md3.y < visTopCss3 - 60 || md3.y > visBotCss3 + 60){
+          md3.y = md3.snow ? (visTopCss3 - 20 - Math.random() * 40) : (visBotCss3 + 20 + Math.random() * 40);
+          md3.fx = Math.random();
+        }
+      }
+      var maxScr3 = Math.max(1, cssH3 - (window.innerHeight || 800));
+      var glowBoost3 = 0.35 + 0.65 * Math.min(1, Math.max(0, visTopCss3 / maxScr3));
+      for(var fi3 = SP.sequences.length - 1; fi3 >= 0; fi3--){
+        var sd3 = SP.sequences[fi3].dur || spSeqDuration(SP.sequences[fi3].members.length);
+        if(now - SP.sequences[fi3].t0 > sd3) SP.sequences.splice(fi3, 1);
+      }
+      if(seaAlpha3 > 0.02){
+        for(var di3 = 0; di3 < SP.dots.length; di3++){
+          var d3 = SP.dots[di3];
+          var yCss3 = spDotBobY(d3, t);
+          if(yCss3 < visTopCss3 - 30 || yCss3 > visBotCss3 + 30) continue;
+          var x3 = d3.fx * W + Math.sin(t * d3.swaySp + d3.sway) * 7 * s.dpr, y3 = yCss3 * kTile3;
+          var tw3 = 0.55 + 0.45 * Math.sin(t * 2 + d3.tw);
+          var fl3 = d3.snow ? 0 : spSequenceGlow(d3, now);
+          if(fl3 > 0.02){
+            var haloR3 = d3.r * s.dpr * (4 + 7 * fl3);
+            pctx.fillStyle = 'rgba(64,255,213,' + (0.30 * fl3 * seaAlpha3).toFixed(3) + ')';
+            pctx.beginPath(); pctx.arc(x3, y3, haloR3, 0, 6.29); pctx.fill();
+            pctx.fillStyle = 'rgba(64,255,213,' + (0.48 * fl3 * seaAlpha3).toFixed(3) + ')';
+            pctx.beginPath(); pctx.arc(x3, y3, haloR3 * 0.45, 0, 6.29); pctx.fill();
+            pctx.fillStyle = 'rgba(190,255,240,' + ((0.40 + 0.6 * fl3) * seaAlpha3).toFixed(3) + ')';
+            pctx.beginPath(); pctx.arc(x3, y3, d3.r * s.dpr * (1 + 0.9 * fl3), 0, 6.29); pctx.fill();
+            continue;
+          }
+          if(d3.snow) pctx.fillStyle = 'rgba(235,242,244,' + ((0.28 * tw3 + 0.12) * seaAlpha3).toFixed(3) + ')';
+          else if(d3.hue < 0.62) pctx.fillStyle = 'rgba(143,227,255,' + (0.75 * tw3 * glowBoost3 * seaAlpha3).toFixed(3) + ')';
+          else if(d3.hue < 0.88) pctx.fillStyle = 'rgba(150,255,196,' + (0.7 * tw3 * glowBoost3 * seaAlpha3).toFixed(3) + ')';
+          else pctx.fillStyle = 'rgba(255,224,138,' + (0.7 * tw3 * glowBoost3 * seaAlpha3).toFixed(3) + ')';
+          pctx.beginPath(); pctx.arc(x3, y3, d3.r * s.dpr, 0, 6.29); pctx.fill();
+          if(!d3.snow && d3.r > 1.9){
+            pctx.fillStyle = 'rgba(160,235,255,' + (0.10 * tw3 * glowBoost3 * seaAlpha3).toFixed(3) + ')';
+            pctx.beginPath(); pctx.arc(x3, y3, d3.r * s.dpr * 3.1, 0, 6.29); pctx.fill();
+          }
+        }
+      }
+    }
     /* BUILD 101 — THE BACKGROUND TURNS (his call): in a river the
        dimmed horizontal sea was not enough — the water behind the
        stream flips VERTICAL too: the same layers rotated, strata

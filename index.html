@@ -684,6 +684,56 @@ body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{ba
    order breaks the z-1 tie: trench first, plankton canvas after. */
 #sea-trench{position:absolute; inset:0; z-index:1; background:#000; opacity:0; pointer-events:none; transition:opacity .25s ease}
 #sea-plankton-canvas{position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none}
+/* MOBILE WINDOW MODE (Nov 17, 2026 — his word: "keep pc design while
+   optimizing for phones with whatever is necessary"): on phones the
+   Sea's water leaves the page-tall layout entirely. The two canvases
+   and the trench become FIXED viewport layers — the Sea Demo's proven
+   model (its water has always ridden the viewport, and it runs clean
+   on his phone) — and the sea runner paints the visible window into
+   them in page coordinates (see WIN in the sea runner). The bw-mob
+   class exists only when __bwMobilePerf is true; PC never enters. */
+html.bw-mob #sea-canvas{position:fixed; top:0; left:0; width:100%; height:100%}
+html.bw-mob #sea-trench{position:fixed; top:0; left:0; width:100%; height:100%}
+html.bw-mob #sea-plankton-canvas{position:fixed; top:0; left:0; width:100%; height:100%}
+/* WINDOW MODE v2 (Nov 17, 2026): the Sea-mode paint itself moves to
+   the demo's layer types. The gradient column becomes a page-tall
+   CSS background (the demo's body background, verbatim stops — here
+   in px over the Sea's own depth span, 13,000 m at 0.045 m/px =
+   288,889 CSS px, so the water at a given depth is the same
+   forever), and the rays become the demo's CSS-animated DOM layer.
+   Both elements are created by the sea runner on mobile only and
+   stay display:none everywhere else. */
+#sea-waterbg, #sea-rays{display:none}
+html.bw-mob #sea-waterbg{display:block; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background-image:linear-gradient(180deg, #14607e 0px, #0d4a68 17333px, #083650 40444px, #062a44 69333px, #041c31 109778px, #02101f 158889px, #01070f 208000px, #00040a 254222px, #000000 288889px);
+  background-size:100% 288889px; background-repeat:no-repeat; background-position:0 0}
+html.bw-mob #sea-rays{display:block; position:fixed; left:0; right:0; top:0; height:100%; z-index:0; pointer-events:none; overflow:hidden;
+  -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 84px); mask-image:linear-gradient(180deg, transparent 0, #000 84px)}
+html.bw-mob #sea-rays .surface-light{position:absolute; left:0; right:0; top:0; height:62vh;
+  background:radial-gradient(ellipse 95% 48% at 30% -12%, rgba(196,242,255,.38), transparent 62%),
+    radial-gradient(ellipse 72% 42% at 78% -10%, rgba(255,242,196,.24), transparent 62%),
+    linear-gradient(180deg, rgba(170,228,248,.16), transparent 72%)}
+html.bw-mob #sea-rays .streaks{position:absolute; left:-10%; right:-10%; top:0; height:115vh;
+  background:repeating-linear-gradient(105deg, transparent 0 90px, rgba(178,232,250,.05) 90px 92px, transparent 92px 190px);
+  -webkit-mask-image:linear-gradient(180deg, #000 0%, transparent 82%); mask-image:linear-gradient(180deg, #000 0%, transparent 82%);
+  animation:bwStreakDrift 52s linear infinite}
+@keyframes bwStreakDrift{from{transform:translateX(0)} to{transform:translateX(190px)}}
+html.bw-mob #sea-rays .raybeam{position:absolute; top:-24vh; height:128vh;
+  background:linear-gradient(180deg, rgba(255,247,208,.55), rgba(198,238,255,.16) 42%, transparent 76%);
+  filter:blur(7px); mix-blend-mode:screen; transform-origin:50% 0; transform:rotate(16deg);
+  animation:bwRayShimmer 8s ease-in-out infinite alternate; will-change:opacity, transform}
+html.bw-mob #sea-rays .raybeam.b1{left:4%; width:120px; animation-duration:9s}
+html.bw-mob #sea-rays .raybeam.b2{left:19%; width:52px; animation-duration:6.5s; animation-delay:-2s}
+html.bw-mob #sea-rays .raybeam.b3{left:33%; width:170px; animation-duration:11s; animation-delay:-5s}
+html.bw-mob #sea-rays .raybeam.b4{left:55%; width:64px; animation-duration:7.5s; animation-delay:-1s}
+html.bw-mob #sea-rays .raybeam.b5{left:70%; width:140px; animation-duration:10s; animation-delay:-4s}
+html.bw-mob #sea-rays .raybeam.b6{left:86%; width:48px; animation-duration:6s; animation-delay:-3s}
+@keyframes bwRayShimmer{from{opacity:.38; transform:rotate(15deg) translateX(-6px)} to{opacity:.85; transform:rotate(17.5deg) translateX(8px)}}
+html.bw-mob #sea-rays .surface-pool{position:absolute; left:0; right:0; top:0; height:16vh;
+  background:linear-gradient(180deg, rgba(230,250,255,.20), transparent)}
+@media (prefers-reduced-motion: reduce){
+  html.bw-mob #sea-rays .raybeam, html.bw-mob #sea-rays .streaks{animation:none !important}
+}
 .post-head .post-del{margin-left:8px}
 .cmt-list{margin:2px 0 12px; display:flex; flex-direction:column; gap:10px}
 .cmt{background:rgba(13,7,22,.45); border:1px solid rgba(184,166,217,.18); border-radius:10px; padding:9px 13px}
@@ -2713,6 +2763,7 @@ if(!window.__bwHeal108){
    much paint work a phone is asked to do. */
 var BW_MOBILE_PERF = !!(window.matchMedia && (window.matchMedia('(pointer:coarse)').matches || window.matchMedia('(max-width:760px)').matches));
 window.__bwMobilePerf = BW_MOBILE_PERF;
+if(BW_MOBILE_PERF){ try{ document.documentElement.classList.add('bw-mob'); }catch(e){} }
 
 /* ---------- canvas plumbing: only the visible view's canvas runs ---------- */
 var runners = window.__bwRunners || (window.__bwRunners = {});   // shared with part 2
@@ -6834,7 +6885,11 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       if(t.closest('.post-card, .side-panel, .door, .post-composer, .sea-note, .page-head, button, a, input, textarea, select, form, video, audio, .chip, .depth-gauge, .waters-pick, .river-members')) return;
       var pcvEl = document.getElementById('sea-plankton-canvas');
       if(!pcvEl) return;
-      var rect = pcvEl.getBoundingClientRect();
+      /* WINDOW MODE (mobile): the plankton canvas rides the viewport,
+         so its own rect no longer measures page depth — the Sea
+         section's rect does (page Y = clientY - section top, the
+         same arithmetic the page-tall canvas used to give). */
+      var rect = window.__bwMobilePerf ? vs.getBoundingClientRect() : pcvEl.getBoundingClientRect();
       var cxCss = e.clientX - rect.left, cyCss = e.clientY - rect.top;
       if(cxCss < 0 || cyCss < 0 || cxCss > rect.width || cyCss > rect.height) return;
       var now = performance.now(), tSec = now / 1000;
@@ -6875,12 +6930,100 @@ runners['sea-canvas'] = function(canvas, ctx, state){
     field: SP
   };
 
+  /* — WINDOW MODE (Nov 17, 2026, mobile only — WIN is false on PC and
+     every branch below falls back to the shipped expressions): the
+     two canvases are FIXED viewport layers (CSS: html.bw-mob), so
+     the bitmap is one screenful, exactly like the Sea Demo's water.
+     The frame keeps painting in PAGE coordinates: the context is
+     translated by -visTop each frame (see the clear block) and
+     `rect` is synthesized as the page-tall canvas the math was born
+     with (top = -visTopCss, height = content height). Every paint
+     formula downstream is the shipped one; only the window the
+     paint lands on moved. Diagnosis (sea-mobilefix-qa): with the
+     paint loop stopped dead the giant layers cost the same as with
+     it running — the page-tall layers themselves were the jank. — */
+  var WIN = !!window.__bwMobilePerf;
+  /* WINDOW MODE v2: the demo's layer types for Sea-mode paint —
+     a page-tall CSS-gradient div (the water column) and a fixed
+     CSS-animated rays layer — created here, on mobile only, and
+     driven per frame with the shipped laws (gradient keyed to
+     page depth; rays below the header, gone after 640px of dive,
+     crossfaded out in lake/river mode by seaAlpha). */
+  var domBg = null, domRays = null;
+  function ensureDomLayers(){
+    if(domBg || !WIN) return;
+    var vs = document.getElementById('view-sea');
+    if(!vs || !canvas.parentNode) return;
+    domBg = document.createElement('div');
+    domBg.id = 'sea-waterbg'; domBg.setAttribute('aria-hidden', 'true');
+    vs.insertBefore(domBg, canvas);
+    domRays = document.createElement('div');
+    domRays.id = 'sea-rays'; domRays.setAttribute('aria-hidden', 'true');
+    domRays.innerHTML = '<div class="surface-light"></div><div class="streaks"></div><div class="raybeam b1"></div><div class="raybeam b2"></div><div class="raybeam b3"></div><div class="raybeam b4"></div><div class="raybeam b5"></div><div class="raybeam b6"></div><div class="surface-pool"></div>';
+    vs.insertBefore(domRays, canvas);
+  }
+  function driveDomLayers(hdrCss, raysOp, bgOp){
+    ensureDomLayers();
+    if(!domBg) return;
+    if(state._bgOpW === undefined || Math.abs(state._bgOpW - bgOp) > 0.004){
+      state._bgOpW = bgOp; domBg.style.opacity = bgOp.toFixed(3);
+    }
+    if(!domRays) return;
+    if(state._raysTopW !== hdrCss){ state._raysTopW = hdrCss; domRays.style.top = hdrCss + 'px'; }
+    if(state._raysOpW === undefined || Math.abs(state._raysOpW - raysOp) > 0.004){
+      state._raysOpW = raysOp;
+      domRays.style.opacity = raysOp.toFixed(3);
+      domRays.style.visibility = raysOp <= 0.004 ? 'hidden' : 'visible';
+    }
+    var sy = Math.round(window.scrollY || 0);
+    if(state._raysTyW !== sy){ state._raysTyW = sy; domRays.style.transform = 'translate3d(0,' + (-sy) + 'px,0)'; }
+  }
+  function winFit(){
+    var key = window.innerWidth + 'x' + window.innerHeight + 'x' + (window.devicePixelRatio || 1);
+    if(state._winKey !== key || !state._winS){
+      state._winKey = key;
+      state._winS = fitCanvas(canvas);
+      if(pctx) fitCanvas(pcv);
+    }
+    return state._winS;
+  }
+
   function frame(now){
     if(!running['sea-canvas']) return;
-    var s = fitCanvas(canvas), W=s.w, H=s.h, t = now/1000;
+    var t = now/1000;
+    var s, rect, visTopCssW = 0;
+    if(WIN){
+      /* window head: the section's document position is re-measured
+         on the BUILD 102 cadence; between measures the visible
+         window is pure scroll arithmetic — no layout reads ride
+         the scroll path, and the bitmaps are refit only when the
+         viewport itself changes size. */
+      state._winTick = (state._winTick || 0) + 1;
+      if(!state._secElW) state._secElW = document.getElementById('view-sea');
+      if(state._winTick % 20 === 1 || state._secDocTopW === undefined){
+        if(state._secElW) state._secDocTopW = state._secElW.getBoundingClientRect().top + (window.scrollY || 0);
+      }
+      var vhCssW = (window.visualViewport ? window.visualViewport.height : (window.innerHeight || 800));
+      var pageCssHW = Math.max(state._targetH102 || 0, vhCssW);
+      var maxTopW = Math.max(0, pageCssHW - vhCssW);
+      /* NB: no lower clamp — before the section's top reaches the
+         viewport's top (the page load moment, header still on
+         screen) the window's page-Y origin is legitimately
+         negative, and the translate must carry the paint down to
+         meet the section, exactly as the section's own rect does
+         for the lake pin below. Clamping at 0 parked the pond at
+         the viewport's top edge and shifted the shallow plankton. */
+      visTopCssW = Math.min(maxTopW, (window.scrollY || 0) - (state._secDocTopW || 0));
+      state._sTopW = (state._secDocTopW || 0) - (window.scrollY || 0);
+      s = winFit();
+      rect = { left: 0, top: -visTopCssW, width: window.innerWidth || 0, height: pageCssHW };
+    } else {
+      s = fitCanvas(canvas);
+      if(pctx) fitCanvas(pcv);
+      rect = canvas.getBoundingClientRect();
+    }
+    var W = s.w, H = s.h;
     tileHcur = Math.max(160, Math.min(H, (window.visualViewport ? window.visualViewport.height : (window.innerHeight || 800)) * s.dpr));
-    if(pctx) fitCanvas(pcv);
-    var rect = canvas.getBoundingClientRect();
     /* — PERF PASS (Nov 17): two more internals, look untouched.
        1) The header height the rays offset by is measured on
           resize, not read from layout every frame.
@@ -6897,14 +7040,26 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       state._hdrKey3 = window.innerWidth;
     }
     var hdrCss3 = state._hdrCss3;
-    var kTileH = rect.height ? (H / rect.height) : s.dpr;
+    var kTileH = WIN ? s.dpr : (rect.height ? (H / rect.height) : s.dpr);
     var off3 = hdrCss3 * kTileH;
     var vhH = (window.innerHeight || 800) * kTileH;
     var cTop3 = Math.max(0, -rect.top * kTileH - 8 * s.dpr);
     var cBot3 = Math.min(H, -rect.top * kTileH + vhH + 8 * s.dpr);
     if(cTop3 < vhH * 1.35 + off3) cBot3 = Math.min(H, Math.max(cBot3, off3 + vhH * 1.30)); /* the rays paint past the fold near the surface */
     if(state.lakeK > 0.003){ cTop3 = Math.max(0, cTop3 - vhH * 0.3); cBot3 = Math.min(H, cBot3 + vhH * 0.3); }
-    if(state.riverK === undefined || state.riverK > 0.003 || cBot3 <= cTop3){
+    if(WIN){
+      /* WINDOW MODE: the bitmap IS the window — clear it whole under
+         an identity transform, then shift the pen into page space.
+         Every paint below lands in the same page coordinates the
+         page-tall canvas used; only the visible slice exists. */
+      var tyW = -Math.round(visTopCssW * s.dpr);
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, W, H);
+      ctx.setTransform(1, 0, 0, 1, 0, tyW);
+      if(pctx){
+        pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.clearRect(0, 0, pcv.width, pcv.height);
+        pctx.setTransform(1, 0, 0, 1, 0, tyW);
+      }
+    } else if(state.riverK === undefined || state.riverK > 0.003 || cBot3 <= cTop3){
       ctx.clearRect(0, 0, W, H);
       if(pctx) pctx.clearRect(0, 0, pcv.width, pcv.height);
     } else {
@@ -6953,7 +7108,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       ? (inner102 ? inner102.scrollHeight : 0)
       : (state._targetH102 || 0);
     if(targetH102 > 10) state._targetH102 = targetH102;
-    if(targetH102 > 10){
+    if(targetH102 > 10 && !WIN){
       var curH102 = parseFloat(canvas.style.height) || 0;
       if(Math.abs(curH102 - targetH102) > 3) canvas.style.height = targetH102 + 'px';
       if(pcv){ var curPH102 = parseFloat(pcv.style.height) || 0; if(Math.abs(curPH102 - targetH102) > 3) pcv.style.height = targetH102 + 'px'; }
@@ -7018,11 +7173,17 @@ runners['sea-canvas'] = function(canvas, ctx, state){
        Painted only across the visible window, and faded out
        entirely in lake/river mode (outside the pond's rim there
        is no water — just the page — exactly as the waves did). */
-    var kTile3 = rect.height ? (H / rect.height) : s.dpr;
+    var kTile3 = WIN ? s.dpr : (rect.height ? (H / rect.height) : s.dpr);
+    /* PH3: the page's full height in bitmap px — the span the legacy
+       river/lake loops were written against. Off the window path it
+       IS H, untouched; on it, the loops below bound themselves to
+       the visible slice of this span instead of painting a whole
+       page that no longer exists as a bitmap. */
+    var PH3 = WIN ? Math.round(rect.height * kTile3) : H;
     var visTop3 = Math.max(0, -rect.top * kTile3 - 8 * s.dpr);
-    var visBot3 = Math.min(H, -rect.top * kTile3 + (window.innerHeight || 800) * kTile3 + 8 * s.dpr);
+    var visBot3 = Math.min(WIN ? PH3 : H, -rect.top * kTile3 + (window.innerHeight || 800) * kTile3 + 8 * s.dpr);
     var seaAlpha3 = (1 - state.lakeK) * (1 - state.riverK);
-    if(seaAlpha3 > 0.003 && visBot3 > visTop3){
+    if(!WIN && seaAlpha3 > 0.003 && visBot3 > visTop3){
       if(!state._grad3 || state._gradKey3 !== H + '|' + kTile3){
         var g3 = ctx.createLinearGradient(0, 0, 0, (SP_TOTAL_M / SP_M_PER_PX) * kTile3);
         g3.addColorStop(0.00, '#14607e'); g3.addColorStop(0.06, '#0d4a68');
@@ -7107,6 +7268,15 @@ runners['sea-canvas'] = function(canvas, ctx, state){
         ctx.restore();
       }
     }
+    if(WIN){
+      /* WINDOW MODE v2: the water column and the rays live on the
+         DOM layers now (the sea canvas keeps lake/river only and
+         stays transparent here — it was cleared at the frame head).
+         The rays' fade is the shipped law: full at the surface,
+         gone after ~640px of dive, and seaAlpha carries the
+         lake/river crossfade for both layers. */
+      driveDomLayers(hdrCss3, seaAlpha3 * Math.max(0, 1 - (window.scrollY || 0) / 640), seaAlpha3);
+    }
     /* — the plankton field, on its own canvas above the trench:
        dots hold true page depths, only the visible window paints,
        and the deeper you scroll the harder they shine (the demo's
@@ -7185,19 +7355,21 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       };
       ctx.save();
       ctx.beginPath();
-      for(var ey = 0; ey <= H; ey += 12){ var exL110 = edge110(ey, -1); if(ey === 0) ctx.moveTo(exL110, ey); else ctx.lineTo(exL110, ey); }
-      for(var ey2 = H; ey2 >= 0; ey2 -= 12){ ctx.lineTo(edge110(ey2, 1), ey2); }
+      var bY0 = WIN ? Math.max(0, Math.floor(visTop3) - 12) : 0;
+      var bY1 = WIN ? Math.min(PH3, Math.ceil(visBot3) + 12) : PH3;
+      for(var ey = bY0; ey <= bY1; ey += 12){ var exL110 = edge110(ey, -1); if(ey === bY0) ctx.moveTo(exL110, ey); else ctx.lineTo(exL110, ey); }
+      for(var ey2 = bY1; ey2 >= bY0; ey2 -= 12){ ctx.lineTo(edge110(ey2, 1), ey2); }
       ctx.closePath(); ctx.clip();
       layers.forEach(function(L){
         if(!L._rgb) return;
-        ctx.beginPath(); ctx.moveTo(W, 0);
-        for(var vy = 0; vy <= H; vy += 6){
+        ctx.beginPath(); ctx.moveTo(W, bY0);
+        for(var vy = bY0; vy <= bY1; vy += 6){
           var vx = W / 2 + (L.base - 0.5) * 2 * bandHalf110 * 0.92
             + Math.sin(vy * L.len * 2.2 + riverTF * L.spd * 3.4) * W * L.amp * ampK * 0.55
             + Math.sin(vy * L.len * 5.9 - riverTF * L.spd * 2.6) * W * L.amp * 0.45 * ampK * 0.55;
           ctx.lineTo(vx, vy);
         }
-        ctx.lineTo(W, H); ctx.closePath();
+        ctx.lineTo(W, bY1); ctx.closePath();
         ctx.fillStyle = 'rgb(' + L._rgb[0] + ',' + L._rgb[1] + ',' + L._rgb[2] + ')';
         ctx.globalAlpha = (L._alp === undefined ? 0.6 : L._alp) * 0.42 * state.riverK;
         ctx.fill();
@@ -7224,7 +7396,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
            (~⅔ inch) BELOW true center now, his call superseding the
            dead-center pin. The radius cap below tightens by the same
            amount, so the whole disc still fits the screen. */
-        var r110 = canvas.getBoundingClientRect();
+        var r110 = WIN ? null : canvas.getBoundingClientRect();
         /* FINAL FIXES (Nov 9, 04:22 — his eyes: "center it to page
            always... no matter how you scroll"): the center is read
            from the VISUAL viewport — the rectangle the eye actually
@@ -7237,8 +7409,8 @@ runners['sea-canvas'] = function(canvas, ctx, state){
         var vv110 = window.visualViewport;
         var vh110 = vv110 ? vv110.height : (window.innerHeight || 800);
         var vo110 = vv110 ? vv110.offsetTop : 0;
-        var mid110 = vo110 + vh110 * 0.5 - r110.top + LAKE_DY111;
-        var k110 = r110.height ? (H / r110.height) : s.dpr;
+        var mid110 = WIN ? (vo110 + vh110 * 0.5 - state._sTopW + LAKE_DY111) : (vo110 + vh110 * 0.5 - r110.top + LAKE_DY111);
+        var k110 = WIN ? s.dpr : (r110.height ? (H / r110.height) : s.dpr);
         /* THE POND PIN — FINAL LAW (his word, Nov 9, owning the
            confusion himself and closing it): "Lake should not scroll
            up like this. It should always stay centered on the mobile
@@ -7249,7 +7421,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
            the canvas's own device pixels and clamped to the canvas,
            recomputed every frame — at every scroll depth, phone
            and PC alike, the pond's center IS the screen's center. */
-        return Math.max(0, Math.min(H, mid110 * k110));
+        return Math.max(0, Math.min(WIN ? PH3 : H, mid110 * k110));
       })();
       /* BUILD 102 (his call): "the bigger the posts and scroll
          gets, the bigger the lake grows" — the pond swells with
@@ -7275,7 +7447,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       }
       var pondT102 = Math.min(1.45, 1.0 + 0.06 * pondN102);
       state.pondGrow += (pondT102 - state.pondGrow) * 0.03;
-      var Rb = Math.min(W, H) * 0.385 * state.pondGrow * (1 + 0.06 * Math.sin(t * 0.10)); /* BUILD 110: the warp — bigger and smaller, very very slow (~63s a breath). The rim wiggle above is untouched. */
+      var Rb = Math.min(W, PH3) * 0.385 * state.pondGrow * (1 + 0.06 * Math.sin(t * 0.10)); /* BUILD 110: the warp — bigger and smaller, very very slow (~63s a breath). The rim wiggle above is untouched. */
       var vhCap111 = (window.visualViewport ? window.visualViewport.height : (window.innerHeight || 800));
       Rb = Math.min(Rb, W * 0.47, vhCap111 * s.dpr * Math.max(0.30, (0.5 - LAKE_DY111 / vhCap111) * 0.94)); /* FINAL FIXES: this cap is device px, like Rb — CSS px here quietly halved the pond on retina screens. Nov 10: the fraction is (0.5 − LAKE_DY/vh) × 0.94 — the drop, plus headroom for the wavy rim's swell, so the lowered pond still fits rim to rim (rig-measured: bottom margin −5px before the 0.94, ≥0 after). */
       /* the rim itself is wavy — the waveform circle with the music
@@ -7355,6 +7527,11 @@ runners['sea-canvas'] = function(canvas, ctx, state){
          as a fast wavy line, and the inner threads ripple faster
          too. */
       var rBase = riverBaseF; /* FINAL FIXES (Nov 9, 04:31): way bigger — landing just a tad narrower than the post boxes, his exact words */
+      /* WINDOW MODE: the pour's loops walk only the visible slice of
+         the page span (pY0..pY1); off the window path they are the
+         shipped -24..H+24, unchanged. */
+      var pY0 = WIN ? Math.max(-24, Math.floor(visTop3) - 24) : -24;
+      var pY1 = WIN ? Math.min(PH3 + 24, Math.ceil(visBot3) + 24) : PH3 + 24;
       /* the pour leans gold, the way the forge's stream does — mixed
          from the water's own color so the seasons still run it */
       var pourRGB = [Math.round(moodRGB[0] + (255 - moodRGB[0]) * 0.38), Math.round(moodRGB[1] + (209 - moodRGB[1]) * 0.38), Math.round(moodRGB[2] + (102 - moodRGB[2]) * 0.38)];
@@ -7363,8 +7540,8 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       var rTh = function(y){ return rBase * (1 + 0.16 * Math.sin(y * 0.011 + riverTF * 1.7) + 0.06 * Math.sin(y * 0.027 - riverTF * 2.6) + 0.03 * Math.sin(y * 0.061 + riverTF * 3.9)); }; /* BUILD 110: the edges calm — the wiggle lives in the centerline now */
       /* the pour itself: one filled ribbon, bulging and narrowing */
       ctx.beginPath();
-      for(var ry = -24; ry <= H + 24; ry += 10){ var exL = rCx(ry) - rTh(ry); if(ry === -24) ctx.moveTo(exL, ry); else ctx.lineTo(exL, ry); }
-      for(var ry2 = H + 24; ry2 >= -24; ry2 -= 10){ ctx.lineTo(rCx(ry2) + rTh(ry2), ry2); }
+      for(var ry = pY0; ry <= pY1; ry += 10){ var exL = rCx(ry) - rTh(ry); if(ry === pY0) ctx.moveTo(exL, ry); else ctx.lineTo(exL, ry); }
+      for(var ry2 = pY1; ry2 >= pY0; ry2 -= 10){ ctx.lineTo(rCx(ry2) + rTh(ry2), ry2); }
       ctx.closePath();
       ctx.fillStyle = pour;
       ctx.globalAlpha = 0.5 * state.riverK;
@@ -7378,7 +7555,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
          a soft light core down the center, wide enough to read as
          liquid, where before only hairlines ran. */
       ctx.beginPath();
-      for(var ryC = -24; ryC <= H + 24; ryC += 10){ var cxC = rCx(ryC); if(ryC === -24) ctx.moveTo(cxC, ryC); else ctx.lineTo(cxC, ryC); }
+      for(var ryC = pY0; ryC <= pY1; ryC += 10){ var cxC = rCx(ryC); if(ryC === pY0) ctx.moveTo(cxC, ryC); else ctx.lineTo(cxC, ryC); }
       ctx.strokeStyle = 'rgb(' + Math.min(255, pourRGB[0] + 60) + ',' + Math.min(255, pourRGB[1] + 55) + ',' + Math.min(255, pourRGB[2] + 40) + ')';
       ctx.globalAlpha = 0.55 * state.riverK;
       ctx.lineWidth = Math.max(3 * s.dpr, rBase * 1.9); /* BUILD 110 (his words): the light top layer a LOT thicker — almost the post boxes' presence, not quite */
@@ -7392,15 +7569,17 @@ runners['sea-canvas'] = function(canvas, ctx, state){
          untouched; every other layer stays exactly as it was. */
       ctx.save();
       ctx.beginPath();
-      for(var ryR = -24; ryR <= H + 24; ryR += 10){ var exR = rCx(ryR) - rTh(ryR); if(ryR === -24) ctx.moveTo(exR, ryR); else ctx.lineTo(exR, ryR); }
-      for(var ryR2 = H + 24; ryR2 >= -24; ryR2 -= 10){ ctx.lineTo(rCx(ryR2) + rTh(ryR2), ryR2); }
+      for(var ryR = pY0; ryR <= pY1; ryR += 10){ var exR = rCx(ryR) - rTh(ryR); if(ryR === pY0) ctx.moveTo(exR, ryR); else ctx.lineTo(exR, ryR); }
+      for(var ryR2 = pY1; ryR2 >= pY0; ryR2 -= 10){ ctx.lineTo(rCx(ryR2) + rTh(ryR2), ryR2); }
       ctx.closePath();
       ctx.clip();
       ctx.strokeStyle = 'rgb(' + Math.min(255, pourRGB[0] + 110) + ',' + Math.min(255, pourRGB[1] + 100) + ',' + Math.min(255, pourRGB[2] + 80) + ')';
       ctx.lineWidth = Math.max(1, 1.3 * s.dpr);
-      var ripStep = Math.max(46 * s.dpr, H / 16);
+      var ripStep = Math.max(46 * s.dpr, PH3 / 16);
       var ripDrift = (riverTF * 9) % ripStep;
-      for(var ripY = -ripStep + ripDrift; ripY < H + ripStep; ripY += ripStep){
+      var ripY0 = -ripStep + ripDrift;
+      if(WIN){ var advR = Math.floor((visTop3 - ripStep - ripY0) / ripStep); if(advR > 0) ripY0 += advR * ripStep; }
+      for(var ripY = ripY0; ripY < (WIN ? visBot3 + ripStep : PH3 + ripStep); ripY += ripStep){
         var ripCx = rCx(ripY), ripW = rTh(ripY) * 0.92;
         ctx.beginPath();
         for(var ripX = -ripW; ripX <= ripW; ripX += 7){
@@ -7415,9 +7594,9 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       /* two slow threads riding inside the stream */
       [-0.38, 0.38].forEach(function(off){
         ctx.beginPath();
-        for(var ry3 = -24; ry3 <= H + 24; ry3 += 9){
+        for(var ry3 = pY0; ry3 <= pY1; ry3 += 9){
           var xx3 = rCx(ry3) + rTh(ry3) * off + Math.sin(ry3 * 0.014 - riverTF * 2.8 + off * 4) * 3 * s.dpr;
-          if(ry3 === -24) ctx.moveTo(xx3, ry3); else ctx.lineTo(xx3, ry3);
+          if(ry3 === pY0) ctx.moveTo(xx3, ry3); else ctx.lineTo(xx3, ry3);
         }
         ctx.strokeStyle = pour;
         ctx.globalAlpha = 0.65 * state.riverK;

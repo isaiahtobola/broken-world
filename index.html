@@ -414,6 +414,9 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
    the five-door row, wearing the staircase step that follows
    Exhibit Two — door-2's own plum gradient. */
 .door-6{background:linear-gradient(150deg, #3a2560, #291b44)}
+/* Exhibit Seven hangs under Exhibit Six (Nov 17, 2026, his green light):
+   the Sea Demo door wears the deepest staircase step — door-1's plum. */
+.door-7{background:linear-gradient(150deg, #291b44, #1f1433)}
 .sea-left .door{margin-top:18px}
 /* NOV 14 late — GOLDEN DOORS (his call, 23:39): a door under the
    cursor — or under a dragging finger — turns gold and glows; the
@@ -446,6 +449,7 @@ body[data-theme="xmas"] .post-card, body[data-theme="xmas"] .post-composer{backg
    designated theme colors now; normal days keep their plum. */
 body[data-theme="halloween"] .door-1, body[data-theme="xmas"] .door-1{background:linear-gradient(150deg, var(--panel2), var(--panel))}
 body[data-theme="halloween"] .door-2, body[data-theme="xmas"] .door-2, body[data-theme="halloween"] .door-3, body[data-theme="xmas"] .door-3, body[data-theme="halloween"] .door-4, body[data-theme="xmas"] .door-4, body[data-theme="halloween"] .door-5, body[data-theme="xmas"] .door-5, body[data-theme="halloween"] .door-6, body[data-theme="xmas"] .door-6{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
+body[data-theme="halloween"] .door-7, body[data-theme="xmas"] .door-7{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
 body[data-theme="halloween"] .sea-note, body[data-theme="xmas"] .sea-note{background:linear-gradient(140deg, var(--panel2), var(--panel)); border-color:var(--gold)}
 body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{background:var(--panel); border-color:var(--gold)}
 /* REFINED (his calls, Nov 15 02:39 + 02:47): posts used to glow
@@ -2065,6 +2069,52 @@ html.kint-lock{overflow:hidden !important}
       <h1>Groups Feed</h1>
       <p>View groups and posts below.</p>
     </div>
+    <!-- Exhibits, folded for phones (Nov 17, 2026, his plan): one small
+         button at the top of the Sea opens all seven doors in a popup
+         wearing the demo's deep-sea design. Mobile only — on PC the
+         doors keep hanging where they hang. -->
+    <style>
+      .sea7-btn{ display:none; }
+      .sea7-overlay{ display:none; }
+      @media (max-width:760px){
+        .sea7-btn{
+          display:inline-flex; align-items:center; gap:7px; margin:14px 0 2px;
+          font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+          color:#0a141c; font-weight:700; cursor:pointer; min-height:40px;
+          background:linear-gradient(180deg, var(--yellow), var(--gold));
+          border:1px solid rgba(240,183,63,.85); border-radius:999px; padding:8px 16px;
+        }
+        .sea7-overlay{
+          position:fixed; inset:0; z-index:1200; overflow:hidden;
+          background:linear-gradient(180deg, #14607e 0%, #0d4a68 26%, #083650 52%, #041c31 78%, #02101f 100%);
+        }
+        .sea7-overlay.open{ display:block; }
+        .sea7-rays{
+          position:absolute; inset:0; pointer-events:none; overflow:hidden;
+          background:
+            radial-gradient(ellipse 95% 34% at 30% -10%, rgba(196,242,255,.30), transparent 62%),
+            repeating-linear-gradient(105deg, transparent 0 90px, rgba(178,232,250,.055) 90px 92px, transparent 92px 190px);
+          -webkit-mask-image:linear-gradient(180deg, #000 0%, transparent 78%);
+          mask-image:linear-gradient(180deg, #000 0%, transparent 78%);
+        }
+        .sea7-scroll{ position:relative; z-index:2; height:100%; overflow-y:auto; padding:22px 16px 40px; -webkit-overflow-scrolling:touch; }
+        .sea7-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+        .sea7-head h2{ margin:0; font-size:26px; font-weight:800; color:#fff; }
+        .sea7-sub{ font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#8fe3ff; margin-top:4px; }
+        .sea7-close{ background:rgba(2,8,14,.6); border:1px solid rgba(242,193,78,.5); color:#ffe08a; width:40px; height:40px; min-height:40px; border-radius:50%; font-size:16px; cursor:pointer; flex:0 0 auto; }
+        .sea7-list{ display:flex; flex-direction:column; gap:10px; }
+        .sea7-card{
+          display:flex; align-items:center; justify-content:space-between; gap:12px; text-decoration:none;
+          background:rgba(8,17,24,.72); border:1px solid rgba(242,193,78,.35); border-radius:14px; padding:14px 16px;
+        }
+        .sea7-text{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+        .sea7-num{ font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#f2c14e; }
+        .sea7-name{ font-size:18px; font-weight:700; color:#f7ead1; line-height:1.2; }
+        .sea7-sub2{ font-size:13px; color:#9db8bd; line-height:1.35; }
+        .sea7-arrow{ font-family:var(--mono); color:#f2c14e; font-size:18px; flex:0 0 auto; }
+      }
+    </style>
+    <button class="sea7-btn" id="sea7-btn" type="button">◆ Exhibits</button>
     <!-- The five exhibits, layered into each other (his restructure; Instant Beat door removed 2026-10-30 — the invention stays private for now; the board door added Nov 11, 2026 on his green light; the Tree Diagram and Theology doors added Nov 13, 2026 on his green light; Nov 14, 2026: the Mars book takes slot five and the board leaves the row to hang as Exhibit Six under the Rivers bank — five doors, left to right in his order: Ocean, Tree Diagram, Completion Filter, Theology, Mars) -->
     <div class="doors">
       <a class="door door-1" href="https://isaiahtobola.github.io/bw-ocean/" target="_blank" rel="noopener">
@@ -2112,6 +2162,13 @@ html.kint-lock{overflow:hidden !important}
           <h3>UFO Conspiracy Hypothetical versus Science</h3>
           <p>His thoughts, pinned up against the science — the detective board.</p>
           <span class="door-arrow">Open ↗</span>
+        </a>
+        <!-- Exhibit Seven (Nov 17, 2026, his green light): the Sea Demo door hangs here, under the board. -->
+        <a class="door door-7" href="sea-demo/" target="_blank" rel="noopener">
+          <span class="door-kicker">Exhibit Seven · The Demo</span>
+          <h3>Sea Demo — 13,000 Deep</h3>
+          <p>The deep-sea demonstration — sun rays at the surface, plankton chains, and the ROV patrolling the trench.</p>
+          <span class="door-arrow">Dive ↗</span>
         </a>
       </aside>
             <div class="feed">
@@ -12023,5 +12080,85 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
   }, true);
 })();
 </script>
+    <div class="sea7-overlay" id="sea7-overlay" role="dialog" aria-modal="true" aria-label="Exhibits — the seven doors">
+      <div class="sea7-rays" aria-hidden="true"></div>
+      <div class="sea7-scroll">
+        <div class="sea7-head">
+          <div>
+            <h2>Exhibits</h2>
+            <div class="sea7-sub">Seven doors off the Sea</div>
+          </div>
+          <button type="button" class="sea7-close" id="sea7-close" aria-label="Close exhibits">✕</button>
+        </div>
+        <div class="sea7-list">
+          <a class="sea7-card" href="https://isaiahtobola.github.io/bw-ocean/" target="_blank" rel="noopener">
+            <span class="sea7-text">
+              <span class="sea7-num">Exhibit One</span>
+              <span class="sea7-name">BW Ocean</span>
+              <span class="sea7-sub2">The plum-and-gold museum</span>
+            </span>
+            <span class="sea7-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="sea7-card" href="https://isaiahtobola.github.io/completion-filter/tree/" target="_blank" rel="noopener">
+            <span class="sea7-text">
+              <span class="sea7-num">Exhibit Two</span>
+              <span class="sea7-name">One Tree, Every Variation</span>
+            </span>
+            <span class="sea7-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="sea7-card" href="https://isaiahtobola.github.io/completion-filter/" target="_blank" rel="noopener">
+            <span class="sea7-text">
+              <span class="sea7-num">Exhibit Three</span>
+              <span class="sea7-name">The Completion Filter</span>
+            </span>
+            <span class="sea7-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="sea7-card" href="https://isaiahtobola.github.io/completion-filter/theology/" target="_blank" rel="noopener">
+            <span class="sea7-text">
+              <span class="sea7-num">Exhibit Four</span>
+              <span class="sea7-name">My Theology</span>
+            </span>
+            <span class="sea7-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="sea7-card" href="https://isaiahtobola.github.io/completion-filter/mars/" target="_blank" rel="noopener">
+            <span class="sea7-text">
+              <span class="sea7-num">Exhibit Five</span>
+              <span class="sea7-name">Robots and Mars</span>
+              <span class="sea7-sub2">The Mars Book</span>
+            </span>
+            <span class="sea7-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="sea7-card" href="https://isaiahtobola.github.io/completion-filter/board/" target="_blank" rel="noopener">
+            <span class="sea7-text">
+              <span class="sea7-num">Exhibit Six</span>
+              <span class="sea7-name">The UFO Board</span>
+              <span class="sea7-sub2">UFO Conspiracy Hypothetical versus Science</span>
+            </span>
+            <span class="sea7-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="sea7-card" href="sea-demo/" target="_blank" rel="noopener">
+            <span class="sea7-text">
+              <span class="sea7-num">Exhibit Seven</span>
+              <span class="sea7-name">Sea Demo — 13,000 Deep</span>
+              <span class="sea7-sub2">The deep-sea demonstration</span>
+            </span>
+            <span class="sea7-arrow" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    <script>
+    (function(){
+      var btn = document.getElementById('sea7-btn'), ov = document.getElementById('sea7-overlay'),
+          cl = document.getElementById('sea7-close'), sc = ov ? ov.querySelector('.sea7-scroll') : null;
+      if(!btn || !ov) return;
+      function open(){ ov.classList.add('open'); document.body.style.overflow = 'hidden'; }
+      function close(){ ov.classList.remove('open'); document.body.style.overflow = ''; }
+      btn.addEventListener('click', open);
+      if(cl) cl.addEventListener('click', close);
+      if(sc) sc.addEventListener('click', function(e){ if(e.target === sc) close(); });
+      document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && ov.classList.contains('open')) close(); });
+    })();
+    </script>
 </body>
 </html>

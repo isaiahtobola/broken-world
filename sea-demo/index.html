@@ -45,6 +45,11 @@
          inside this layer too — they're the far edge of the same light. */
       .layer-rays{
         position:fixed; inset:0; z-index:2; pointer-events:none; overflow:hidden;
+        /* Nov 17, 2026: the layer now starts below the HUD (JS sets its
+           top), so its first stretch fades in — the light brightens
+           gradually under the HUD instead of starting on a hard line. */
+        -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 84px);
+        mask-image:linear-gradient(180deg, transparent 0, #000 84px);
       }
       .surface-light{
         position:absolute; left:0; right:0; top:0; height:62vh;
@@ -819,6 +824,21 @@
           if (!ticking) { ticking = true; requestAnimationFrame(updateDepth); }
         }, { passive: true });
         window.addEventListener("resize", updateDepth);
+
+        /* Nov 17, 2026, his fix: the rays begin BELOW the header — the
+           fixed ray layer is pushed down by the HUD bar's own height,
+           measured live per layout (the PC and phone HUDs are
+           different heights), so the light starts under the HUD
+           instead of bleeding up behind it. The depth fade above is
+           untouched: the layer still dissolves by ~1,100 m. */
+        var hudEl = document.querySelector(".hud");
+        function fitRays() {
+          if (hudEl && raysLayer) raysLayer.style.top = hudEl.offsetHeight + "px";
+        }
+        window.addEventListener("resize", fitRays);
+        window.addEventListener("load", fitRays);
+        fitRays();
+        setTimeout(fitRays, 350);
 
         document.getElementById("diveBtn").addEventListener("click", function () {
           var max = document.documentElement.scrollHeight - window.innerHeight;

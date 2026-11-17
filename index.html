@@ -2070,14 +2070,16 @@ html.kint-lock{overflow:hidden !important}
       <h1>Groups Feed</h1>
       <p>View groups and posts below.</p>
     </div>
-    <!-- Exhibits, folded for phones (Nov 17, 2026, his plan): one small
-         button at the top of the Sea opens all seven doors in a popup
-         wearing the demo's deep-sea design. Mobile only — on PC the
-         doors keep hanging where they hang. -->
+    <!-- Exhibits (Nov 17, 2026, his final word): one small button at the
+         top of the Sea opens all seven doors in a popup wearing the
+         demo's deep-sea design — on BOTH layouts, the same button and
+         the same popup, PC and mobile alike. The bank doors keep
+         hanging where they hang, untouched. -->
     <style>
       .sea7-btn{ display:none; }
       .sea7-overlay{ display:none; }
-      @media (max-width:760px){
+      /* Both layouts ride these rules now — the phone-only media
+         query that folded the exhibits away on PC is retired. */
         .sea7-btn{
           display:inline-flex; align-items:center; gap:7px; margin:14px 0 2px;
           font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
@@ -2113,7 +2115,6 @@ html.kint-lock{overflow:hidden !important}
         .sea7-name{ font-size:18px; font-weight:700; color:#f7ead1; line-height:1.2; }
         .sea7-sub2{ font-size:13px; color:#9db8bd; line-height:1.35; }
         .sea7-arrow{ font-family:var(--mono); color:#f2c14e; font-size:18px; flex:0 0 auto; }
-      }
     </style>
     <button class="sea7-btn" id="sea7-btn" type="button">◆ Exhibits</button>
     <!-- The five exhibits, layered into each other (his restructure; Instant Beat door removed 2026-10-30 — the invention stays private for now; the board door added Nov 11, 2026 on his green light; the Tree Diagram and Theology doors added Nov 13, 2026 on his green light; Nov 14, 2026: the Mars book takes slot five and the board leaves the row to hang as Exhibit Six under the Rivers bank — five doors, left to right in his order: Ocean, Tree Diagram, Completion Filter, Theology, Mars) -->
@@ -5884,6 +5885,19 @@ function fitCanvas(c){
   var r = c.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio||1, 2);
   if(window.__bwMobilePerf && (c.id === 'sea-canvas' || c.id === 'sea-plankton-canvas')) dpr = Math.min(dpr, 1.25);
   else if(window.__bwMobilePerf && c.id === 'car-canvas') dpr = Math.min(dpr, 1.5);
+  if(c.id === 'sea-canvas' || c.id === 'sea-plankton-canvas'){
+    /* PERF PASS (Nov 17, his word: "the sea is still glitchy and
+       lagging so just fix it"): a Sea grown thousands of CSS px
+       tall at full ratio makes a bitmap taller than the GPU's
+       fast path — the whole page then scrolls in software and
+       janks, on phones and retina PCs alike. Cap the bitmap at
+       4096 device px a side; the Sea paints gradients and glow
+       only (no text, no hard edges), so the browser's upscale
+       is invisible and the geometry math — which runs on the
+       returned ratio — is untouched. */
+    if(r.height > 1) dpr = Math.min(dpr, 4096 / r.height);
+    if(r.width > 1) dpr = Math.min(dpr, 4096 / r.width);
+  }
   var w = Math.max(2, Math.round(r.width*dpr)), h = Math.max(2, Math.round(r.height*dpr));
   if(Math.abs(c.width-w) > 3 || Math.abs(c.height-h) > 3){ c.width=w; c.height=h; }
   return {w:c.width, h:c.height, dpr:dpr};
@@ -6865,8 +6879,41 @@ runners['sea-canvas'] = function(canvas, ctx, state){
     if(!running['sea-canvas']) return;
     var s = fitCanvas(canvas), W=s.w, H=s.h, t = now/1000;
     tileHcur = Math.max(160, Math.min(H, (window.visualViewport ? window.visualViewport.height : (window.innerHeight || 800)) * s.dpr));
-    ctx.clearRect(0,0,W,H);
-    if(pctx){ fitCanvas(pcv); pctx.clearRect(0,0,pcv.width,pcv.height); }
+    if(pctx) fitCanvas(pcv);
+    var rect = canvas.getBoundingClientRect();
+    /* — PERF PASS (Nov 17): two more internals, look untouched.
+       1) The header height the rays offset by is measured on
+          resize, not read from layout every frame.
+       2) The two page-tall bitmaps are no longer cleared end to
+          end every frame — in Sea mode nothing is ever painted
+          outside the visible window, so only the window is
+          cleared (extended to cover the rays' reach near the
+          surface and the pond's spill in lake mode). River mode
+          paints the full height, so it still clears it. — */
+    if(state._hdrCss3 === undefined || state._hdrKey3 !== window.innerWidth){
+      var hdrEl3 = document.querySelector('.site-header');
+      var navEl3 = document.querySelector('.site-nav');
+      state._hdrCss3 = (hdrEl3 ? hdrEl3.offsetHeight : 0) + (navEl3 ? navEl3.offsetHeight : 0);
+      state._hdrKey3 = window.innerWidth;
+    }
+    var hdrCss3 = state._hdrCss3;
+    var kTileH = rect.height ? (H / rect.height) : s.dpr;
+    var off3 = hdrCss3 * kTileH;
+    var vhH = (window.innerHeight || 800) * kTileH;
+    var cTop3 = Math.max(0, -rect.top * kTileH - 8 * s.dpr);
+    var cBot3 = Math.min(H, -rect.top * kTileH + vhH + 8 * s.dpr);
+    if(cTop3 < vhH * 1.35 + off3) cBot3 = Math.min(H, Math.max(cBot3, off3 + vhH * 1.30)); /* the rays paint past the fold near the surface */
+    if(state.lakeK > 0.003){ cTop3 = Math.max(0, cTop3 - vhH * 0.3); cBot3 = Math.min(H, cBot3 + vhH * 0.3); }
+    if(state.riverK === undefined || state.riverK > 0.003 || cBot3 <= cTop3){
+      ctx.clearRect(0, 0, W, H);
+      if(pctx) pctx.clearRect(0, 0, pcv.width, pcv.height);
+    } else {
+      ctx.clearRect(0, cTop3, W, cBot3 - cTop3);
+      if(pctx){
+        var pcTop3 = Math.min(cTop3, pcv.height), pcBot3 = Math.min(cBot3, pcv.height);
+        if(pcBot3 > pcTop3) pctx.clearRect(0, pcTop3, pcv.width, pcBot3 - pcTop3);
+      }
+    }
     /* FINAL FIXES — RIVER SIZE + SPEED (Nov 9, 04:31): one shared
        size unit for every river part. The animation itself is
        PERFECT (his word) — only BIGGER: the pour lands just a tad
@@ -6874,7 +6921,12 @@ runners['sea-canvas'] = function(canvas, ctx, state){
        FASTER: river time runs at 1.3x. */
     var riverUnitF = Math.max(12 * s.dpr, Math.min(W * 0.016, 24 * s.dpr));
     var feedElF = document.getElementById('sea-feed');
-    var feedWF = feedElF ? feedElF.clientWidth * s.dpr : W * 0.6;
+    /* PERF PASS (Nov 17): the feed's width only changes on resize —
+       cache it instead of reading layout every frame. */
+    if(state._feedKey3 !== window.innerWidth || state._feedW3 === undefined)
+      state._feedW3 = feedElF ? feedElF.clientWidth : 0;
+    state._feedKey3 = window.innerWidth;
+    var feedWF = state._feedW3 ? state._feedW3 * s.dpr : W * 0.6;
     var riverBaseF = Math.max(riverUnitF, Math.min(feedWF * 0.36, W * 0.44));
     var riverTF = t * 1.3;
     /* BUILD 98 — WATER MOODS (his design, Nov 7): the same canvas,
@@ -6892,7 +6944,15 @@ runners['sea-canvas'] = function(canvas, ctx, state){
        page's bottom, and the pond rides the whole length. */
     var seaView102 = document.getElementById('view-sea');
     var inner102 = seaView102 ? seaView102.querySelector('.sea-inner') : null;
-    var targetH102 = inner102 ? inner102.scrollHeight : 0;
+    /* PERF PASS (Nov 17): the content height is re-measured a few
+       times a second, not every frame — a scrollHeight read forces
+       layout whenever the room's DOM has been touched, and the
+       canvas only needs to catch up when posts actually land. */
+    state._hTick3 = (state._hTick3 || 0) + 1;
+    var targetH102 = (state._hTick3 % 20 === 1 || state._targetH102 === undefined)
+      ? (inner102 ? inner102.scrollHeight : 0)
+      : (state._targetH102 || 0);
+    if(targetH102 > 10) state._targetH102 = targetH102;
     if(targetH102 > 10){
       var curH102 = parseFloat(canvas.style.height) || 0;
       if(Math.abs(curH102 - targetH102) > 3) canvas.style.height = targetH102 + 'px';
@@ -6905,7 +6965,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
     if(!inLake && state.lakeK < 0.002) state.lakeK = 0;
     if(!inRiver && state.riverK < 0.002) state.riverK = 0;
     ampK = 1 - 0.82 * state.lakeK - 0.25 * state.riverK;
-    var rect = canvas.getBoundingClientRect();
+    /* rect was measured once in the frame head (PERF PASS, Nov 17) */
     var px = (pointer.x - rect.left) * s.dpr, py = (pointer.y - rect.top) * s.dpr;
     /* (Stage 3: the old click-bloom is retired — plankton taps
        are heard by the SP system above, on completed clicks.) */
@@ -6983,9 +7043,17 @@ runners['sea-canvas'] = function(canvas, ctx, state){
          from view within the first stretch of scrolling, exactly
          as the demo's fade reads. Skipped once the window has
          dived past them. — */
+      /* Nov 17, 2026, his fix: the rays begin BELOW the header — the
+         whole light composition is shifted down by the header's own
+         height (hdrCss3/off3, measured in the frame head: banner +
+         nav, per layout — the PC and phone headers are different
+         heights), so a clean band of plain water sits between the
+         header's bottom edge and the first of the light. The depth
+         fade below is untouched. */
       var vh3 = (window.visualViewport ? window.visualViewport.height : (window.innerHeight || 800)) * kTile3;
-      if(visTop3 < vh3 * 1.35){
+      if(visTop3 < vh3 * 1.35 + off3){
         ctx.save();
+        ctx.translate(0, off3);
         /* the demo's own fade: the whole light layer dissolves with
            depth — full at the surface, gone after ~640 px of dive */
         ctx.globalAlpha = seaAlpha3 * Math.max(0, 1 - (window.scrollY || 0) / 640);

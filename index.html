@@ -711,17 +711,19 @@ html.bw-mob #sea-plankton-canvas{position:fixed; top:0; left:0; width:100%; heig
 html.bw-mob #sea-waterbg{display:block; position:absolute; inset:0; z-index:0; pointer-events:none;
   background-image:linear-gradient(180deg, #14607e 0px, #0d4a68 17333px, #083650 40444px, #062a44 69333px, #041c31 109778px, #02101f 158889px, #01070f 208000px, #00040a 254222px, #000000 288889px);
   background-size:100% 288889px; background-repeat:no-repeat; background-position:0 0}
-html.bw-mob #sea-rays{display:block; position:fixed; left:0; right:0; top:0; height:100%; z-index:0; pointer-events:none; overflow:hidden;
+html.bw-mob #sea-rays{display:block; position:absolute; left:0; right:0; top:0; height:calc(10000px - var(--hdr, 401px)); z-index:0; pointer-events:none; overflow:hidden;
   -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 84px); mask-image:linear-gradient(180deg, transparent 0, #000 84px)}
 /* Nov 17, 2026, his tweak: the ray strokes reach ~450 m on the Sea's
    gauge (450 / 0.045 = 10,000 CSS px from the surface) and melt across
-   that whole reach. The fixed layer is now just a window: an inner
-   page-space wrapper carries the light and is translated by -scrollY
-   (driveDomLayers), so the beams are anchored to the page and their
-   gradients spend themselves along their full length — the same law
-   the PC canvas paints. --hdr is the measured header height, set by
-   driveDomLayers, so the melt still lands on the 450 m mark. */
-html.bw-mob #sea-rays .rays-space{position:absolute; left:0; right:0; top:0; height:calc(10000px - var(--hdr, 401px)); will-change:transform}
+   that whole reach. Nov 18, 2026, his fix: the layer is anchored to
+   the PAGE (position:absolute inside the Sea view; driveDomLayers
+   sets its top and --hdr to the measured header height), so the
+   browser's own scrolling carries the light up and away — no fixed
+   window, no per-frame transform, nothing follows the reader down.
+   The beams' gradients spend themselves along their full length —
+   the same law the PC canvas paints — and past the 450 m mark the
+   light is gone. */
+html.bw-mob #sea-rays .rays-space{position:absolute; left:0; right:0; top:0; height:calc(10000px - var(--hdr, 401px))}
 html.bw-mob #sea-rays .surface-light{position:absolute; left:0; right:0; top:0; height:62vh;
   background:radial-gradient(ellipse 95% 48% at 30% -12%, rgba(196,242,255,.38), transparent 62%),
     radial-gradient(ellipse 72% 42% at 78% -10%, rgba(255,242,196,.24), transparent 62%),
@@ -2211,6 +2213,13 @@ html.kint-lock{overflow:hidden !important}
            Eight takes Exhibit Four's (the left-bank mapping). */
         .sea7-card.g-step3{background:linear-gradient(150deg, #4a2f78, #3a2560)}
         .sea7-card.g-step4{background:linear-gradient(150deg, #5a3a8c, #4a2f78)}
+        /* Nov 18, 2026, his mobile fix: in the PHONE popup only, the
+           two newest doors wear the same flat dark theme as doors
+           1–6 — the staircase steps stay on the PC popup and the
+           PC bank cards, untouched. */
+        @media (max-width:900px){
+          .sea7-card.g-step3, .sea7-card.g-step4{ background:rgba(8,17,24,.72); }
+        }
         .sea7-text{ display:flex; flex-direction:column; gap:2px; min-width:0; }
         .sea7-num{ font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#f2c14e; }
         .sea7-name{ font-size:18px; font-weight:700; color:#f7ead1; line-height:1.2; }
@@ -7118,9 +7127,19 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       state._bgOpW = bgOp; domBg.style.opacity = bgOp.toFixed(3);
     }
     if(!domRays) return;
-    if(state._raysTopW !== hdrCss){
-      state._raysTopW = hdrCss;
-      domRays.style.top = hdrCss + 'px';
+    /* Nov 18, 2026: the layer is page-anchored (position:absolute),
+       so its top is set relative to its offsetParent: the light must
+       START at page y = hdrCss (the surface, just under the header)
+       whatever ancestor the layer hangs from. --hdr keeps the raw
+       header height — the rays-space/beams heights are measured
+       against it so the melt still lands on the 450 m mark. */
+    var raysTopRel = hdrCss;
+    if(domRays.offsetParent){
+      raysTopRel = hdrCss - Math.round(domRays.offsetParent.getBoundingClientRect().top + (window.scrollY || 0));
+    }
+    if(state._raysTopW !== raysTopRel){
+      state._raysTopW = raysTopRel;
+      domRays.style.top = raysTopRel + 'px';
       domRays.style.setProperty('--hdr', hdrCss + 'px');
     }
     if(state._raysOpW === undefined || Math.abs(state._raysOpW - raysOp) > 0.004){
@@ -7130,15 +7149,16 @@ runners['sea-canvas'] = function(canvas, ctx, state){
     var sy = Math.round(window.scrollY || 0);
     /* the light is spent at 450 m (10,000 CSS px from the surface):
        past that the layer hides outright instead of compositing
-       empty water. The wrapper inside carries the -scrollY shift,
-       so the fixed layer itself stays put as a viewport window. */
+       empty water. */
     var raysVis = raysOp > 0.004 && sy < 10100;
     if(state._raysVisW !== raysVis){
       state._raysVisW = raysVis;
       domRays.style.visibility = raysVis ? 'visible' : 'hidden';
     }
-    var raysInner = domRays.firstChild;
-    if(raysInner && state._raysTyW !== sy){ state._raysTyW = sy; raysInner.style.transform = 'translate3d(0,' + (-sy) + 'px,0)'; }
+    /* Nov 18, 2026: no transform here anymore — the rays layer is
+       page-anchored (position:absolute), so the browser's own
+       scrolling carries the light away; sy now only drives the
+       past-450 m visibility cutoff above. */
   }
   function winFit(){
     var key = window.innerWidth + 'x' + window.innerHeight + 'x' + (window.devicePixelRatio || 1);

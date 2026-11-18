@@ -1378,6 +1378,16 @@ body.wave-on .mrail{opacity:0; pointer-events:none}
      desktop row's 350px flex-basis would otherwise become a 350px
      HEIGHT per door, with the words parked at the bottom. */
   .door{flex:none; min-height:0; justify-content:flex-start; padding:20px 20px 18px}
+  /* Exhibits on phones (Nov 17, 2026, his call): the door cards
+     leave the phone layout entirely — the ◆ Exhibits button and
+     its popup are the only exhibits path on a phone. The five-door
+     row and the left bank are display:none at phone widths: the
+     bank's only phone content was doors Six and Seven (the Rivers
+     panel relocates into the mobile banks mount, build 106), so
+     no empty shell or grid gap stays behind. Desktop widths never
+     enter this block — PC keeps every door exactly where it hangs. */
+  #view-sea .doors{display:none}
+  #view-sea .sea-left{display:none}
   .media-grid{grid-template-columns:repeat(2,1fr)}
   .files-table-head{grid-template-columns:2fr 1fr .7fr}
   .files-table-head span:nth-child(4), .files-table-head span:nth-child(5){display:none}

@@ -6823,10 +6823,23 @@ runners['sea-canvas'] = function(canvas, ctx, state){
     if(SP.coveredCssH >= cssH - 4) return;
     var y0 = SP.coveredCssH, area = cssW * (cssH - y0);
     var n = Math.round(area / 11000);
-    for(var i = 0; i < n && SP.dots.length < 1600; i++){
+    /* NOV 18, 2026 — SPREAD (his word: the plankton read "a little
+       too clustered — spread them out some"): pure random scatter
+       clumps by nature (Poisson), so each new band is seeded on a
+       jittered grid instead — one dot per cell, placed off-centre
+       at random inside its cell. Same count, same density law; no
+       two dots are born crowding the same patch of water. */
+    var cellSide = Math.sqrt(11000);
+    var cols = Math.max(1, Math.round(cssW / cellSide));
+    var rows = Math.max(1, Math.ceil(n / cols));
+    var cellH = (cssH - y0) / rows;
+    var cells = [];
+    for(var cr = 0; cr < rows; cr++) for(var cc = 0; cc < cols; cc++) cells.push([cc, cr]);
+    for(var ci = cells.length - 1; ci > 0; ci--){ var cj = Math.floor(Math.random() * (ci + 1)); var ct = cells[ci]; cells[ci] = cells[cj]; cells[cj] = ct; }
+    for(var i = 0; i < n && i < cells.length && SP.dots.length < 1600; i++){
       var snow = Math.random() < 0.38;
       SP.dots.push({
-        fx: Math.random(), y: y0 + Math.random() * (cssH - y0),
+        fx: (cells[i][0] + 0.16 + Math.random() * 0.68) / cols, y: y0 + (cells[i][1] + 0.16 + Math.random() * 0.68) * cellH,
         r: snow ? 0.8 + Math.random() * 1.4 : 0.7 + Math.random() * 2.1,
         snow: snow, sp: snow ? 6 + Math.random() * 10 : 3 + Math.random() * 7,
         sway: Math.random() * Math.PI * 2, swaySp: 0.2 + Math.random() * 0.5,
@@ -6834,6 +6847,25 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       });
     }
     SP.coveredCssH = cssH;
+  }
+  /* a dot that drifts out and re-enters takes the middle of the
+     widest empty stretch of water (sampled from its schoolmates),
+     so the school KEEPS its spread while it drifts instead of
+     re-clumping at random. Distribution only — speeds, glow, taps
+     and chains are untouched. */
+  function spSpreadFx(){
+    var xs = [0, 1];
+    for(var si = 0; si < 48 && SP.dots.length; si++){
+      var d = SP.dots[Math.floor(Math.random() * SP.dots.length)];
+      if(d) xs.push(d.fx);
+    }
+    xs.sort(function(a, b){ return a - b; });
+    var bg = -1, bx = 0.5;
+    for(var gi = 1; gi < xs.length; gi++){
+      var gap = xs[gi] - xs[gi - 1];
+      if(gap > bg){ bg = gap; bx = xs[gi - 1] + gap / 2; }
+    }
+    return Math.min(0.995, Math.max(0.005, bx + (Math.random() - 0.5) * bg * 0.4));
   }
   function spDotBobY(d, t){
     /* a gentle bob on top of the drift (the drift pass in the frame
@@ -6955,6 +6987,48 @@ runners['sea-canvas'] = function(canvas, ctx, state){
     field: SP
   };
 
+  /* — SOFT RAYS (Nov 18, 2026, his word: the beams read as hard
+     RECTANGLES — "more faded out on the sides so it blends"). Each
+     beam is pre-rendered ONCE into a sprite: the demo's vertical
+     melt down its length (stored at quarter height — the melt is
+     smooth, drawImage stretches it back invisibly), and across its
+     width a bell, alpha (1-u²)^1.3 — full at the core, gone at both
+     edges, so no beam keeps a hard side anywhere. The vertical
+     stops carry a ~1.18x lift so the feathered light doesn't read
+     dimmer than the rectangles did. The frame then stamps sprites
+     with drawImage instead of re-filling giant rotated rectangles
+     every frame — the fill pass was also the scroll judder: the
+     light now costs almost nothing to repaint. PC path only; the
+     mobile DOM rays are untouched. — */
+  var SP_BEAM_SPRITES = {};
+  function spBeamSprite(bi, bw3, blen3){
+    var key = bi + '|' + Math.round(bw3) + '|' + Math.round(blen3 / 128);
+    var hit = SP_BEAM_SPRITES[key];
+    if(hit) return hit;
+    var VS = 4;
+    var sw = Math.max(2, Math.round(bw3)), sh = Math.max(2, Math.round(blen3 / VS));
+    var cv = document.createElement('canvas'); cv.width = sw; cv.height = sh;
+    var g = cv.getContext('2d');
+    var vg = g.createLinearGradient(0, 0, 0, sh);
+    vg.addColorStop(0, 'rgba(255,247,208,0.649)');
+    vg.addColorStop(0.30, 'rgba(198,238,255,0.248)');
+    vg.addColorStop(0.55, 'rgba(198,238,255,0.136)');
+    vg.addColorStop(0.78, 'rgba(198,238,255,0.047)');
+    vg.addColorStop(0.92, 'rgba(198,238,255,0.012)');
+    vg.addColorStop(1, 'rgba(198,238,255,0)');
+    g.fillStyle = vg; g.fillRect(0, 0, sw, sh);
+    var hg = g.createLinearGradient(0, 0, sw, 0);
+    for(var si2 = 0; si2 <= 16; si2++){
+      var uu = si2 / 16 * 2 - 1;
+      hg.addColorStop(si2 / 16, 'rgba(0,0,0,' + Math.pow(Math.max(0, 1 - uu * uu), 1.3).toFixed(3) + ')');
+    }
+    g.globalCompositeOperation = 'destination-in';
+    g.fillStyle = hg; g.fillRect(0, 0, sw, sh);
+    g.globalCompositeOperation = 'source-over';
+    for(var kk in SP_BEAM_SPRITES){ if(kk.split('|')[0] === String(bi)) delete SP_BEAM_SPRITES[kk]; }
+    SP_BEAM_SPRITES[key] = cv;
+    return cv;
+  }
   /* — WINDOW MODE (Nov 17, 2026, mobile only — WIN is false on PC and
      every branch below falls back to the shipped expressions): the
      two canvases are FIXED viewport layers (CSS: html.bw-mob), so
@@ -7291,8 +7365,20 @@ runners['sea-canvas'] = function(canvas, ctx, state){
           { fx: 0.70, w: 140, dur: 10.0, ph: -4.0 }, { fx: 0.86, w: 48, dur: 6.0, ph: -3.0 }
         ];
         var wScale3 = Math.max(0.45, Math.min(1.15, (W / kTile3) / 1200));
-        beams3.forEach(function(bm){
-          var shim = 0.5 + 0.5 * Math.sin((t / bm.dur) * Math.PI * 2 + bm.ph);
+        /* NOV 18, 2026 — THE SCROLL-STEADY CLOCK (his word: the rays
+           glitch "a little" while scrolling on PC): while the page
+           is moving — and for a breath after it stops — the rays'
+           shimmer clock holds still, so the light rides the scroll
+           as one solid piece of page instead of stepping through
+           its brightness/lean phases mid-glide. At rest the clock
+           runs exactly as before. */
+        if(state._rayT3 === undefined){ state._rayT3 = t; state._rayTop3 = rect.top; state._rayHold3 = 0; state._rayLast3 = t; }
+        if(Math.abs(rect.top - state._rayTop3) > 0.05){ state._rayHold3 = t + 0.12; state._rayTop3 = rect.top; }
+        if(t >= state._rayHold3) state._rayT3 += Math.min(0.05, Math.max(0, t - state._rayLast3));
+        state._rayLast3 = t;
+        var rayT3 = state._rayT3;
+        beams3.forEach(function(bm, bi3){
+          var shim = 0.5 + 0.5 * Math.sin((rayT3 / bm.dur) * Math.PI * 2 + bm.ph);
           var bAlpha = 0.38 + 0.47 * shim;
           var bw3 = bm.w * wScale3 * kTile3, bx3 = bm.fx * W, btop3 = -vh3 * 0.24;
           var lean3 = (15 + 2.5 * shim) * Math.PI / 180;
@@ -7301,14 +7387,10 @@ runners['sea-canvas'] = function(canvas, ctx, state){
              along the lean (never shorter than the old surface
              beam, for the first screenful's sake) */
           var blen3 = Math.max(vh3 * 1.28, (rayReach3 - off3 - btop3) / Math.cos(lean3));
-          var bg3 = ctx.createLinearGradient(0, 0, 0, blen3);
-          bg3.addColorStop(0, 'rgba(255,247,208,' + (0.55 * bAlpha).toFixed(3) + ')');
-          bg3.addColorStop(0.30, 'rgba(198,238,255,' + (0.21 * bAlpha).toFixed(3) + ')');
-          bg3.addColorStop(0.55, 'rgba(198,238,255,' + (0.115 * bAlpha).toFixed(3) + ')');
-          bg3.addColorStop(0.78, 'rgba(198,238,255,' + (0.04 * bAlpha).toFixed(3) + ')');
-          bg3.addColorStop(0.92, 'rgba(198,238,255,' + (0.01 * bAlpha).toFixed(3) + ')');
-          bg3.addColorStop(1, 'rgba(198,238,255,0)');
-          ctx.fillStyle = bg3;
+          /* the beam's face is its pre-rendered sprite now (soft
+             sides, same melt); bAlpha rides on globalAlpha, exactly
+             as it used to ride inside the gradient stops */
+          var spr3 = (bw3 > 1 && blen3 > 10) ? spBeamSprite(bi3, bw3, blen3) : null;
           /* a ~16° lean over a 10,000 px reach drifts ~2,900 CSS px
              sideways — wider than the page — so each beam is drawn
              tiled across page widths: the surface is sunlit
@@ -7321,7 +7403,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
             ctx.save();
             ctx.translate(bx3 + kb3 * W, btop3); ctx.rotate(lean3);
             ctx.globalCompositeOperation = 'screen'; /* the demo blends its beams on screen mode */
-            ctx.fillRect(-bw3 / 2, 0, bw3, blen3);
+            if(spr3){ ctx.globalAlpha = seaAlpha3 * bAlpha; ctx.drawImage(spr3, -bw3 / 2, 0, bw3, blen3); }
             ctx.restore();
           }
         });
@@ -7329,7 +7411,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
            their alpha spent segment by segment as they deepen */
         ctx.lineWidth = Math.max(1, 1.4 * s.dpr);
         var streakStep3 = 190 * wScale3 * kTile3;
-        var streakOff3 = (t * 3.65 * kTile3) % streakStep3; /* the demo's slow 52 s drift */
+        var streakOff3 = (rayT3 * 3.65 * kTile3) % streakStep3; /* the demo's slow 52 s drift, on the scroll-steady clock */
         /* the streak field runs the rays' whole reach now, its
            alpha spent across the same 450 m melt; only the rows
            inside the visible window are stroked */
@@ -7381,7 +7463,7 @@ runners['sea-canvas'] = function(canvas, ctx, state){
         md3.y += md3.snow ? md3.sp * 0.016 : -md3.sp * 0.016;
         if(md3.y < visTopCss3 - 60 || md3.y > visBotCss3 + 60){
           md3.y = md3.snow ? (visTopCss3 - 20 - Math.random() * 40) : (visBotCss3 + 20 + Math.random() * 40);
-          md3.fx = Math.random();
+          md3.fx = spSpreadFx();
         }
       }
       var maxScr3 = Math.max(1, cssH3 - (window.innerHeight || 800));

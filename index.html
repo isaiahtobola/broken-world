@@ -414,9 +414,13 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
    the five-door row, wearing the staircase step that follows
    Exhibit Two — door-2's own plum gradient. */
 .door-6{background:linear-gradient(150deg, #3a2560, #291b44)}
-/* Exhibit Seven hangs under Exhibit Six (Nov 17, 2026, his green light):
-   the Sea Demo door wears the deepest staircase step — door-1's plum. */
-.door-7{background:linear-gradient(150deg, #291b44, #1f1433)}
+/* Exhibit Seven hangs under Exhibit Six (Nov 18, 2026, his swap):
+   The Number 7 door wears Exhibit Three's staircase step — the left
+   bank mirrors the row (6 wore 2's step, 7 wears 3's). */
+.door-7{background:linear-gradient(150deg, #4a2f78, #3a2560)}
+/* Exhibit Eight hangs under Exhibit Seven (Nov 18, 2026): the Sea
+   Demo door, moved down one, wears Exhibit Four's staircase step. */
+.door-8{background:linear-gradient(150deg, #5a3a8c, #4a2f78)}
 .sea-left .door{margin-top:18px}
 /* NOV 14 late — GOLDEN DOORS (his call, 23:39): a door under the
    cursor — or under a dragging finger — turns gold and glows; the
@@ -449,7 +453,7 @@ body[data-theme="xmas"] .post-card, body[data-theme="xmas"] .post-composer{backg
    designated theme colors now; normal days keep their plum. */
 body[data-theme="halloween"] .door-1, body[data-theme="xmas"] .door-1{background:linear-gradient(150deg, var(--panel2), var(--panel))}
 body[data-theme="halloween"] .door-2, body[data-theme="xmas"] .door-2, body[data-theme="halloween"] .door-3, body[data-theme="xmas"] .door-3, body[data-theme="halloween"] .door-4, body[data-theme="xmas"] .door-4, body[data-theme="halloween"] .door-5, body[data-theme="xmas"] .door-5, body[data-theme="halloween"] .door-6, body[data-theme="xmas"] .door-6{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
-body[data-theme="halloween"] .door-7, body[data-theme="xmas"] .door-7{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
+body[data-theme="halloween"] .door-7, body[data-theme="xmas"] .door-7, body[data-theme="halloween"] .door-8, body[data-theme="xmas"] .door-8{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
 body[data-theme="halloween"] .sea-note, body[data-theme="xmas"] .sea-note{background:linear-gradient(140deg, var(--panel2), var(--panel)); border-color:var(--gold)}
 body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{background:var(--panel); border-color:var(--gold)}
 /* REFINED (his calls, Nov 15 02:39 + 02:47): posts used to glow
@@ -820,6 +824,23 @@ html.bw-mob #sea-rays .surface-pool{position:absolute; left:0; right:0; top:0; h
 #lake-list::-webkit-scrollbar-thumb, #river-bar::-webkit-scrollbar-thumb{background:rgba(240,183,63,.35); border-radius:8px}
 #lake-list::-webkit-scrollbar-track, #river-bar::-webkit-scrollbar-track{background:rgba(13,7,22,.35); border-radius:8px}
 @media (max-width:1180px){ .sea-grid{grid-template-columns:214px minmax(0,1fr) 264px} }
+/* NOV 18, 2026 — PC SEA SCALE-UP (his word, from his wide-monitor
+   photos: the Sea sat "all way too centered" with empty water on
+   both sides — "pc only not mobile but pc view just size everything
+   up a bit", and widen it "regardless of if it makes it go more
+   meters down"). SEA VIEW ONLY, wide desktop only: the wrap opens
+   up, the side columns take one step wider, the centre feed takes
+   everything else, and the doors row stretches with the wrap. The
+   Rivers and Lakes panels are pinned to the exact widths they have
+   always had — they do not resize. The depth gauge keeps its
+   0.045 m/px scale untouched; a bigger Sea simply reads deeper.
+   Every other view and all of mobile are exactly as they were. */
+@media (min-width:1181px){
+  #view-sea .sea-inner{max-width:min(1600px, max(1180px, 94vw))}
+  #view-sea .sea-grid{grid-template-columns:296px minmax(0,1fr) 356px}
+  #view-sea .rivers-panel{width:250px}
+  #view-sea .lakes-panel{width:302px}
+}
 
 .rv-leave{font:inherit; font-size:11px; color:var(--gold); background:none; border:1px solid var(--gold); border-radius:999px; padding:1px 8px; cursor:pointer; margin-left:2px}
 .rv-leave.armed{background:var(--gold); color:#150d20}
@@ -2185,6 +2206,11 @@ html.kint-lock{overflow:hidden !important}
           display:flex; align-items:center; justify-content:space-between; gap:12px; text-decoration:none;
           background:rgba(8,17,24,.72); border:1px solid rgba(242,193,78,.35); border-radius:14px; padding:14px 16px;
         }
+        /* Nov 18, 2026 — the two newest doors wear their staircase
+           steps in the popup too: Seven takes Exhibit Three's step,
+           Eight takes Exhibit Four's (the left-bank mapping). */
+        .sea7-card.g-step3{background:linear-gradient(150deg, #4a2f78, #3a2560)}
+        .sea7-card.g-step4{background:linear-gradient(150deg, #5a3a8c, #4a2f78)}
         .sea7-text{ display:flex; flex-direction:column; gap:2px; min-width:0; }
         .sea7-num{ font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#f2c14e; }
         .sea7-name{ font-size:18px; font-weight:700; color:#f7ead1; line-height:1.2; }
@@ -2240,9 +2266,16 @@ html.kint-lock{overflow:hidden !important}
           <p>His thoughts, pinned up against the science — the detective board.</p>
           <span class="door-arrow">Open ↗</span>
         </a>
-        <!-- Exhibit Seven (Nov 17, 2026, his green light): the Sea Demo door hangs here, under the board. -->
-        <a class="door door-7" href="sea-demo/" target="_blank" rel="noopener">
-          <span class="door-kicker">Exhibit Seven · The Demo</span>
+        <!-- Exhibit Seven (Nov 18, 2026, his swap): The Number 7 booklet door hangs here, under the board. -->
+        <a class="door door-7" href="https://isaiahtobola.github.io/completion-filter/seven/" target="_blank" rel="noopener">
+          <span class="door-kicker">Exhibit Seven · The Booklet</span>
+          <h3>The Number 7</h3>
+          <p>Dice, sins and virtues, and the sevens of the world — one number, everywhere you look.</p>
+          <span class="door-arrow">Read ↗</span>
+        </a>
+        <!-- Exhibit Eight (Nov 18, 2026): the Sea Demo door moved down one to make room. -->
+        <a class="door door-8" href="sea-demo/" target="_blank" rel="noopener">
+          <span class="door-kicker">Exhibit Eight · The Demo</span>
           <h3>Sea Demo — 13,000 Deep</h3>
           <p>The deep-sea demonstration — sun rays at the surface, plankton chains, and the ROV patrolling the trench.</p>
           <span class="door-arrow">Dive ↗</span>
@@ -12735,13 +12768,13 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
   }, true);
 })();
 </script>
-    <div class="sea7-overlay" id="sea7-overlay" role="dialog" aria-modal="true" aria-label="Exhibits — the seven doors">
+    <div class="sea7-overlay" id="sea7-overlay" role="dialog" aria-modal="true" aria-label="Exhibits — the eight doors">
       <div class="sea7-rays" aria-hidden="true"></div>
       <div class="sea7-scroll">
         <div class="sea7-head">
           <div>
             <h2>Exhibits</h2>
-            <div class="sea7-sub">Seven doors off the Sea</div>
+            <div class="sea7-sub">Eight doors off the Sea</div>
           </div>
           <button type="button" class="sea7-close" id="sea7-close" aria-label="Close exhibits">✕</button>
         </div>
@@ -12791,9 +12824,17 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
             </span>
             <span class="sea7-arrow" aria-hidden="true">→</span>
           </a>
-          <a class="sea7-card" href="sea-demo/" target="_blank" rel="noopener">
+          <a class="sea7-card g-step3" href="https://isaiahtobola.github.io/completion-filter/seven/" target="_blank" rel="noopener">
             <span class="sea7-text">
               <span class="sea7-num">Exhibit Seven</span>
+              <span class="sea7-name">The Number 7</span>
+              <span class="sea7-sub2">The booklet — dice, sins and virtues, and the sevens of the world</span>
+            </span>
+            <span class="sea7-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="sea7-card g-step4" href="sea-demo/" target="_blank" rel="noopener">
+            <span class="sea7-text">
+              <span class="sea7-num">Exhibit Eight</span>
               <span class="sea7-name">Sea Demo — 13,000 Deep</span>
               <span class="sea7-sub2">The deep-sea demonstration</span>
             </span>

@@ -755,6 +755,40 @@ html.bw-mob #sea-rays .surface-pool{position:absolute; left:0; right:0; top:0; h
 @media (prefers-reduced-motion: reduce){
   html.bw-mob #sea-rays .raybeam, html.bw-mob #sea-rays .streaks{animation:none !important}
 }
+/* SEA VIEW (Nov 18, 2026, his ask): phones only — a small floating
+   "Sea View" button in the Sea fades every box over the water away
+   so the plankton can be tapped in the open sea. The button itself
+   is created by the sea-view script at the end of this file, only
+   when __bwMobilePerf is true, and every rule here is gated on
+   html.bw-mob, so PC never renders any of it. Hiding is opacity +
+   pointer-events, never display: the page keeps its full height,
+   so depth scrolling and the reader's scroll position are
+   untouched, and taps fall through the faded furniture to the
+   water, where the plankton tap handler hears them. */
+#sea-view-btn{display:none}
+html.bw-mob #sea-view-btn{
+  display:block; position:fixed; right:14px; bottom:84px; z-index:60;
+  font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--gold); background:rgba(8,17,24,.78); border:1px solid rgba(240,183,63,.55);
+  border-radius:999px; padding:10px 16px; min-height:40px; cursor:pointer;
+  -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+  box-shadow:0 8px 22px rgba(0,0,0,.45);
+}
+html.bw-mob.bw-seaview #sea-view-btn{
+  background:linear-gradient(180deg, var(--yellow), var(--gold));
+  color:#0a141c; font-weight:700;
+}
+html.bw-mob .site-header, html.bw-mob .site-nav, html.bw-mob #mrail,
+html.bw-mob .site-footer, html.bw-mob #view-sea .sea-inner,
+html.bw-mob .depth-gauge{transition:opacity .25s ease}
+html.bw-mob.bw-seaview .site-header,
+html.bw-mob.bw-seaview .site-nav,
+html.bw-mob.bw-seaview #mrail,
+html.bw-mob.bw-seaview .site-footer,
+html.bw-mob.bw-seaview #view-sea .sea-inner,
+html.bw-mob.bw-seaview .depth-gauge{
+  opacity:0; pointer-events:none;
+}
 .post-head .post-del{margin-left:8px}
 .cmt-list{margin:2px 0 12px; display:flex; flex-direction:column; gap:10px}
 .cmt{background:rgba(13,7,22,.45); border:1px solid rgba(184,166,217,.18); border-radius:10px; padding:9px 13px}
@@ -12876,5 +12910,37 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
       document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && ov.classList.contains('open')) close(); });
     })();
     </script>
+<script>
+/* SEA VIEW toggle (Nov 18, 2026, his ask — phones only): creates the
+   floating "Sea View" button inside the Sea view and flips the
+   bw-seaview class on <html>; the CSS above (all html.bw-mob gated)
+   does the fading. On PC this script returns immediately — no
+   button, no listeners, no DOM change. If the reader somehow leaves
+   the Sea while Sea View is on, the class comes off with the view,
+   so the header and menus can never stay hidden on another page. */
+(function(){
+  if(!window.__bwMobilePerf) return;
+  var vs = document.getElementById('view-sea');
+  if(!vs || document.getElementById('sea-view-btn')) return;
+  var btn = document.createElement('button');
+  btn.id = 'sea-view-btn';
+  btn.type = 'button';
+  btn.textContent = 'Sea View';
+  btn.setAttribute('aria-pressed', 'false');
+  btn.setAttribute('aria-label', 'Sea View — hide the boxes and see the open sea');
+  vs.appendChild(btn);
+  function setOn(on){
+    document.documentElement.classList.toggle('bw-seaview', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  btn.addEventListener('click', function(){
+    setOn(!document.documentElement.classList.contains('bw-seaview'));
+  });
+  new MutationObserver(function(){
+    if(document.body.getAttribute('data-current') !== 'sea' &&
+       document.documentElement.classList.contains('bw-seaview')) setOn(false);
+  }).observe(document.body, { attributes: true, attributeFilter: ['data-current'] });
+})();
+</script>
 </body>
 </html>

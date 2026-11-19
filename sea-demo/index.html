@@ -637,17 +637,22 @@
                 <stop offset="10%" stop-color="#fff6c8" stop-opacity=".66"></stop>
                 <stop offset="26%" stop-color="#fff3bd" stop-opacity=".38"></stop>
                 <stop offset="44%" stop-color="#ffedb0" stop-opacity=".19"></stop>
-                <stop offset="60%" stop-color="#ffedb0" stop-opacity=".085"></stop>
-                <stop offset="74%" stop-color="#ffedb0" stop-opacity=".03"></stop>
-                <stop offset="86%" stop-color="#ffedb0" stop-opacity=".008"></stop>
+                <stop offset="58%" stop-color="#ffedb0" stop-opacity=".088"></stop>
+                <stop offset="68%" stop-color="#ffedb0" stop-opacity=".042"></stop>
+                <stop offset="77%" stop-color="#ffedb0" stop-opacity=".018"></stop>
+                <stop offset="85%" stop-color="#ffedb0" stop-opacity=".007"></stop>
+                <stop offset="92%" stop-color="#ffedb0" stop-opacity=".002"></stop>
+                <stop offset="97%" stop-color="#ffedb0" stop-opacity=".0005"></stop>
                 <stop offset="100%" stop-color="#ffedb0" stop-opacity="0"></stop>
               </linearGradient>
               <linearGradient id="beamCore" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stop-color="#ffffff" stop-opacity=".98"></stop>
                 <stop offset="22%" stop-color="#fffbe8" stop-opacity=".52"></stop>
                 <stop offset="48%" stop-color="#fff6cf" stop-opacity=".20"></stop>
-                <stop offset="70%" stop-color="#fff6cf" stop-opacity=".055"></stop>
-                <stop offset="86%" stop-color="#fff6cf" stop-opacity=".012"></stop>
+                <stop offset="64%" stop-color="#fff6cf" stop-opacity=".075"></stop>
+                <stop offset="76%" stop-color="#fff6cf" stop-opacity=".026"></stop>
+                <stop offset="86%" stop-color="#fff6cf" stop-opacity=".008"></stop>
+                <stop offset="94%" stop-color="#fff6cf" stop-opacity=".0015"></stop>
                 <stop offset="100%" stop-color="#fff6cf" stop-opacity="0"></stop>
               </linearGradient>
               <radialGradient id="beamPatch" cx="50%" cy="50%" r="50%">
@@ -659,49 +664,100 @@
                 <stop offset="45%" stop-color="#ffe9a8" stop-opacity=".38"></stop>
                 <stop offset="100%" stop-color="#ffe9a8" stop-opacity="0"></stop>
               </radialGradient>
-              <!-- Every beam layer is blurred, so the beam's edges
-                   feather into the water instead of ending in a line.
-                   The two inner layers also pass through a turbulence
-                   displacement, which roughens their outline so the
-                   cone reads as water and light, not geometry. -->
-              <filter id="beamBlurXL" x="-20%" y="-200%" width="140%" height="500%">
-                <feGaussianBlur stdDeviation="60"></feGaussianBlur>
-              </filter>
-              <filter id="beamBlurL" x="-20%" y="-200%" width="140%" height="500%">
-                <feGaussianBlur stdDeviation="34"></feGaussianBlur>
-              </filter>
-              <filter id="beamBlurM" x="-20%" y="-200%" width="140%" height="500%">
-                <feGaussianBlur stdDeviation="13"></feGaussianBlur>
-              </filter>
-              <filter id="beamBlurS" x="-20%" y="-200%" width="140%" height="500%">
-                <feGaussianBlur stdDeviation="6"></feGaussianBlur>
-              </filter>
-              <filter id="beamRoughM" x="-20%" y="-200%" width="140%" height="500%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.0016 0.006" numOctaves="2" seed="7" result="n"></feTurbulence>
-                <feDisplacementMap in="SourceGraphic" in2="n" scale="60"></feDisplacementMap>
-                <feGaussianBlur stdDeviation="13"></feGaussianBlur>
-              </filter>
-              <filter id="beamRoughS" x="-20%" y="-200%" width="140%" height="500%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.0021 0.008" numOctaves="2" seed="11" result="n"></feTurbulence>
-                <feDisplacementMap in="SourceGraphic" in2="n" scale="34"></feDisplacementMap>
-                <feGaussianBlur stdDeviation="6"></feGaussianBlur>
-              </filter>
+              <!-- v2: NO SVG filters anywhere in the beam. Filter
+                   regions are rectangles, and on some browsers (iOS
+                   Safari in particular) a filtered layer's glow gets
+                   clipped to that rectangle — the beam ended in a
+                   visible box of light. Instead the wash is a radial
+                   gradient centred on the lamp, its pattern compressed
+                   vertically (gradientTransform scale(1 .36)), so its
+                   reach up/down is ~0.36× its reach forward: brightness
+                   is a
+                   function of elliptical distance from the lens and
+                   melts in EVERY direction. Gradients cannot draw a
+                   straight edge, so no rim or box can exist. The cone
+                   and core are each drawn as a stack of copies squashed
+                   vertically by degrees — the stacking builds the soft
+                   side falloff a blur used to provide, with no filter. -->
+              <radialGradient id="beamWash" gradientUnits="userSpaceOnUse" cx="197" cy="82" r="2950" gradientTransform="translate(197 82) scale(1 .36) translate(-197 -82)">
+                <stop offset="0%" stop-color="#fff6c8" stop-opacity=".60"></stop>
+                <stop offset="18%" stop-color="#fff3bd" stop-opacity=".42"></stop>
+                <stop offset="35%" stop-color="#ffedb0" stop-opacity=".23"></stop>
+                <stop offset="50%" stop-color="#ffedb0" stop-opacity=".125"></stop>
+                <stop offset="65%" stop-color="#ffedb0" stop-opacity=".06"></stop>
+                <stop offset="78%" stop-color="#ffedb0" stop-opacity=".026"></stop>
+                <stop offset="88%" stop-color="#ffedb0" stop-opacity=".011"></stop>
+                <stop offset="95%" stop-color="#ffedb0" stop-opacity=".003"></stop>
+                <stop offset="100%" stop-color="#ffedb0" stop-opacity="0"></stop>
+              </radialGradient>
+              <!-- Side-fade masks (v2): each mask is a plain vertical
+                   gradient, black at the group's top/bottom extremes
+                   and white through the middle. Applied to a group, it
+                   multiplies every shape's alpha by height, so a
+                   shape's silhouette — which lives at the group's
+                   vertical extremes — is faded to nothing exactly
+                   where it would otherwise draw a line. A gradient
+                   mask has no hard edge of its own. -->
+              <linearGradient id="washSideGrad" gradientUnits="userSpaceOnUse" x1="0" y1="-640" x2="0" y2="835">
+                <stop offset="0" stop-color="#000"></stop>
+                <stop offset=".16" stop-color="#2e2e2e"></stop>
+                <stop offset=".36" stop-color="#fff"></stop>
+                <stop offset=".64" stop-color="#fff"></stop>
+                <stop offset=".84" stop-color="#2e2e2e"></stop>
+                <stop offset="1" stop-color="#000"></stop>
+              </linearGradient>
+              <mask id="washMask" maskUnits="userSpaceOnUse" x="150" y="-640" width="3400" height="1475">
+                <rect x="150" y="-640" width="3400" height="1475" fill="url(#washSideGrad)"></rect>
+              </mask>
+              <linearGradient id="coneSideGrad" gradientUnits="userSpaceOnUse" x1="0" y1="-240" x2="0" y2="410">
+                <stop offset="0" stop-color="#000"></stop>
+                <stop offset=".20" stop-color="#333"></stop>
+                <stop offset=".42" stop-color="#fff"></stop>
+                <stop offset=".58" stop-color="#fff"></stop>
+                <stop offset=".80" stop-color="#333"></stop>
+                <stop offset="1" stop-color="#000"></stop>
+              </linearGradient>
+              <mask id="coneMask" maskUnits="userSpaceOnUse" x="150" y="-240" width="2700" height="650">
+                <rect x="150" y="-240" width="2700" height="650" fill="url(#coneSideGrad)"></rect>
+              </mask>
             </defs>
             <g class="lights-group">
               <g class="beam">
-                <!-- One beam, drawn like torchlight in real water: it arcs
-                     gently as it reaches, narrows like an ice-cream cone
-                     to a rounded soft point, and is fully faded before it
-                     gets there. No straight edge anywhere; the outer wash
-                     follows the same tapered silhouette, dimmer and wider. -->
-                <path d="M197,82 C901,-465 1861,-678 2693,7 C3173,120 3397,150 3397,205 C3397,260 3173,290 2693,451 C1861,861 901,640 197,82 Z" fill="url(#beamGrad)" opacity=".45" filter="url(#beamBlurXL)"></path>
-                <path d="M197,82 C846,-228 1731,-348 2498,68 C2941,110 3147,128 3147,180 C3147,232 2941,252 2498,321 C1731,528 846,402 197,82 Z" fill="url(#beamGrad)" opacity=".55" filter="url(#beamBlurL)"></path>
-                <path d="M197,82 C791,-109 1601,-183 2303,89 C2708,116 2897,128 2897,158 C2897,188 2708,202 2303,245 C1601,358 791,279 197,82 Z" fill="url(#beamGrad)" opacity=".8" filter="url(#beamRoughM)"></path>
-                <ellipse cx="850" cy="40" rx="620" ry="120" fill="url(#beamPatch)" opacity=".20" transform="rotate(4 850 40)"></ellipse>
+                <!-- One beam, drawn like torchlight in real water. The
+                     wash is one teardrop drawn six times, scaled down
+                     toward the lamp in steps, all carrying the radial
+                     beamWash gradient at low opacity: any single
+                     silhouette contributes only a whisper of alpha, so
+                     the six edges together read as one continuous melt
+                     instead of a line. Inside them, the cone and
+                     core keep the ice-cream-cone shape with gently
+                     undulating outlines — the turbulence feel now lives
+                     in the geometry, not in a filter. The whole beam is
+                     fully dissolved well before the last shape ends. -->
+                <g mask="url(#washMask)"><path d="M197,82 C450,-190 700,-330 1000,-430 C1400,-560 1750,-590 2100,-545 C2500,-495 2850,-330 3120,-140 C3250,-50 3340,15 3360,95 C3380,180 3260,285 3080,390 C2820,545 2450,680 2050,730 C1600,785 1250,705 950,570 C650,445 400,260 197,82 Z" fill="url(#beamWash)" opacity=".15"></path><path d="M197,82 C450,-190 700,-330 1000,-430 C1400,-560 1750,-590 2100,-545 C2500,-495 2850,-330 3120,-140 C3250,-50 3340,15 3360,95 C3380,180 3260,285 3080,390 C2820,545 2450,680 2050,730 C1600,785 1250,705 950,570 C650,445 400,260 197,82 Z" fill="url(#beamWash)" opacity=".15" transform="translate(197 82) scale(.88) translate(-197 -82)"></path><path d="M197,82 C450,-190 700,-330 1000,-430 C1400,-560 1750,-590 2100,-545 C2500,-495 2850,-330 3120,-140 C3250,-50 3340,15 3360,95 C3380,180 3260,285 3080,390 C2820,545 2450,680 2050,730 C1600,785 1250,705 950,570 C650,445 400,260 197,82 Z" fill="url(#beamWash)" opacity=".15" transform="translate(197 82) scale(.76) translate(-197 -82)"></path><path d="M197,82 C450,-190 700,-330 1000,-430 C1400,-560 1750,-590 2100,-545 C2500,-495 2850,-330 3120,-140 C3250,-50 3340,15 3360,95 C3380,180 3260,285 3080,390 C2820,545 2450,680 2050,730 C1600,785 1250,705 950,570 C650,445 400,260 197,82 Z" fill="url(#beamWash)" opacity=".15" transform="translate(197 82) scale(.64) translate(-197 -82)"></path><path d="M197,82 C450,-190 700,-330 1000,-430 C1400,-560 1750,-590 2100,-545 C2500,-495 2850,-330 3120,-140 C3250,-50 3340,15 3360,95 C3380,180 3260,285 3080,390 C2820,545 2450,680 2050,730 C1600,785 1250,705 950,570 C650,445 400,260 197,82 Z" fill="url(#beamWash)" opacity=".16" transform="translate(197 82) scale(.52) translate(-197 -82)"></path><path d="M197,82 C450,-190 700,-330 1000,-430 C1400,-560 1750,-590 2100,-545 C2500,-495 2850,-330 3120,-140 C3250,-50 3340,15 3360,95 C3380,180 3260,285 3080,390 C2820,545 2450,680 2050,730 C1600,785 1250,705 950,570 C650,445 400,260 197,82 Z" fill="url(#beamWash)" opacity=".16" transform="translate(197 82) scale(.40) translate(-197 -82)"></path></g>
+                <g mask="url(#coneMask)">
+                <!-- Cone stack: one ice-cream-cone path, seven copies
+                     squashed toward the beam axis (y≈95) at rising
+                     opacity. The centre collects all seven; the rim
+                     collects only the widest, faintest one — a smooth
+                     vertical falloff with no single visible edge. -->
+                <path d="M197,82 C500,-60 800,-130 1150,-160 C1500,-190 1850,-140 2150,-60 C2400,5 2620,60 2700,120 C2760,165 2680,215 2450,265 C2150,330 1750,360 1400,330 C1000,295 600,200 197,82 Z" fill="url(#beamGrad)" opacity=".17"></path>
+                <path d="M197,82 C500,-60 800,-130 1150,-160 C1500,-190 1850,-140 2150,-60 C2400,5 2620,60 2700,120 C2760,165 2680,215 2450,265 C2150,330 1750,360 1400,330 C1000,295 600,200 197,82 Z" fill="url(#beamGrad)" opacity=".17" transform="translate(0 95) scale(1 .90) translate(0 -95)"></path>
+                <path d="M197,82 C500,-60 800,-130 1150,-160 C1500,-190 1850,-140 2150,-60 C2400,5 2620,60 2700,120 C2760,165 2680,215 2450,265 C2150,330 1750,360 1400,330 C1000,295 600,200 197,82 Z" fill="url(#beamGrad)" opacity=".18" transform="translate(0 95) scale(1 .80) translate(0 -95)"></path>
+                <path d="M197,82 C500,-60 800,-130 1150,-160 C1500,-190 1850,-140 2150,-60 C2400,5 2620,60 2700,120 C2760,165 2680,215 2450,265 C2150,330 1750,360 1400,330 C1000,295 600,200 197,82 Z" fill="url(#beamGrad)" opacity=".19" transform="translate(0 95) scale(1 .70) translate(0 -95)"></path>
+                <path d="M197,82 C500,-60 800,-130 1150,-160 C1500,-190 1850,-140 2150,-60 C2400,5 2620,60 2700,120 C2760,165 2680,215 2450,265 C2150,330 1750,360 1400,330 C1000,295 600,200 197,82 Z" fill="url(#beamGrad)" opacity=".20" transform="translate(0 95) scale(1 .60) translate(0 -95)"></path>
+                <path d="M197,82 C500,-60 800,-130 1150,-160 C1500,-190 1850,-140 2150,-60 C2400,5 2620,60 2700,120 C2760,165 2680,215 2450,265 C2150,330 1750,360 1400,330 C1000,295 600,200 197,82 Z" fill="url(#beamGrad)" opacity=".21" transform="translate(0 95) scale(1 .50) translate(0 -95)"></path>
+                <path d="M197,82 C500,-60 800,-130 1150,-160 C1500,-190 1850,-140 2150,-60 C2400,5 2620,60 2700,120 C2760,165 2680,215 2450,265 C2150,330 1750,360 1400,330 C1000,295 600,200 197,82 Z" fill="url(#beamGrad)" opacity=".22" transform="translate(0 95) scale(1 .40) translate(0 -95)"></path>                <ellipse cx="850" cy="40" rx="620" ry="120" fill="url(#beamPatch)" opacity=".20" transform="rotate(4 850 40)"></ellipse>
                 <ellipse cx="1750" cy="170" rx="760" ry="150" fill="url(#beamPatch)" opacity=".13" transform="rotate(3 1750 170)"></ellipse>
                 <ellipse cx="450" cy="95" rx="330" ry="70" fill="url(#beamPatch)" opacity=".22" transform="rotate(2 450 95)"></ellipse>
-                <path d="M197,82 C670,-8 1315,-43 1874,99 C2197,112 2347,118 2347,132 C2347,146 2197,152 1874,174 C1315,215 670,177 197,82 Z" fill="url(#beamCore)" opacity=".85" filter="url(#beamRoughS)"></path>
-                <path d="M197,82 C320,45 488,30 634,82 C718,88 757,90 757,96 C757,102 718,104 634,113 C488,137 320,121 197,82 Z" fill="url(#beamCore)" opacity=".9" filter="url(#beamBlurS)"></path>
+                <ellipse cx="2500" cy="130" rx="680" ry="170" fill="url(#beamPatch)" opacity=".10" transform="rotate(3 2500 130)"></ellipse>
+                <!-- Core stack: same trick, five copies. -->
+                <path d="M197,82 C670,-8 1315,-43 1874,99 C2197,112 2347,118 2347,132 C2347,146 2197,152 1874,174 C1315,215 670,177 197,82 Z" fill="url(#beamCore)" opacity=".15"></path>
+                <path d="M197,82 C670,-8 1315,-43 1874,99 C2197,112 2347,118 2347,132 C2347,146 2197,152 1874,174 C1315,215 670,177 197,82 Z" fill="url(#beamCore)" opacity=".16" transform="translate(0 95) scale(1 .85) translate(0 -95)"></path>
+                <path d="M197,82 C670,-8 1315,-43 1874,99 C2197,112 2347,118 2347,132 C2347,146 2197,152 1874,174 C1315,215 670,177 197,82 Z" fill="url(#beamCore)" opacity=".17" transform="translate(0 95) scale(1 .70) translate(0 -95)"></path>
+                <path d="M197,82 C670,-8 1315,-43 1874,99 C2197,112 2347,118 2347,132 C2347,146 2197,152 1874,174 C1315,215 670,177 197,82 Z" fill="url(#beamCore)" opacity=".18" transform="translate(0 95) scale(1 .55) translate(0 -95)"></path>
+                <path d="M197,82 C670,-8 1315,-43 1874,99 C2197,112 2347,118 2347,132 C2347,146 2197,152 1874,174 C1315,215 670,177 197,82 Z" fill="url(#beamCore)" opacity=".19" transform="translate(0 95) scale(1 .40) translate(0 -95)"></path>                <path d="M197,82 C320,45 488,30 634,82 C718,88 757,90 757,96 C757,102 718,104 634,113 C488,137 320,121 197,82 Z" fill="url(#beamCore)" opacity=".9"></path>
+                </g>
                 <g class="beam-snow">
                   <circle class="bsnow a" cx="1738" cy="24" r="2.4" opacity="0.41" style="--o:0.41; animation-duration:9.7s; animation-delay:-6.1s"></circle>
                   <circle class="bsnow b" cx="2314" cy="83" r="2.8" opacity="0.31" style="--o:0.31; animation-duration:7.1s; animation-delay:-4.5s"></circle>

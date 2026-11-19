@@ -421,6 +421,11 @@ body.first-load .christmas-quote{animation:quoteBlurIn 5s ease-out .9s both}
 /* Exhibit Eight hangs under Exhibit Seven (Nov 18, 2026): the Sea
    Demo door, moved down one, wears Exhibit Four's staircase step. */
 .door-8{background:linear-gradient(150deg, #5a3a8c, #4a2f78)}
+/* Exhibit Nine (Nov 19, 2026, his swap): the Mars book leaves the
+   five-door row — Fractals takes the Five seat — and hangs under
+   the Sea Demo. The left bank mirrors the row, so Nine wears
+   Exhibit Five's staircase step. */
+.door-9{background:linear-gradient(150deg, #6d47a3, #5a3a8c)}
 .sea-left .door{margin-top:18px}
 /* NOV 14 late — GOLDEN DOORS (his call, 23:39): a door under the
    cursor — or under a dragging finger — turns gold and glows; the
@@ -453,7 +458,7 @@ body[data-theme="xmas"] .post-card, body[data-theme="xmas"] .post-composer{backg
    designated theme colors now; normal days keep their plum. */
 body[data-theme="halloween"] .door-1, body[data-theme="xmas"] .door-1{background:linear-gradient(150deg, var(--panel2), var(--panel))}
 body[data-theme="halloween"] .door-2, body[data-theme="xmas"] .door-2, body[data-theme="halloween"] .door-3, body[data-theme="xmas"] .door-3, body[data-theme="halloween"] .door-4, body[data-theme="xmas"] .door-4, body[data-theme="halloween"] .door-5, body[data-theme="xmas"] .door-5, body[data-theme="halloween"] .door-6, body[data-theme="xmas"] .door-6{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
-body[data-theme="halloween"] .door-7, body[data-theme="xmas"] .door-7, body[data-theme="halloween"] .door-8, body[data-theme="xmas"] .door-8{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
+body[data-theme="halloween"] .door-7, body[data-theme="xmas"] .door-7, body[data-theme="halloween"] .door-8, body[data-theme="xmas"] .door-8, body[data-theme="halloween"] .door-9, body[data-theme="xmas"] .door-9{background:linear-gradient(150deg, var(--plum-mid), var(--panel2))}
 body[data-theme="halloween"] .sea-note, body[data-theme="xmas"] .sea-note{background:linear-gradient(140deg, var(--panel2), var(--panel)); border-color:var(--gold)}
 body[data-theme="halloween"] .side-panel, body[data-theme="xmas"] .side-panel{background:var(--panel); border-color:var(--gold)}
 /* REFINED (his calls, Nov 15 02:39 + 02:47): posts used to glow
@@ -2247,12 +2252,15 @@ html.kint-lock{overflow:hidden !important}
            Eight takes Exhibit Four's (the left-bank mapping). */
         .sea7-card.g-step3{background:linear-gradient(150deg, #4a2f78, #3a2560)}
         .sea7-card.g-step4{background:linear-gradient(150deg, #5a3a8c, #4a2f78)}
+        /* Nov 19, 2026 — Nine joins them in the popup, wearing
+           Exhibit Five's staircase step (the same mirror mapping). */
+        .sea7-card.g-step5{background:linear-gradient(150deg, #6d47a3, #5a3a8c)}
         /* Nov 18, 2026, his mobile fix: in the PHONE popup only, the
            two newest doors wear the same flat dark theme as doors
            1–6 — the staircase steps stay on the PC popup and the
            PC bank cards, untouched. */
         @media (max-width:900px){
-          .sea7-card.g-step3, .sea7-card.g-step4{ background:rgba(8,17,24,.72); }
+          .sea7-card.g-step3, .sea7-card.g-step4, .sea7-card.g-step5{ background:rgba(8,17,24,.72); }
         }
         .sea7-text{ display:flex; flex-direction:column; gap:2px; min-width:0; }
         .sea7-num{ font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#f2c14e; }
@@ -2333,10 +2341,10 @@ html.kint-lock{overflow:hidden !important}
         <p>Science tells us more about god than religion.</p>
         <span class="door-arrow">Read ↗</span>
       </a>
-      <a class="door door-5" href="https://isaiahtobola.github.io/completion-filter/mars/" target="_blank" rel="noopener">
-        <span class="door-kicker">Exhibit Five · The Mars Book</span>
-        <h3>Robots and Mars</h3>
-        <p>Turning Competitive Intelligence and Energy into a Multiplanetary Symbiosis.</p>
+      <a class="door door-5" href="https://isaiahtobola.github.io/completion-filter/fractals/" target="_blank" rel="noopener">
+        <span class="door-kicker">Exhibit Five · The Study</span>
+        <h3>Fractals — A BW Young Bo &amp; Lux Study</h3>
+        <p>The same shape, everywhere — nature's fractals, computed live, every discoverer credited.</p>
         <span class="door-arrow">Read ↗</span>
       </a>
     </div>
@@ -2369,6 +2377,13 @@ html.kint-lock{overflow:hidden !important}
           <h3>Sea Demo — 13,000 Deep</h3>
           <p>The deep-sea demonstration — sun rays at the surface, plankton chains, and the ROV patrolling the trench.</p>
           <span class="door-arrow">Dive ↗</span>
+        </a>
+        <!-- Exhibit Nine (Nov 19, 2026, his swap): the Mars book leaves the row — Fractals takes Five — and hangs here, under the Sea Demo. -->
+        <a class="door door-9" href="https://isaiahtobola.github.io/completion-filter/mars/" target="_blank" rel="noopener">
+          <span class="door-kicker">Exhibit Nine · The Mars Book</span>
+          <h3>Robots and Mars</h3>
+          <p>Turning Competitive Intelligence and Energy into a Multiplanetary Symbiosis.</p>
+          <span class="door-arrow">Read ↗</span>
         </a>
       </aside>
             <div class="feed">
@@ -7482,6 +7497,26 @@ runners['sea-canvas'] = function(canvas, ctx, state){
       var rayReach3 = 10000 * kTile3; /* canvas px from the section top to 450 m */
       if(visTop3 < rayReach3){
         ctx.save();
+        /* Nov 19, 2026 — THE WHITE-FLASH FIX (his report: the rays
+           flash white over the header/footer edges while scrolling
+           on PC): this block paints the rays' FULL 10,000 px reach
+           every frame, but the frame head only clears the visible
+           window — outside it, the 'screen'-blended beams and the
+           translucent pool/wash/streaks land on last frame's paint
+           and stack, frame after frame, until the band saturates
+           to near-solid white (measured on the bench: a beam core
+           outside the window climbs from one-paint ~60 to
+           rgb(254,255,255) within ~2 s; the pool band dwelled-on
+           above the window reads rgb(243,252,254) where one paint
+           gives ~(102,161,183)). At rest it never shows — the
+           window is always repainted clean — but a scroll reveals
+           the stacked band at the screen's top/bottom edge a frame
+           before the clear catches up. Clip the whole light
+           composition to the exact window this frame cleared:
+           paint can no longer land where nothing was cleared, so
+           nothing can stack — and the visible picture, which lives
+           entirely inside that window, is untouched. */
+        if(cBot3 > cTop3){ ctx.beginPath(); ctx.rect(0, cTop3, W, cBot3 - cTop3); ctx.clip(); }
         ctx.translate(0, off3);
         ctx.globalAlpha = seaAlpha3;
         var pool3 = ctx.createLinearGradient(0, 0, 0, vh3 * 0.16);
@@ -10227,7 +10262,7 @@ setTimeout(function(){ document.body.classList.remove('first-load'); }, 5200);
   var treeDoor = document.querySelector('a.door-2[href*="completion-filter/tree"]');
   var theologyDoor = document.querySelector('a.door-4[href*="completion-filter/theology"]');
   var boardDoor = document.querySelector('a.door-6[href*="completion-filter/board"]');
-  var marsDoor = document.querySelector('a.door-5[href*="completion-filter/mars"]');
+  var marsDoor = document.querySelector('a.door-9[href*="completion-filter/mars"]');
   var oceanDoor = document.querySelector('a.door-1[href*="bw-ocean"]');
   function syncCfDoor(){
     var t = theme === 'halloween' ? 'halloween' : theme === 'xmas' ? 'christmas' : 'normal';
@@ -12869,13 +12904,13 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
   }, true);
 })();
 </script>
-    <div class="sea7-overlay" id="sea7-overlay" role="dialog" aria-modal="true" aria-label="Exhibits — the eight doors">
+    <div class="sea7-overlay" id="sea7-overlay" role="dialog" aria-modal="true" aria-label="Exhibits — the nine doors">
       <div class="sea7-rays" aria-hidden="true"></div>
       <div class="sea7-scroll">
         <div class="sea7-head">
           <div>
             <h2>Exhibits</h2>
-            <div class="sea7-sub">Eight doors off the Sea</div>
+            <div class="sea7-sub">Nine doors off the Sea</div>
           </div>
           <button type="button" class="sea7-close" id="sea7-close" aria-label="Close exhibits">✕</button>
         </div>
@@ -12916,11 +12951,11 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
             </span>
             <span class="sea7-arrow" aria-hidden="true">→</span>
           </a>
-          <a class="sea7-card" href="https://isaiahtobola.github.io/completion-filter/mars/" target="_blank" rel="noopener">
+          <a class="sea7-card" href="https://isaiahtobola.github.io/completion-filter/fractals/" target="_blank" rel="noopener">
             <span class="sea7-text">
               <span class="sea7-num">Exhibit Five</span>
-              <span class="sea7-name">Robots and Mars</span>
-              <span class="sea7-sub2">The Mars Book</span>
+              <span class="sea7-name">Fractals</span>
+              <span class="sea7-sub2">A BW Young Bo &amp; Lux Study</span>
             </span>
             <span class="sea7-arrow" aria-hidden="true">→</span>
           </a>
@@ -12946,6 +12981,14 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
               <span class="sea7-num">Exhibit Eight</span>
               <span class="sea7-name">Sea Demo — 13,000 Deep</span>
               <span class="sea7-sub2">The deep-sea demonstration</span>
+            </span>
+            <span class="sea7-arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="sea7-card g-step5" href="https://isaiahtobola.github.io/completion-filter/mars/" target="_blank" rel="noopener">
+            <span class="sea7-text">
+              <span class="sea7-num">Exhibit Nine</span>
+              <span class="sea7-name">Robots and Mars</span>
+              <span class="sea7-sub2">The Mars Book</span>
             </span>
             <span class="sea7-arrow" aria-hidden="true">→</span>
           </a>

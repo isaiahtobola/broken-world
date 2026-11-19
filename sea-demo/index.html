@@ -227,7 +227,7 @@
       }
       .hud-btns a.back-sea:hover{ background:rgba(60,42,4,.85); }
 
-      /* ============ EXHIBITS POPUP — seven doors, folded into one button ============
+      /* ============ EXHIBITS POPUP — eight doors, folded into one button ============
          Same deep-sea design as the page: surface water, sunshine rays
          shining in at the popup's own top, plankton dots drifting inside. */
       .exhibits-overlay{
@@ -468,7 +468,7 @@
         <div class="zone-inner">
           <div class="depth-tag">≈ 9,500 m · The Trench Deepens</div>
           <h2>Pressure: nearly a thousand atmospheres</h2>
-          <p class="zone-note">Pressure climbs about one atmosphere for every ten metres down, so down here it's already near a thousand — and past it at the trench floor. Real ROVs work at these depths on a tether, with crush-resistant syntactic foam for buoyancy, thrusters, sonar, and lights that cut a small room out of the dark. Ours carries the same kit — red light on its port side, green on starboard, like any vessel.</p>
+          <p class="zone-note">Pressure climbs about one atmosphere for every ten metres down, so down here it's already near a thousand — and past it at the trench floor. The deepest-rated ROVs work at these depths on a tether, with crush-resistant syntactic foam for buoyancy, thrusters, sonar, and lights that cut a small room out of the dark. Ours carries the same kit — red light on its port side, green on starboard, like any vessel.</p>
           <article class="prop-post left">
             <div class="prop-head">
               <div class="prop-ava"></div>
@@ -484,7 +484,7 @@
       </section>
 
       <section class="floor">
-        <div class="depth-tag">11,000 – 12,000 m · Challenger Deep</div>
+        <div class="depth-tag">11,000 – 12,000 m · Below Challenger Deep</div>
         <h2 style="margin:0 0 10px; font-size:clamp(1.7rem,5.4vw,2.7rem); font-weight:800;">The bottom of the world</h2>
         <p class="zone-note" style="max-width:32rem; color:var(--ink-dim); line-height:1.55; margin:0 auto 26px 0;">No light waits for you down here — the Sea has no glowing floor, just black water all the way down. But the ROV is awake: watch for him crossing in front of everything, on patrol in the trench. Tap him and his headlight cuts the dark — one long beam straight out of his lamp, washing across the trench, and no glow anywhere else on him.</p>
         <article class="prop-post">
@@ -492,7 +492,7 @@
             <div class="prop-ava gold"></div>
             <div>
               <div class="prop-name">Prop Post № 6 — The Floor Post</div>
-              <div class="prop-meta">FAKE TEXT BOX · DEMO PROP · 11,500 M</div>
+              <div class="prop-meta">FAKE TEXT BOX · DEMO PROP · 11,500 M · BELOW THE REAL FLOOR — HONEST NOTE AT THE BOTTOM OF THE PAGE</div>
             </div>
           </div>
           <p class="prop-body">Sitting on the trench slope in the black. If the ROV crosses while you're reading, he passes <strong>right over this text</strong> — top layer, above everything. He never appears above 11,000 m; down here is his whole world — his, and whatever glows below him.</p>
@@ -510,7 +510,7 @@
             <div class="prop-ava gold"></div>
             <div>
               <div class="prop-name">Prop Post № 7 — The True Floor Post</div>
-              <div class="prop-meta">FAKE TEXT BOX · DEMO PROP · 13,000 M</div>
+              <div class="prop-meta">FAKE TEXT BOX · DEMO PROP · 13,000 M · BELOW THE REAL FLOOR — SEE THE HONEST NOTE BELOW</div>
             </div>
           </div>
           <p class="prop-body">The actual last box on the page, resting on the floor at 13,000 metres. The ROV still crosses overhead on his patrol — he never leaves the trench — and down here his light has company: one tapped plankton and the whole school goes up in sequence, ghostly turquoise, first to last.</p>
@@ -534,10 +534,10 @@
       </section>
     </main>
 
-    <!-- EXHIBITS POPUP — one small button at the top folds all seven doors
+    <!-- EXHIBITS POPUP — one small button at the top folds all eight doors
          into this overlay, so the top of the Sea stays uncluttered. Same
          water, same rays at its top, its own plankton drifting inside. -->
-    <div class="exhibits-overlay" id="exhibitsOverlay" role="dialog" aria-modal="true" aria-label="Exhibits — the seven doors">
+    <div class="exhibits-overlay" id="exhibitsOverlay" role="dialog" aria-modal="true" aria-label="Exhibits — the eight doors">
       <div class="exhibit-rays" aria-hidden="true">
         <div class="surface-light"></div>
         <div class="streaks"></div>
@@ -551,7 +551,7 @@
         <div class="exhibits-head">
           <div>
             <h2>Exhibits</h2>
-            <div class="sub">Seven doors off the Sea</div>
+            <div class="sub">Eight doors off the Sea</div>
           </div>
           <button type="button" class="exhibits-close" id="exhibitsClose" aria-label="Close exhibits">✕</button>
         </div>
@@ -601,9 +601,17 @@
             </span>
             <span class="door-arrow" aria-hidden="true">→</span>
           </a>
-          <button type="button" class="exhibit-card" data-close-exhibits>
+          <a class="exhibit-card" href="https://isaiahtobola.github.io/completion-filter/seven/" target="_blank" rel="noopener">
             <span class="exhibit-text">
               <span class="exhibit-num">Exhibit Seven</span>
+              <span class="exhibit-name">The Number 7</span>
+              <span class="exhibit-sub">The booklet — dice, sins and virtues, and the sevens of the world</span>
+            </span>
+            <span class="door-arrow" aria-hidden="true">→</span>
+          </a>
+          <button type="button" class="exhibit-card" data-close-exhibits>
+            <span class="exhibit-text">
+              <span class="exhibit-num">Exhibit Eight</span>
               <span class="exhibit-name">Sea Demo — 13,000 Deep</span>
               <span class="exhibit-sub">This very page</span>
             </span>
@@ -683,7 +691,7 @@
           if (d < 4000) return "Midnight Zone";
           if (d < 6000) return "Abyssal Zone";
           if (d < WAKE_AT) return "Hadal Zone · The Trench";
-          if (d < CHAIN_AT) return "Hadal Zone · Challenger Deep";
+          if (d < CHAIN_AT) return "Hadal Zone · Below Challenger Deep";
           return "Hadal Zone · The Chain Floor";
         }
         function updateDepth() {
@@ -700,7 +708,7 @@
           /* Sun rays belong to the surface: full strength at 0 m, fading
              through the sunlight zone, gone by ~1,100 m — right where real
              sunlight gives up too. */
-          var rayO = Math.max(0, 1 - depth / 1100);
+          var rayO = Math.max(0, 1 - depth / 1000);
           raysLayer.style.opacity = rayO.toFixed(3);
           raysLayer.style.visibility = rayO <= 0 ? "hidden" : "visible";
           var past = depth >= WAKE_AT;

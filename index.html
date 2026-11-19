@@ -2259,8 +2259,54 @@ html.kint-lock{overflow:hidden !important}
         .sea7-name{ font-size:18px; font-weight:700; color:#f7ead1; line-height:1.2; }
         .sea7-sub2{ font-size:13px; color:#9db8bd; line-height:1.35; }
         .sea7-arrow{ font-family:var(--mono); color:#f2c14e; font-size:18px; flex:0 0 auto; }
+        /* The Authorship Plaque (Nov 18, 2026, his words): a small
+           museum plaque in gold under the Exhibits button — the one
+           exhibits surface both layouts share, so the same plaque is
+           seen on PC (above the door row) and on phones (right under
+           the button, where the popup is the exhibits path).
+           Widened Nov 18, 2026 (his call): on PC the plaque spans the
+           full width of the five-door exhibits row, edge to edge, so
+           the text flows wide and the plaque stops pushing the doors
+           so far down. The phone twin keeps its popup width. */
+        .sea-plaque{
+          margin:16px 0 6px; padding:18px 22px 16px;
+          background:linear-gradient(160deg, var(--panel2), var(--panel));
+          border:1px solid rgba(240,183,63,.55); border-radius:14px;
+          box-shadow:0 0 0 1px rgba(240,183,63,.10), 0 10px 30px rgba(0,0,0,.35);
+          font-family:var(--serif); color:var(--gold);
+          text-align:center; /* Nov 18, 2026, his call: banner text centered */
+        }
+        .sea-plaque .sp-head{ font-size:19px; font-weight:700; line-height:1.35; color:var(--yellow); margin-bottom:10px; }
+        .sea-plaque p{ font-size:15.5px; line-height:1.55; margin-bottom:9px; }
+        .sea-plaque p:last-child{ margin-bottom:0; }
+        .sea-plaque .sp-final{ font-style:italic; color:var(--yellow); }
+        /* The same plaque, phone placement: under html.bw-mob the
+           in-flow plaque hides and its twin hangs at the head of the
+           Exhibits popup — the phone's exhibits surface — so the
+           fixed Sea View pill (bottom-right, z-60) never floats over
+           the plaque's words; the popup rides at z-1200 above it. */
+        .sea-plaque-pop{ display:none; }
+        html.bw-mob .sea-plaque{ display:none; }
+        html.bw-mob .sea-plaque-pop{
+          display:block; margin:0 0 14px; padding:16px 18px 13px;
+          background:linear-gradient(160deg, var(--panel2), var(--panel));
+          border:1px solid rgba(240,183,63,.55); border-radius:14px;
+          font-family:var(--serif); color:var(--gold);
+          text-align:center; /* Nov 18, 2026: centered to match the PC banner */
+        }
+        html.bw-mob .sea-plaque-pop .sp-head{ font-size:18px; font-weight:700; line-height:1.35; color:var(--yellow); margin-bottom:9px; }
+        html.bw-mob .sea-plaque-pop p{ font-size:15px; line-height:1.55; margin-bottom:8px; }
+        html.bw-mob .sea-plaque-pop p:last-child{ margin-bottom:0; }
+        html.bw-mob .sea-plaque-pop .sp-final{ font-style:italic; color:var(--yellow); }
     </style>
     <button class="sea7-btn" id="sea7-btn" type="button">◆ Exhibits</button>
+    <!-- The Authorship Plaque (Nov 18, 2026, his words, spelling cleaned only): hangs under the Exhibits button on both layouts. -->
+    <div class="sea-plaque" role="note" aria-label="About these exhibits — a note from BW Young Bo and Lux">
+      <div class="sp-head">Exhibits, connections, and interesting relations — found and discovered by BW Young Bo and Lux.</div>
+      <p>Nothing here claims to be concrete evidence, facts, or real theories. This is a collection of humanity’s and scientists’ findings, pieced together where we found a symbolic or mathematical tie.</p>
+      <p>We are not trying to steal anyone’s work, or act like I did math in my room. I just prompted words. The discoveries belong to the people who made them — and they are credited.</p>
+      <p class="sp-final">Everything on this website, and every idea in it, was prompted — a thought from Isaiah. The entire world had already created the beautiful puzzle first.</p>
+    </div>
     <!-- The five exhibits, layered into each other (his restructure; Instant Beat door removed 2026-10-30 — the invention stays private for now; the board door added Nov 11, 2026 on his green light; the Tree Diagram and Theology doors added Nov 13, 2026 on his green light; Nov 14, 2026: the Mars book takes slot five and the board leaves the row to hang as Exhibit Six under the Rivers bank — five doors, left to right in his order: Ocean, Tree Diagram, Completion Filter, Theology, Mars) -->
     <div class="doors">
       <a class="door door-1" href="https://isaiahtobola.github.io/bw-ocean/" target="_blank" rel="noopener">
@@ -12831,6 +12877,13 @@ button.bw-armed{white-space:normal !important; height:auto !important; min-heigh
             <div class="sea7-sub">Eight doors off the Sea</div>
           </div>
           <button type="button" class="sea7-close" id="sea7-close" aria-label="Close exhibits">✕</button>
+        </div>
+        <!-- The Authorship Plaque, phone placement (Nov 18, 2026): shown only under html.bw-mob, at the head of the popup — the same words as the plaque under the Exhibits button on PC. -->
+        <div class="sea-plaque-pop" role="note" aria-label="About these exhibits — a note from BW Young Bo and Lux">
+          <div class="sp-head">Exhibits, connections, and interesting relations — found and discovered by BW Young Bo and Lux.</div>
+          <p>Nothing here claims to be concrete evidence, facts, or real theories. This is a collection of humanity’s and scientists’ findings, pieced together where we found a symbolic or mathematical tie.</p>
+          <p>We are not trying to steal anyone’s work, or act like I did math in my room. I just prompted words. The discoveries belong to the people who made them — and they are credited.</p>
+          <p class="sp-final">Everything on this website, and every idea in it, was prompted — a thought from Isaiah. The entire world had already created the beautiful puzzle first.</p>
         </div>
         <div class="sea7-list">
           <a class="sea7-card" href="https://isaiahtobola.github.io/bw-ocean/" target="_blank" rel="noopener">

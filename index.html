@@ -734,27 +734,33 @@ html.bw-mob #sea-rays .surface-light{position:absolute; left:0; right:0; top:0; 
     radial-gradient(ellipse 72% 42% at 78% -10%, rgba(255,242,196,.24), transparent 62%),
     linear-gradient(180deg, rgba(170,228,248,.16), transparent 72%)}
 html.bw-mob #sea-rays .streaks{position:absolute; left:-10%; right:-10%; top:0; height:calc(10000px - var(--hdr, 401px));
-  background:repeating-linear-gradient(105deg, transparent 0 90px, rgba(178,232,250,.05) 90px 92px, transparent 92px 190px);
+  background:repeating-linear-gradient(90deg, transparent 0 90px, rgba(178,232,250,.05) 90px 92px, transparent 92px 190px);
   -webkit-mask-image:linear-gradient(180deg, #000 0%, transparent 100%); mask-image:linear-gradient(180deg, #000 0%, transparent 100%);
   animation:bwStreakDrift 52s linear infinite}
 @keyframes bwStreakDrift{from{transform:translateX(0)} to{transform:translateX(190px)}}
+/* Nov 20, 2026, his call (with his screenshot): on the narrow
+   phone screen the 16° diagonal lean read weird, so the mobile
+   beams stand VERTICAL now — straight up-down shafts seated on
+   the left and right sides, the middle of the screen left clear.
+   Same gradients, same 450 m melt, same page anchor; only the
+   lean and the seats changed. PC canvas rays are untouched. */
 html.bw-mob #sea-rays .raybeam{position:absolute; top:-24vh; height:calc(10000px - var(--hdr, 401px) + 24vh);
   background:linear-gradient(180deg, rgba(255,247,208,.55), rgba(198,238,255,.21) 30%, rgba(198,238,255,.115) 55%, rgba(198,238,255,.04) 78%, rgba(198,238,255,.01) 92%, transparent 100%);
-  filter:blur(7px); mix-blend-mode:screen; transform-origin:50% 0; transform:rotate(16deg);
+  filter:blur(7px); mix-blend-mode:screen;
   animation:bwRayShimmer 8s ease-in-out infinite alternate; will-change:opacity, transform}
-html.bw-mob #sea-rays .raybeam.b1{left:4%; width:120px; animation-duration:9s}
-html.bw-mob #sea-rays .raybeam.b2{left:19%; width:52px; animation-duration:6.5s; animation-delay:-2s}
-html.bw-mob #sea-rays .raybeam.b3{left:33%; width:170px; animation-duration:11s; animation-delay:-5s}
-html.bw-mob #sea-rays .raybeam.b4{left:55%; width:64px; animation-duration:7.5s; animation-delay:-1s}
-html.bw-mob #sea-rays .raybeam.b5{left:70%; width:140px; animation-duration:10s; animation-delay:-4s}
-html.bw-mob #sea-rays .raybeam.b6{left:86%; width:48px; animation-duration:6s; animation-delay:-3s}
+html.bw-mob #sea-rays .raybeam.b1{left:2%; width:96px; animation-duration:9s}
+html.bw-mob #sea-rays .raybeam.b2{left:14%; width:44px; animation-duration:6.5s; animation-delay:-2s}
+html.bw-mob #sea-rays .raybeam.b3{left:23%; width:64px; animation-duration:11s; animation-delay:-5s}
+html.bw-mob #sea-rays .raybeam.b4{left:auto; right:23%; width:56px; animation-duration:7.5s; animation-delay:-1s}
+html.bw-mob #sea-rays .raybeam.b5{left:auto; right:12%; width:104px; animation-duration:10s; animation-delay:-4s}
+html.bw-mob #sea-rays .raybeam.b6{left:auto; right:2%; width:44px; animation-duration:6s; animation-delay:-3s}
 /* the tiled copies ride deeper water (they only enter the screen
    past ~59 m, where the light is already thin): they hold the
    shimmer's mean opacity instead of animating, and drop their
    will-change — 54 animated, self-promoting layers was most of
    the mobile scroll cost of the longer light. */
 html.bw-mob #sea-rays .raybeam.clone{animation:none; opacity:.62; will-change:auto; filter:none}
-@keyframes bwRayShimmer{from{opacity:.38; transform:rotate(15deg) translateX(-6px)} to{opacity:.85; transform:rotate(17.5deg) translateX(8px)}}
+@keyframes bwRayShimmer{from{opacity:.38; transform:translateX(-5px)} to{opacity:.85; transform:translateX(6px)}}
 html.bw-mob #sea-rays .surface-pool{position:absolute; left:0; right:0; top:0; height:16vh;
   background:linear-gradient(180deg, rgba(230,250,255,.20), transparent)}
 @media (prefers-reduced-motion: reduce){
@@ -7197,21 +7203,15 @@ runners['sea-canvas'] = function(canvas, ctx, state){
     vs.insertBefore(domBg, canvas);
     domRays = document.createElement('div');
     domRays.id = 'sea-rays'; domRays.setAttribute('aria-hidden', 'true');
-    /* the beams are tiled across page widths, exactly as the PC
-       canvas draws them: a ~16° lean over the 10,000 px reach
-       drifts ~2,900 px sideways, so copies of each beam stand one
-       viewport width apart to the left, and the stroke crossing
-       the screen at any depth is the same beam, one period over.
-       (Copy lefts are px against the creation-time viewport; the
-       originals keep their CSS % seats.) */
+    /* Nov 20, 2026: the beams stand vertical now (his call — the
+       16° lean read weird on the narrow screen), seated left and
+       right by their CSS classes. A vertical shaft holds its
+       column at every depth, so the lean's period copies — one
+       clone per viewport width to the left, 48 extra layers —
+       are retired; six beams are the whole layer. */
     var beamsHtml = '';
-    var vwM = window.innerWidth || 390;
-    var beamFxM = [0.04, 0.19, 0.33, 0.55, 0.70, 0.86];
     for(var biM = 0; biM < 6; biM++){
       beamsHtml += '<div class="raybeam b' + (biM + 1) + '"></div>';
-      for(var bjM = -1; bjM >= -8; bjM--){
-        beamsHtml += '<div class="raybeam clone b' + (biM + 1) + '" style="left:' + Math.round((beamFxM[biM] + bjM) * vwM) + 'px"></div>';
-      }
     }
     domRays.innerHTML = '<div class="rays-space"><div class="surface-light"></div><div class="streaks"></div>' + beamsHtml + '<div class="surface-pool"></div></div>';
     vs.insertBefore(domRays, canvas);
@@ -7627,12 +7627,36 @@ runners['sea-canvas'] = function(canvas, ctx, state){
          drift up — and a dot that wanders out of the window's
          neighbourhood quietly re-enters on the far side, so the
          school is always around you, at your own depth */
+      var winH3 = Math.max(120, visBotCss3 - visTopCss3);
       for(var mi3 = 0; mi3 < SP.dots.length; mi3++){
         var md3 = SP.dots[mi3];
         md3.y += md3.snow ? md3.sp * 0.016 : -md3.sp * 0.016;
-        if(md3.y < visTopCss3 - 60 || md3.y > visBotCss3 + 60){
-          md3.y = md3.snow ? (visTopCss3 - 20 - Math.random() * 40) : (visBotCss3 + 20 + Math.random() * 40);
+        var outTop3 = md3.y < visTopCss3 - 60, outBot3 = md3.y > visBotCss3 + 60;
+        if(md3.park){
+          /* NOV 20, 2026 — SPREAD, ROUND 2 (his word: "widen out
+             the vertical aspect of the plankton"): a dot that
+             leaves the window no longer re-enters through a 40 px
+             slot at the far edge — that slot is what piled the
+             school into the bands in his screenshot, a dense
+             stripe at each edge and a sparse middle. Instead it
+             takes a berth spread at random across most of a full
+             window of water on the far side and drifts back in
+             from there, so the school streams home staggered
+             down the whole column. The berth releases when the
+             dot drifts back into the window's neighbourhood; if
+             a fast scroll strands a berth far from the window,
+             it is quietly re-dealt near the window (invisible —
+             the dot is off-screen either way). Positions stay
+             true page depths, so taps and chains read the same
+             water as before. */
+          if(!outTop3 && !outBot3) md3.park = false;
+          else if(md3.y < visTopCss3 - 60 - winH3 || md3.y > visBotCss3 + 60 + winH3){
+            md3.y = md3.snow ? (visTopCss3 - 20 - Math.random() * winH3 * 0.6) : (visBotCss3 + 20 + Math.random() * winH3 * 0.6);
+          }
+        } else if(outTop3 || outBot3){
+          md3.y = md3.snow ? (visTopCss3 - 20 - Math.random() * winH3 * 0.6) : (visBotCss3 + 20 + Math.random() * winH3 * 0.6);
           md3.fx = spSpreadFx();
+          md3.park = true;
         }
       }
       var maxScr3 = Math.max(1, cssH3 - (window.innerHeight || 800));
